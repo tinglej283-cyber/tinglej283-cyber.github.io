@@ -452,18 +452,6 @@ table td strong { color: #f0ebe6; font-weight: 500; }
 .team-pair-card.poor { border-color: rgba(233,69,96,0.15); background: rgba(233,69,96,0.05); }
 .team-pair-card.bad { border-color: rgba(233,69,96,0.3); background: rgba(233,69,96,0.08); }
 
-@media (max-width: 768px) {
-    .chart-grid { grid-template-columns: 1fr; }
-    .chart-row { grid-template-columns: 1fr; }
-    .header h1 { font-size: 20px; }
-    .stats-grid { grid-template-columns: 1fr 1fr; }
-    .login-container { margin: 30px 16px; padding: 30px 24px; }
-    .tabs button { padding: 6px 12px; font-size: 11px; }
-    .tab-content { padding: 16px; }
-    .worker-profile-section { flex-direction: column; text-align: center; }
-    .worker-profile-info .pay-info { justify-content: center; }
-}
-
 .loading { text-align: center; padding: 30px; color: rgba(255,255,255,0.3); font-weight: 300; font-size: 13px; }
 .hidden { display: none !important; }
 ::-webkit-scrollbar { width: 5px; height: 5px; }
@@ -707,11 +695,7 @@ table td strong { color: #f0ebe6; font-weight: 500; }
     align-items: center;
     animation: notifFadeIn 0.5s ease;
 }
-
-.branch-notification-overlay.active {
-    display: flex;
-}
-
+.branch-notification-overlay.active { display: flex; }
 .branch-notification-container {
     position: relative;
     max-width: 580px;
@@ -720,13 +704,9 @@ table td strong { color: #f0ebe6; font-weight: 500; }
     border: 1px solid rgba(212, 165, 116, 0.3);
     border-radius: 24px;
     padding: 35px 30px 25px;
-    box-shadow: 
-        0 0 60px rgba(212, 165, 116, 0.1),
-        0 0 120px rgba(212, 165, 116, 0.05),
-        inset 0 1px 0 rgba(255, 255, 255, 0.05);
+    box-shadow: 0 0 60px rgba(212, 165, 116, 0.1), 0 0 120px rgba(212, 165, 116, 0.05), inset 0 1px 0 rgba(255, 255, 255, 0.05);
     animation: notifSlideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1);
 }
-
 .notif-sparkles {
     position: absolute;
     top: 0;
@@ -736,7 +716,6 @@ table td strong { color: #f0ebe6; font-weight: 500; }
     pointer-events: none;
     overflow: hidden;
 }
-
 .notif-sparkle {
     position: absolute;
     color: #d4a574;
@@ -744,24 +723,16 @@ table td strong { color: #f0ebe6; font-weight: 500; }
     opacity: 0.3;
     animation: notifSparkleFloat 4s infinite alternate;
 }
-
 .notif-sparkle:nth-child(1) { top: 10%; left: 5%; animation-delay: 0s; }
 .notif-sparkle:nth-child(2) { top: 20%; right: 10%; animation-delay: 0.8s; }
 .notif-sparkle:nth-child(3) { bottom: 30%; left: 15%; animation-delay: 1.6s; }
 .notif-sparkle:nth-child(4) { bottom: 20%; right: 5%; animation-delay: 2.4s; }
 .notif-sparkle:nth-child(5) { top: 50%; left: 50%; animation-delay: 3.2s; }
-
 @keyframes notifSparkleFloat {
     0% { opacity: 0.2; transform: translateY(0) rotate(0deg); }
     100% { opacity: 0.8; transform: translateY(-20px) rotate(180deg); }
 }
-
-.notif-content {
-    position: relative;
-    z-index: 1;
-    text-align: center;
-}
-
+.notif-content { position: relative; z-index: 1; text-align: center; }
 .notif-header {
     display: flex;
     justify-content: space-between;
@@ -770,7 +741,6 @@ table td strong { color: #f0ebe6; font-weight: 500; }
     padding-bottom: 12px;
     border-bottom: 1px solid rgba(255, 255, 255, 0.05);
 }
-
 .notif-branch-name {
     font-family: 'Playfair Display', Georgia, serif;
     font-size: 18px;
@@ -778,7 +748,6 @@ table td strong { color: #f0ebe6; font-weight: 500; }
     color: #d4a574;
     letter-spacing: 3px;
 }
-
 .notif-closed-badge {
     font-size: 10px;
     font-weight: 600;
@@ -791,31 +760,23 @@ table td strong { color: #f0ebe6; font-weight: 500; }
     letter-spacing: 1px;
     animation: notifPulse 2s infinite;
 }
-
-@keyframes notifPulse {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.5; }
-}
-
+@keyframes notifPulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
 .notif-trophy {
     font-size: 48px;
     display: block;
     margin-bottom: 2px;
     animation: notifTrophyBounce 1s ease infinite;
 }
-
 @keyframes notifTrophyBounce {
     0%, 100% { transform: scale(1) rotate(0deg); }
     50% { transform: scale(1.05) rotate(-3deg); }
 }
-
 .notif-trophy-label {
     font-size: 10px;
     color: rgba(255, 255, 255, 0.3);
     text-transform: uppercase;
     letter-spacing: 4px;
 }
-
 .notif-winner-name {
     font-family: 'Playfair Display', Georgia, serif;
     font-size: 44px;
@@ -825,14 +786,12 @@ table td strong { color: #f0ebe6; font-weight: 500; }
     letter-spacing: 4px;
     margin: 4px 0 2px;
 }
-
 .notif-winner-id {
     font-size: 12px;
     color: rgba(255, 255, 255, 0.3);
     letter-spacing: 2px;
     margin-bottom: 4px;
 }
-
 .notif-winner-amount {
     font-family: 'Playfair Display', Georgia, serif;
     font-size: 28px;
@@ -840,7 +799,6 @@ table td strong { color: #f0ebe6; font-weight: 500; }
     color: #ffd700;
     text-shadow: 0 0 30px rgba(255, 215, 0, 0.15);
 }
-
 .notif-reason {
     margin: 10px 0 16px;
     display: flex;
@@ -848,7 +806,6 @@ table td strong { color: #f0ebe6; font-weight: 500; }
     align-items: center;
     gap: 4px;
 }
-
 .notif-reason-badge {
     display: inline-block;
     padding: 3px 18px;
@@ -861,20 +818,17 @@ table td strong { color: #f0ebe6; font-weight: 500; }
     color: #ffd700;
     border: 1px solid rgba(255, 215, 0, 0.2);
 }
-
 .notif-reason-detail {
     font-size: 11px;
     color: rgba(255, 255, 255, 0.3);
     letter-spacing: 0.5px;
 }
-
 .notif-divider {
     color: rgba(212, 165, 116, 0.2);
     font-size: 11px;
     letter-spacing: 8px;
     margin: 12px 0;
 }
-
 .notif-results {
     background: rgba(255, 255, 255, 0.02);
     border-radius: 12px;
@@ -882,7 +836,6 @@ table td strong { color: #f0ebe6; font-weight: 500; }
     margin-bottom: 12px;
     border: 1px solid rgba(255, 255, 255, 0.04);
 }
-
 .notif-results-header {
     font-size: 9px;
     color: rgba(255, 255, 255, 0.2);
@@ -891,7 +844,6 @@ table td strong { color: #f0ebe6; font-weight: 500; }
     text-align: left;
     margin-bottom: 6px;
 }
-
 .notif-result-item {
     display: flex;
     justify-content: space-between;
@@ -900,23 +852,14 @@ table td strong { color: #f0ebe6; font-weight: 500; }
     font-size: 11px;
     border-bottom: 1px solid rgba(255, 255, 255, 0.02);
 }
-
-.notif-result-item:last-child {
-    border-bottom: none;
-}
-
+.notif-result-item:last-child { border-bottom: none; }
 .notif-result-item.winner {
     background: rgba(255, 215, 0, 0.05);
     border-radius: 6px;
     padding: 5px 8px;
     border: 1px solid rgba(255, 215, 0, 0.1);
 }
-
-.notif-result-item .rank {
-    min-width: 28px;
-    font-size: 13px;
-}
-
+.notif-result-item .rank { min-width: 28px; font-size: 13px; }
 .notif-result-item .name {
     flex: 1;
     color: rgba(255, 255, 255, 0.7);
@@ -924,18 +867,12 @@ table td strong { color: #f0ebe6; font-weight: 500; }
     padding-left: 4px;
     font-size: 11px;
 }
-
-.notif-result-item.winner .name {
-    color: #ffd700;
-    font-weight: 600;
-}
-
+.notif-result-item.winner .name { color: #ffd700; font-weight: 600; }
 .notif-result-item .credits {
     color: rgba(255, 255, 255, 0.25);
     font-size: 9px;
     padding: 0 6px;
 }
-
 .notif-result-item .bonus {
     color: rgba(255, 215, 0, 0.5);
     font-weight: 500;
@@ -943,12 +880,7 @@ table td strong { color: #f0ebe6; font-weight: 500; }
     text-align: right;
     font-size: 11px;
 }
-
-.notif-result-item.winner .bonus {
-    color: #ffd700;
-    font-weight: 700;
-}
-
+.notif-result-item.winner .bonus { color: #ffd700; font-weight: 700; }
 .notif-stress {
     background: rgba(123, 207, 166, 0.03);
     border-radius: 12px;
@@ -956,7 +888,6 @@ table td strong { color: #f0ebe6; font-weight: 500; }
     margin-bottom: 14px;
     border: 1px solid rgba(123, 207, 166, 0.08);
 }
-
 .notif-stress-header {
     font-size: 9px;
     color: rgba(255, 255, 255, 0.2);
@@ -965,7 +896,6 @@ table td strong { color: #f0ebe6; font-weight: 500; }
     text-align: left;
     margin-bottom: 4px;
 }
-
 .notif-stress-item {
     display: flex;
     justify-content: space-between;
@@ -973,16 +903,8 @@ table td strong { color: #f0ebe6; font-weight: 500; }
     font-size: 11px;
     padding: 2px 0;
 }
-
-.notif-stress-name {
-    color: rgba(255, 255, 255, 0.5);
-}
-
-.notif-stress-bonus {
-    color: #ffd700;
-    font-weight: 500;
-}
-
+.notif-stress-name { color: rgba(255, 255, 255, 0.5); }
+.notif-stress-bonus { color: #ffd700; font-weight: 500; }
 .notif-footer {
     display: flex;
     justify-content: space-between;
@@ -992,16 +914,11 @@ table td strong { color: #f0ebe6; font-weight: 500; }
     font-size: 9px;
     color: rgba(255, 255, 255, 0.12);
 }
-
 .notif-timestamp {
     font-family: 'Playfair Display', Georgia, serif;
     letter-spacing: 1px;
 }
-
-.notif-stats {
-    letter-spacing: 0.5px;
-}
-
+.notif-stats { letter-spacing: 0.5px; }
 .notif-close-btn {
     position: absolute;
     top: 10px;
@@ -1016,50 +933,25 @@ table td strong { color: #f0ebe6; font-weight: 500; }
     border-radius: 6px;
     font-family: 'Inter', sans-serif;
 }
-
 .notif-close-btn:hover {
     color: rgba(255, 255, 255, 0.5);
     background: rgba(255, 255, 255, 0.05);
 }
-
-@keyframes notifFadeIn {
-    from { opacity: 0; }
-    to { opacity: 1; }
-}
-
+@keyframes notifFadeIn { from { opacity: 0; } to { opacity: 1; } }
 @keyframes notifSlideUp {
-    from {
-        opacity: 0;
-        transform: translateY(30px) scale(0.95);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0) scale(1);
-    }
+    from { opacity: 0; transform: translateY(30px) scale(0.95); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
 }
 
-@media (max-width: 640px) {
-    .branch-notification-container {
-        padding: 24px 16px 18px;
-        border-radius: 16px;
-        max-width: 95%;
-    }
-    .notif-winner-name { font-size: 30px; }
-    .notif-winner-amount { font-size: 20px; }
-    .notif-branch-name { font-size: 14px; }
-    .notif-result-item { font-size: 10px; flex-wrap: wrap; gap: 2px; }
-    .notif-result-item .bonus { min-width: 55px; }
-    .notif-footer { flex-direction: column; gap: 3px; text-align: center; }
-}
 /* ============================================================
-   📱 COMPLETE MOBILE RESPONSIVENESS FIXES
+   📱 MOBILE RESPONSIVENESS - ORGANIZED
    ============================================================ */
 
 @media (max-width: 768px) {
     /* Layout */
     .chart-grid { grid-template-columns: 1fr; }
     .chart-row { grid-template-columns: 1fr; }
-    .stats-grid { grid-template-columns: 1fr 1fr; }
+    .stats-grid { grid-template-columns: 1fr 1fr; gap: 8px; }
     .login-container { margin: 20px 12px; padding: 25px 18px; }
     .tab-content { padding: 14px; }
     
@@ -1081,7 +973,7 @@ table td strong { color: #f0ebe6; font-weight: 500; }
     #sessionTimer { font-size: 10px; padding: 2px 10px; }
     .btn-logout { padding: 5px 14px; font-size: 11px; }
     
-    /* Tabs */
+    /* Tabs - Scrollable horizontally */
     .tabs { 
         padding: 4px 6px; 
         gap: 2px;
@@ -1111,21 +1003,14 @@ table td strong { color: #f0ebe6; font-weight: 500; }
     .worker-profile-info h2 { font-size: 18px; }
     .worker-avatar-large { width: 60px; height: 60px; }
     
-    /* Cards and Grids */
-    .branch-grid { 
-        grid-template-columns: 1fr 1fr; 
-        gap: 8px;
-    }
+    /* Grids - 2 columns on tablet */
+    .branch-grid { grid-template-columns: 1fr 1fr; gap: 8px; }
     .branch-card { padding: 12px 10px; }
     .branch-card .branch-name { font-size: 13px; }
-    
-    /* Pay Summary Grids */
-    .pay-reduction-grid { 
-        grid-template-columns: 1fr 1fr; 
-        gap: 8px;
-    }
+    .pay-reduction-grid { grid-template-columns: 1fr 1fr; gap: 8px; }
     .pay-summary-grid { grid-template-columns: 1fr 1fr; }
     .bonus-accrual-grid { grid-template-columns: 1fr 1fr; }
+    .compact-grid { grid-template-columns: 1fr 1fr; }
     
     /* Tables */
     .table-wrap { 
@@ -1134,14 +1019,8 @@ table td strong { color: #f0ebe6; font-weight: 500; }
         margin: 8px -8px;
         padding: 0 8px;
     }
-    table { 
-        font-size: 10px; 
-        min-width: 500px;
-    }
-    table th, table td { 
-        padding: 6px 8px; 
-        font-size: 9px;
-    }
+    table { font-size: 10px; min-width: 500px; }
+    table th, table td { padding: 6px 8px; font-size: 9px; }
     
     /* Leaderboard */
     .leaderboard-item { 
@@ -1153,27 +1032,14 @@ table td strong { color: #f0ebe6; font-weight: 500; }
     .leaderboard-item .value { font-size: 12px; }
     
     /* Modal */
-    .modal-content { 
-        padding: 18px 16px; 
-        margin: 10px;
-        max-height: 95vh;
-    }
-    .modal-header { 
-        flex-direction: column; 
-        align-items: flex-start;
-        gap: 10px;
-    }
+    .modal-content { padding: 18px 16px; margin: 10px; max-height: 95vh; }
+    .modal-header { flex-direction: column; align-items: flex-start; gap: 10px; }
     .modal-header h3 { font-size: 18px; }
     .modal-close-btn { align-self: flex-end; }
     
     /* Stats */
     .stat-card .number { font-size: 22px; }
     .stat-card .label { font-size: 9px; }
-    
-    /* Simulator */
-    .simulator-controls { grid-template-columns: 1fr; }
-    .simulator-results-grid { grid-template-columns: 1fr; gap: 6px; }
-    #workerBonusSliders { grid-template-columns: 1fr !important; }
     
     /* Charts */
     .chart-box canvas { max-height: 150px; }
@@ -1196,12 +1062,33 @@ table td strong { color: #f0ebe6; font-weight: 500; }
         font-size: 10px;
     }
     
-    /* Compact Grid */
-    .compact-grid { grid-template-columns: 1fr 1fr; }
-    
     /* Pay Cards */
     .pay-card { padding: 12px; }
     .pay-card .pay-row { font-size: 12px; }
+    
+    /* Container - Remove boundary */
+    .container {
+        max-width: 100% !important;
+        padding: 0 8px !important;
+        margin: 0 !important;
+        width: 100% !important;
+        overflow-x: hidden !important;
+    }
+    body { padding: 4px !important; margin: 0 !important; overflow-x: hidden !important; }
+    body::before { display: none !important; }
+    
+    /* Remove blue boundary from all elements */
+    * { max-width: 100% !important; box-sizing: border-box !important; }
+    html { overflow-x: hidden !important; width: 100% !important; }
+    
+    /* Login fills screen */
+    .login-container {
+        max-width: 100% !important;
+        margin: 8px !important;
+        padding: 20px 16px !important;
+        width: auto !important;
+        border-radius: 16px !important;
+    }
 }
 
 /* ============================================================
@@ -1231,6 +1118,7 @@ table td strong { color: #f0ebe6; font-weight: 500; }
     .pay-reduction-grid { grid-template-columns: 1fr; }
     .pay-summary-grid { grid-template-columns: 1fr; }
     .bonus-accrual-grid { grid-template-columns: 1fr; }
+    .compact-grid { grid-template-columns: 1fr 1fr; gap: 4px; }
     
     .worker-profile-section { padding: 12px; }
     .worker-profile-info h2 { font-size: 16px; }
@@ -1239,7 +1127,6 @@ table td strong { color: #f0ebe6; font-weight: 500; }
     .modal-content { padding: 14px 12px; }
     .modal-header h3 { font-size: 16px; }
     
-    .compact-grid { grid-template-columns: 1fr 1fr; gap: 4px; }
     .compact-card { padding: 8px; }
     .compact-card .value { font-size: 14px; }
     
@@ -1253,1079 +1140,10 @@ table td strong { color: #f0ebe6; font-weight: 500; }
 }
 
 /* ============================================================
-   📱 FIX FOR TABLES ON MOBILE
+   📱 WHAT-IF SIMULATOR - WORKER BOXES SCROLLABLE
    ============================================================ */
 
-@media (max-width: 768px) {
-    .table-wrap table {
-        min-width: 400px;
-    }
-    .table-wrap table th,
-    .table-wrap table td {
-        white-space: nowrap;
-        padding: 4px 6px;
-        font-size: 9px;
-    }
-}
-
-/* ============================================================
-   📱 FIX FOR MODAL OVERLAY ON MOBILE
-   ============================================================ */
-
-@media (max-width: 768px) {
-    .modal-overlay { padding: 10px; }
-    .modal-content { 
-        border-radius: 12px; 
-        padding: 16px;
-        width: 100%;
-    }
-    .modal-header .subtitle { font-size: 10px; }
-}
-
-/* ============================================================
-   📱 FIX FOR LOCATION TRACKING
-   ============================================================ */
-
-@media (max-width: 768px) {
-    .location-indicator { font-size: 9px; padding: 2px 8px; }
-    .tracking-status { font-size: 9px; padding: 4px 8px; }
-    #locationStatus { font-size: 11px; padding: 8px 12px; }
-    #locationStatus .location-indicator { font-size: 9px; }
-}
-
-/* ============================================================
-   📱 FIX FOR NOTIFICATION
-   ============================================================ */
-
-@media (max-width: 768px) {
-    .notif-winner-name { font-size: 28px; }
-    .notif-winner-amount { font-size: 20px; }
-    .notif-results { padding: 8px 10px; }
-    .notif-result-item { font-size: 9px; }
-    .notif-result-item .bonus { min-width: 45px; font-size: 9px; }
-    .notif-stress { padding: 8px 10px; }
-}
-
-/* ============================================================
-   📱 FIX FOR TAB CONTENT PADDING
-   ============================================================ */
-
-@media (max-width: 768px) {
-    .tab-content { 
-        padding: 12px; 
-        border-radius: 10px;
-    }
-    .tab-content h3 { font-size: 16px; }
-    .tab-content h3 small { font-size: 10px; }
-}
-
-/* ============================================================
-   📱 FIX FOR SCROLLABLE TABS
-   ============================================================ */
-
-.tabs {
-    -webkit-overflow-scrolling: touch;
-    scrollbar-width: none;
-}
-.tabs::-webkit-scrollbar {
-    display: none;
-}
-/* ============================================================
-   📱 FORCE EVERYTHING TO FIT PHONE SCREEN
-   ============================================================ */
-
-/* Make everything fit the screen */
-* {
-    max-width: 100% !important;
-    box-sizing: border-box !important;
-}
-
-/* Prevent horizontal scrolling */
-html, body {
-    overflow-x: hidden !important;
-    width: 100% !important;
-    padding: 8px !important;
-    margin: 0 !important;
-}
-
-/* Container takes FULL width on mobile */
-.container {
-    max-width: 100% !important;
-    padding: 0 4px !important;
-    margin: 0 !important;
-    width: 100% !important;
-    overflow-x: hidden !important;
-}
-
-/* Headers and cards take full width */
-.header, .tab-content, .stat-card, .branch-card {
-    width: 100% !important;
-    max-width: 100% !important;
-    margin-left: 0 !important;
-    margin-right: 0 !important;
-}
-
-/* Tables become scrollable ONLY when needed */
-.table-wrap {
-    overflow-x: auto !important;
-    -webkit-overflow-scrolling: touch !important;
-    max-width: 100% !important;
-}
-.table-wrap table {
-    min-width: 100% !important;
-    width: 100% !important;
-}
-
-/* Grids stack vertically on phones */
-.stats-grid, .branch-grid, .pay-reduction-grid, .bonus-accrual-grid {
-    grid-template-columns: 1fr 1fr !important;
-    gap: 8px !important;
-}
-
-/* Make tabs scroll horizontally if needed, but show all */
-.tabs {
-    overflow-x: auto !important;
-    flex-wrap: nowrap !important;
-    -webkit-overflow-scrolling: touch !important;
-    padding: 4px 8px !important;
-}
-.tabs button {
-    flex-shrink: 0 !important;
-    font-size: 10px !important;
-    padding: 6px 10px !important;
-}
-
-/* Login screen fills the screen */
-.login-container {
-    max-width: 100% !important;
-    margin: 10px !important;
-    padding: 20px 16px !important;
-    width: auto !important;
-}
-
-/* Charts fit */
-.chart-box canvas {
-    max-height: 150px !important;
-    width: 100% !important;
-}
-.chart-grid {
-    grid-template-columns: 1fr !important;
-}
-
-/* Remove any blue boundary */
-body::before {
-    display: none !important;
-}
-
-/* Cards and boxes don't overflow */
-.worker-profile-section, .branch-rank-card, .team-pair-card {
-    width: 100% !important;
-    max-width: 100% !important;
-    padding: 12px !important;
-}
-
-/* Pay cards fit */
-.pay-summary-grid, .compact-grid {
-    grid-template-columns: 1fr 1fr !important;
-    gap: 6px !important;
-}
-
-/* Modals fit */
-.modal-content {
-    max-width: 95% !important;
-    margin: 10px !important;
-    padding: 16px !important;
-}
-
-/* Simulator fits */
-.simulator-controls {
-    grid-template-columns: 1fr !important;
-}
-.simulator-results-grid {
-    grid-template-columns: 1fr !important;
-}
-
-/* What-if simulator worker sliders */
-#workerBonusSliders {
-    grid-template-columns: 1fr !important;
-}
-
-/* Leaderboard items fit */
-.leaderboard-item {
-    flex-wrap: wrap !important;
-    padding: 8px 10px !important;
-}
-
-/* Notification fits */
-.branch-notification-container {
-    max-width: 95% !important;
-    margin: 10px !important;
-    padding: 16px !important;
-}
-
-/* ============================================================
-   📱 EXTRA SMALL PHONES (under 400px)
-   ============================================================ */
-
-@media (max-width: 400px) {
-    .stats-grid, .branch-grid, .pay-reduction-grid, .bonus-accrual-grid {
-        grid-template-columns: 1fr !important;
-    }
-    .pay-summary-grid, .compact-grid {
-        grid-template-columns: 1fr !important;
-    }
-    .header-user {
-        flex-direction: column !important;
-        align-items: center !important;
-        gap: 4px !important;
-    }
-    .header h1 {
-        font-size: 16px !important;
-        text-align: center !important;
-    }
-    .login-container {
-        padding: 16px 12px !important;
-        margin: 8px !important;
-    }
-    .login-container h2 {
-        font-size: 22px !important;
-    }
-    .tab-content {
-        padding: 8px !important;
-    }
-    .tabs button {
-        font-size: 8px !important;
-        padding: 4px 6px !important;
-    }
-    table {
-        font-size: 8px !important;
-    }
-    table th, table td {
-        padding: 3px 4px !important;
-        font-size: 8px !important;
-    }
-}
-/* ============================================================
-   📱 REMOVE THE BOUNDARY - LET EVERYTHING FILL THE SCREEN
-   ============================================================ */
-
-/* Remove the container limit on phones */
-@media (max-width: 768px) {
-    .container {
-        max-width: 100% !important;
-        padding: 0 4px !important;
-        margin: 0 !important;
-        width: 100% !important;
-        overflow-x: hidden !important;
-    }
-    
-    /* Remove body padding that creates space */
-    body {
-        padding: 4px !important;
-        margin: 0 !important;
-        overflow-x: hidden !important;
-    }
-    
-    /* Remove the blue background overlay */
-    body::before {
-        display: none !important;
-    }
-    
-    /* Make EVERYTHING fill the screen */
-    .login-container {
-        max-width: 100% !important;
-        margin: 8px !important;
-        padding: 20px 16px !important;
-        width: auto !important;
-        border-radius: 16px !important;
-    }
-    
-    .header {
-        padding: 12px 14px !important;
-        border-radius: 12px !important;
-        margin-bottom: 12px !important;
-        width: 100% !important;
-    }
-    
-    .tab-content {
-        padding: 12px !important;
-        border-radius: 10px !important;
-        width: 100% !important;
-    }
-    
-    /* TABS - Let them scroll but show all */
-    .tabs {
-        overflow-x: auto !important;
-        -webkit-overflow-scrolling: touch !important;
-        flex-wrap: nowrap !important;
-        padding: 4px 6px !important;
-        gap: 2px !important;
-        border-radius: 10px !important;
-        width: 100% !important;
-    }
-    .tabs button {
-        flex-shrink: 0 !important;
-        font-size: 10px !important;
-        padding: 6px 10px !important;
-        white-space: nowrap !important;
-    }
-    
-    /* Force all grids to fit */
-    .stats-grid,
-    .branch-grid,
-    .pay-reduction-grid,
-    .bonus-accrual-grid,
-    .chart-grid {
-        grid-template-columns: 1fr 1fr !important;
-        gap: 8px !important;
-        width: 100% !important;
-    }
-    
-    /* Tables - scrollable but fit */
-    .table-wrap {
-        overflow-x: auto !important;
-        -webkit-overflow-scrolling: touch !important;
-        width: 100% !important;
-        margin: 0 !important;
-        padding: 0 !important;
-    }
-    .table-wrap table {
-        width: 100% !important;
-        min-width: 300px !important;
-        font-size: 10px !important;
-    }
-    .table-wrap table th,
-    .table-wrap table td {
-        padding: 4px 6px !important;
-        font-size: 9px !important;
-        white-space: nowrap !important;
-    }
-}
-
-/* ============================================================
-   📱 EXTRA SMALL PHONES
-   ============================================================ */
-
-@media (max-width: 480px) {
-    .stats-grid,
-    .branch-grid,
-    .pay-reduction-grid,
-    .bonus-accrual-grid,
-    .pay-summary-grid,
-    .compact-grid {
-        grid-template-columns: 1fr !important;
-    }
-    
-    .header-user {
-        flex-wrap: wrap !important;
-        justify-content: center !important;
-        gap: 4px !important;
-    }
-    
-    .tabs button {
-        font-size: 8px !important;
-        padding: 4px 6px !important;
-    }
-    
-    .login-container {
-        padding: 14px 12px !important;
-        margin: 6px !important;
-    }
-    
-    .login-container h2 {
-        font-size: 22px !important;
-    }
-}
-/* ============================================================
-   📱 FIX FOR MONTHLY PAY & WHAT-IF SIMULATOR CUT-OFF
-   ============================================================ */
-
-/* Fix Monthly Pay Summary */
-#workerPayDashboard,
-#workerPayDashboard > div {
-    width: 100% !important;
-    max-width: 100% !important;
-    overflow: visible !important;
-    padding: 10px !important;
-}
-
-/* Fix the 3-column Monthly Pay layout */
-#workerPayDashboard .pay-reduction-grid,
-#workerPayDashboard .pay-reduction-grid .stat-box,
-.pay-reduction-grid {
-    width: 100% !important;
-    max-width: 100% !important;
-    overflow: visible !important;
-}
-
-/* Fix Monthly Pay grid on mobile */
-@media (max-width: 768px) {
-    .pay-reduction-grid {
-        grid-template-columns: 1fr 1fr !important;
-        gap: 6px !important;
-    }
-    .pay-reduction-grid .stat-box {
-        padding: 8px !important;
-    }
-    .pay-reduction-grid .stat-box .number {
-        font-size: 16px !important;
-    }
-}
-
-
-
-/* Fix Simulator results */
-.simulator-results-grid {
-    display: grid !important;
-    grid-template-columns: 1fr !important;
-    gap: 6px !important;
-    width: 100% !important;
-}
-
-.simulator-controls {
-    display: grid !important;
-    grid-template-columns: 1fr !important;
-    gap: 8px !important;
-    width: 100% !important;
-}
-
-/* Fix distribution breakdown */
-#simDistribution {
-    width: 100% !important;
-    max-width: 100% !important;
-    overflow: visible !important;
-}
-
-#simDistribution > div {
-    flex-wrap: wrap !important;
-    padding: 4px 0 !important;
-}
-
-#simDistribution .rank,
-#simDistribution .name,
-#simDistribution .credits,
-#simDistribution .lifetime,
-#simDistribution .bonus {
-    font-size: 9px !important;
-    min-width: auto !important;
-}
-
-/* Fix simulator message */
-#simMessage {
-    width: 100% !important;
-    max-width: 100% !important;
-    overflow: visible !important;
-    padding: 8px !important;
-    font-size: 11px !important;
-}
-
-/* Fix Worker Bonus Sliders - Force each worker to full width */
-.worker-slider-item {
-    width: 100% !important;
-    max-width: 100% !important;
-    overflow: visible !important;
-    padding: 8px !important;
-}
-
-/* Fix the "You" badge on sliders */
-.simulator-controls .range-values {
-    flex-wrap: wrap !important;
-    gap: 2px !important;
-}
-
-/* Fix the pool breakdown */
-#simTotalBreakdown {
-    width: 100% !important;
-    max-width: 100% !important;
-    overflow: visible !important;
-}
-
-#simTotalBreakdown > div {
-    grid-template-columns: 1fr !important;
-    gap: 4px !important;
-}
-
-/* Fix What-If Simulator range inputs */
-.simulator-controls input[type="range"] {
-    width: 100% !important;
-    max-width: 100% !important;
-}
-
-/* Ensure all simulator content fits */
-.what-if-simulator {
-    overflow: visible !important;
-    padding: 12px !important;
-    width: 100% !important;
-    max-width: 100% !important;
-}
-
-.what-if-simulator h4 {
-    font-size: 15px !important;
-}
-
-.what-if-simulator .subtitle {
-    font-size: 10px !important;
-}
-
-/* ============================================================
-   📱 EXTRA SMALL PHONES - FORCE SINGLE COLUMN
-   ============================================================ */
-
-@media (max-width: 480px) {
-    .pay-reduction-grid {
-        grid-template-columns: 1fr !important;
-    }
-    .pay-reduction-grid .stat-box {
-        padding: 6px !important;
-    }
-    .pay-reduction-grid .stat-box .number {
-        font-size: 14px !important;
-    }
-    .pay-reduction-grid .stat-box .label {
-        font-size: 8px !important;
-    }
-    
-    #simDistribution > div {
-        font-size: 8px !important;
-        gap: 2px !important;
-    }
-    #simDistribution .rank {
-        min-width: 20px !important;
-        font-size: 10px !important;
-    }
-    #simDistribution .name {
-        min-width: 40px !important;
-        font-size: 8px !important;
-    }
-    #simDistribution .credits {
-        min-width: 30px !important;
-        font-size: 8px !important;
-    }
-    #simDistribution .bonus {
-        min-width: 40px !important;
-        font-size: 8px !important;
-    }
-    
-    .simulator-results-grid .result-box .value {
-        font-size: 14px !important;
-    }
-    .simulator-results-grid .result-box .label {
-        font-size: 8px !important;
-    }
-}
-/* ============================================================
-   📱 MAKE MONTHLY PAY & SIMULATOR SCROLLABLE
-   ============================================================ */
-
-/* Make Monthly Pay scrollable */
-#workerPayDashboard {
-    overflow-x: auto !important;
-    -webkit-overflow-scrolling: touch !important;
-    width: 100% !important;
-}
-
-#workerPayDashboard > div {
-    min-width: 300px !important;
-    width: 100% !important;
-}
-
-/* Make the pay grid scrollable */
-.pay-reduction-grid {
-    overflow-x: auto !important;
-    -webkit-overflow-scrolling: touch !important;
-    display: flex !important;
-    gap: 8px !important;
-    padding: 4px 0 !important;
-    width: 100% !important;
-}
-
-.pay-reduction-grid .stat-box {
-    min-width: 120px !important;
-    flex: 0 0 auto !important;
-    padding: 10px !important;
-}
-
-/* What-If Simulator - Make scrollable */
-.what-if-simulator {
-    overflow-x: auto !important;
-    -webkit-overflow-scrolling: touch !important;
-    width: 100% !important;
-    padding: 12px !important;
-}
-
-/* Simulator controls - scrollable */
-.simulator-controls {
-    display: flex !important;
-    flex-wrap: nowrap !important;
-    gap: 12px !important;
-    overflow-x: auto !important;
-    -webkit-overflow-scrolling: touch !important;
-    padding: 4px 0 !important;
-    width: 100% !important;
-}
-
-.simulator-controls > div {
-    min-width: 140px !important;
-    flex: 0 0 auto !important;
-}
-
-/* Worker sliders - scrollable */
-#workerBonusSliders {
-    display: flex !important;
-    flex-wrap: nowrap !important;
-    gap: 8px !important;
-    overflow-x: auto !important;
-    -webkit-overflow-scrolling: touch !important;
-    padding: 4px 0 !important;
-    width: 100% !important;
-}
-
-#workerBonusSliders > div {
-    min-width: 140px !important;
-    flex: 0 0 auto !important;
-    padding: 8px !important;
-}
-
-/* Simulator results - scrollable */
-.simulator-results {
-    overflow-x: auto !important;
-    -webkit-overflow-scrolling: touch !important;
-    width: 100% !important;
-}
-
-.simulator-results-grid {
-    display: flex !important;
-    flex-wrap: nowrap !important;
-    gap: 8px !important;
-    min-width: 300px !important;
-    padding: 4px 0 !important;
-}
-
-.simulator-results-grid .result-box {
-    min-width: 100px !important;
-    flex: 0 0 auto !important;
-}
-
-/* Distribution breakdown - scrollable */
-#simDistribution {
-    overflow-x: auto !important;
-    -webkit-overflow-scrolling: touch !important;
-    width: 100% !important;
-}
-
-#simDistribution > div {
-    min-width: 350px !important;
-    white-space: nowrap !important;
-}
-
-/* Pool breakdown - scrollable */
-#simTotalBreakdown {
-    overflow-x: auto !important;
-    -webkit-overflow-scrolling: touch !important;
-    width: 100% !important;
-}
-
-#simTotalBreakdown > div {
-    min-width: 300px !important;
-}
-
-/* Show scroll hint */
-.scroll-hint {
-    font-size: 9px !important;
-    color: rgba(255,255,255,0.2) !important;
-    text-align: center !important;
-    padding: 4px !important;
-    margin-top: 4px !important;
-}
-
-/* ============================================================
-   📱 RESPONSIVE SCROLL - ADJUST MIN-WIDTH ON SMALLER SCREENS
-   ============================================================ */
-
-@media (max-width: 480px) {
-    .pay-reduction-grid .stat-box {
-        min-width: 100px !important;
-        padding: 6px !important;
-    }
-    .pay-reduction-grid .stat-box .number {
-        font-size: 14px !important;
-    }
-    .pay-reduction-grid .stat-box .label {
-        font-size: 8px !important;
-    }
-    
-    .simulator-controls > div {
-        min-width: 120px !important;
-    }
-    #workerBonusSliders > div {
-        min-width: 120px !important;
-    }
-    .simulator-results-grid .result-box {
-        min-width: 80px !important;
-    }
-    .simulator-results-grid .result-box .value {
-        font-size: 12px !important;
-    }
-    #simDistribution > div {
-        min-width: 280px !important;
-        font-size: 8px !important;
-    }
-}
-/* ============================================================
-   📱 FIX: MONTHLY PAY 7-COLUMN GRID & SIMULATOR CONFLICT
-   ============================================================ */
-
-/* Monthly Pay - Make it scrollable with proper sizing */
-#tabMyPerformance .pay-reduction-grid,
-#tabMyPerformance .pay-summary-grid {
-    overflow-x: auto !important;
-    -webkit-overflow-scrolling: touch !important;
-    display: flex !important;
-    gap: 6px !important;
-    padding: 4px 0 !important;
-    width: 100% !important;
-}
-
-#tabMyPerformance .pay-reduction-grid > div,
-#tabMyPerformance .pay-summary-grid > div {
-    min-width: 90px !important;
-    flex: 0 0 auto !important;
-    padding: 6px 8px !important;
-}
-
-#tabMyPerformance .pay-reduction-grid > div .number,
-#tabMyPerformance .pay-summary-grid > div .number {
-    font-size: 14px !important;
-}
-
-#tabMyPerformance .pay-reduction-grid > div .label,
-#tabMyPerformance .pay-summary-grid > div .label {
-    font-size: 7px !important;
-    letter-spacing: 0.3px !important;
-}
-
-/* Monthly Pay - The 7 column section */
-#tabMyPerformance [style*="grid-template-columns:repeat(7,1fr)"] {
-    display: flex !important;
-    flex-wrap: nowrap !important;
-    overflow-x: auto !important;
-    -webkit-overflow-scrolling: touch !important;
-    gap: 4px !important;
-    padding: 4px 0 !important;
-}
-
-#tabMyPerformance [style*="grid-template-columns:repeat(7,1fr)"] > div {
-    min-width: 60px !important;
-    flex: 0 0 auto !important;
-    padding: 4px 6px !important;
-}
-
-#tabMyPerformance [style*="grid-template-columns:repeat(7,1fr)"] > div div[style*="font-size:16px"] {
-    font-size: 12px !important;
-}
-
-#tabMyPerformance [style*="grid-template-columns:repeat(7,1fr)"] > div div[style*="font-size:9px"] {
-    font-size: 7px !important;
-}
-
-/* Fix the status text in Monthly Pay */
-#tabMyPerformance [style*="grid-template-columns:repeat(7,1fr)"] > div:last-child div[style*="font-size:13px"] {
-    font-size: 10px !important;
-}
-
-/* Monthly Pay status message */
-#tabMyPerformance .pay-summary-grid + div {
-    font-size: 9px !important;
-    padding: 4px 8px !important;
-}
-
-/* ============================================================
-   📱 FIX: WHAT-IF SIMULATOR CONFLICTING TEXT
-   ============================================================ */
-
-/* Make the bottom info bar scrollable and clean */
-.what-if-simulator > div:last-child {
-    overflow-x: auto !important;
-    -webkit-overflow-scrolling: touch !important;
-    display: flex !important;
-    flex-wrap: nowrap !important;
-    gap: 6px !important;
-    padding: 4px 6px !important;
-    font-size: 8px !important;
-    white-space: nowrap !important;
-}
-
-.what-if-simulator > div:last-child span {
-    flex-shrink: 0 !important;
-    padding: 0 4px !important;
-}
-
-/* Simulator bottom bar */
-#workerBonusSliders + div {
-    overflow-x: auto !important;
-    -webkit-overflow-scrolling: touch !important;
-    display: flex !important;
-    flex-wrap: nowrap !important;
-    gap: 4px !important;
-    padding: 4px 6px !important;
-    font-size: 7px !important;
-    white-space: nowrap !important;
-}
-
-#workerBonusSliders + div span {
-    flex-shrink: 0 !important;
-    padding: 0 2px !important;
-}
-
-/* ============================================================
-   📱 INCREASE BOUNDARY - MORE SPACE ON MOBILE
-   ============================================================ */
-
-@media (max-width: 768px) {
-    /* Increase container padding */
-    .container {
-        padding: 0 8px !important;
-        max-width: 100% !important;
-    }
-    
-    /* Increase body padding */
-    body {
-        padding: 8px !important;
-    }
-    
-    /* Give more space to tab content */
-    .tab-content {
-        padding: 16px !important;
-        margin-bottom: 12px !important;
-    }
-    
-    /* Increase card padding */
-    .stat-card {
-        padding: 16px 12px !important;
-    }
-    .branch-card {
-        padding: 14px 12px !important;
-    }
-    
-    /* More space for What-If Simulator */
-    .what-if-simulator {
-        padding: 16px !important;
-    }
-    
-    /* More space for worker sliders */
-    #workerBonusSliders > div {
-        padding: 10px 12px !important;
-    }
-}
-
-/* ============================================================
-   📱 EXTRA SMALL PHONES
-   ============================================================ */
-
-@media (max-width: 480px) {
-    #tabMyPerformance [style*="grid-template-columns:repeat(7,1fr)"] > div {
-        min-width: 50px !important;
-        padding: 3px 4px !important;
-    }
-    #tabMyPerformance [style*="grid-template-columns:repeat(7,1fr)"] > div div[style*="font-size:16px"] {
-        font-size: 10px !important;
-    }
-    #tabMyPerformance [style*="grid-template-columns:repeat(7,1fr)"] > div div[style*="font-size:9px"] {
-        font-size: 6px !important;
-    }
-    
-    .what-if-simulator > div:last-child {
-        font-size: 7px !important;
-    }
-    #workerBonusSliders + div {
-        font-size: 6px !important;
-    }
-}
-
-/* ============================================================
-   📱 SCROLL HINT FOR MONTHLY PAY
-   ============================================================ */
-
-/* Add a subtle scroll indicator */
-#tabMyPerformance [style*="grid-template-columns:repeat(7,1fr)"] {
-    position: relative !important;
-}
-
-#tabMyPerformance [style*="grid-template-columns:repeat(7,1fr)"]::after {
-    content: '⇢ SWIPE →' !important;
-    position: sticky !important;
-    right: 0 !important;
-    top: 50% !important;
-    transform: translateY(-50%) !important;
-    background: rgba(0,0,0,0.7) !important;
-    color: rgba(255,255,255,0.3) !important;
-    font-size: 7px !important;
-    padding: 2px 6px !important;
-    border-radius: 4px !important;
-    pointer-events: none !important;
-    white-space: nowrap !important;
-}
-/* ============================================================
-   📱 FORCE MONTHLY PAY 7-COLUMN TO BE SCROLLABLE
-   ============================================================ */
-
-/* Target the specific 7-column monthly pay section */
-#tabMyPerformance .monthly-pay-grid,
-[style*="grid-template-columns:repeat(7,1fr)"] {
-    display: flex !important;
-    flex-wrap: nowrap !important;
-    overflow-x: auto !important;
-    -webkit-overflow-scrolling: touch !important;
-    gap: 4px !important;
-    padding: 4px 0 !important;
-    width: 100% !important;
-    grid-template-columns: unset !important;
-}
-
-[style*="grid-template-columns:repeat(7,1fr)"] > div {
-    min-width: 60px !important;
-    flex: 0 0 auto !important;
-    padding: 4px 6px !important;
-}
-
-[style*="grid-template-columns:repeat(7,1fr)"] > div div[style*="font-size:16px"] {
-    font-size: 12px !important;
-}
-
-[style*="grid-template-columns:repeat(7,1fr)"] > div div[style*="font-size:9px"] {
-    font-size: 7px !important;
-}
-
-/* Add scroll hint */
-[style*="grid-template-columns:repeat(7,1fr)"] {
-    position: relative !important;
-}
-
-[style*="grid-template-columns:repeat(7,1fr)"]::after {
-    content: '⇢ SWIPE →' !important;
-    position: sticky !important;
-    right: 0 !important;
-    top: 50% !important;
-    transform: translateY(-50%) !important;
-    background: rgba(0,0,0,0.7) !important;
-    color: rgba(255,255,255,0.3) !important;
-    font-size: 7px !important;
-    padding: 2px 6px !important;
-    border-radius: 4px !important;
-    pointer-events: none !important;
-    white-space: nowrap !important;
-    z-index: 10 !important;
-}
-/* ============================================================
-   🛠️ PROTECT WHAT-IF SIMULATOR FROM MONTHLY PAY CSS
-   ============================================================ */
-
-/* Only target Monthly Pay, not What-If Simulator */
-#tabMyPerformance .pay-reduction-grid,
-#tabMyPerformance .pay-summary-grid,
-#tabMyPerformance [style*="grid-template-columns:repeat(7,1fr)"] {
-    /* These only apply inside My Performance tab */
-}
-
-/* What-If Simulator - RESTORE ORIGINAL LAYOUT */
-.what-if-simulator .simulator-controls {
-    display: grid !important;
-    grid-template-columns: 1fr 1fr !important;
-    gap: 12px !important;
-    overflow: visible !important;
-    flex-wrap: wrap !important;
-}
-
-.what-if-simulator .simulator-results-grid {
-    display: grid !important;
-    grid-template-columns: 1fr 1fr 1fr !important;
-    gap: 8px !important;
-    overflow: visible !important;
-    min-width: unset !important;
-}
-
-.what-if-simulator #workerBonusSliders {
-    display: grid !important;
-    grid-template-columns: 1fr 1fr !important;
-    gap: 8px !important;
-    overflow: visible !important;
-    flex-wrap: wrap !important;
-}
-
-.what-if-simulator #simDistribution > div {
-    min-width: unset !important;
-    white-space: normal !important;
-    flex-wrap: wrap !important;
-}
-
-.what-if-simulator #simTotalBreakdown > div {
-    min-width: unset !important;
-    grid-template-columns: 1fr 1fr 1fr !important;
-}
-
-/* Reset any overflow changes */
-.what-if-simulator {
-    overflow: visible !important;
-}
-
-.what-if-simulator > div:last-child {
-    overflow: visible !important;
-    display: flex !important;
-    flex-wrap: wrap !important;
-    font-size: 9px !important;
-    white-space: normal !important;
-}
-
-#workerBonusSliders + div {
-    overflow: visible !important;
-    display: flex !important;
-    flex-wrap: wrap !important;
-    font-size: 9px !important;
-    white-space: normal !important;
-}
-
-/* ============================================================
-   📱 WHAT-IF SIMULATOR ON MOBILE (2 columns on tablet, 1 on phone)
-   ============================================================ */
-
-@media (max-width: 768px) {
-    .what-if-simulator .simulator-controls {
-        grid-template-columns: 1fr 1fr !important;
-    }
-    .what-if-simulator .simulator-results-grid {
-        grid-template-columns: 1fr 1fr !important;
-    }
-    .what-if-simulator #workerBonusSliders {
-        grid-template-columns: 1fr 1fr !important;
-    }
-    .what-if-simulator #simTotalBreakdown > div {
-        grid-template-columns: 1fr 1fr !important;
-    }
-}
-
-@media (max-width: 480px) {
-    .what-if-simulator .simulator-controls {
-        grid-template-columns: 1fr !important;
-    }
-    .what-if-simulator .simulator-results-grid {
-        grid-template-columns: 1fr !important;
-    }
-    .what-if-simulator #workerBonusSliders {
-        grid-template-columns: 1fr !important;
-    }
-    .what-if-simulator #simTotalBreakdown > div {
-        grid-template-columns: 1fr !important;
-    }
-}
-/* Hide the conflicting bottom text */
-.what-if-simulator > div:last-child {
-    display: none !important;
-}
-/* ============================================================
-   📱 FIX: WORKER BOXES CUT OFF - MAKE SCROLLABLE
-   ============================================================ */
-
-/* Make the entire worker sliders container scrollable */
+/* Make worker sliders horizontally scrollable */
 #workerBonusSliders {
     display: flex !important;
     flex-wrap: nowrap !important;
@@ -2337,7 +1155,6 @@ body::before {
     scroll-snap-type: x mandatory !important;
 }
 
-/* Each worker box - keep them in a row */
 #workerBonusSliders > div {
     min-width: 200px !important;
     max-width: 250px !important;
@@ -2349,20 +1166,17 @@ body::before {
     border: 1px solid rgba(255,255,255,0.08) !important;
 }
 
-/* Make sure content inside each box fits */
 #workerBonusSliders > div .sim-worker-name {
     font-size: 11px !important;
     font-weight: 600 !important;
     color: #f0ebe6 !important;
 }
-
 #workerBonusSliders > div .sim-worker-credits {
     font-size: 18px !important;
     font-weight: 700 !important;
     color: #ffd700 !important;
 }
 
-/* Scroll hint at the end */
 #workerBonusSliders::after {
     content: '⇢ SWIPE →' !important;
     position: sticky !important;
@@ -2381,17 +1195,25 @@ body::before {
     margin-left: 6px !important;
 }
 
-/* ============================================================
-   📱 MOBILE - SMALLER BOXES ON PHONES
-   ============================================================ */
+/* Hide conflicting bottom text in What-If Simulator */
+.what-if-simulator > div:last-child {
+    display: none !important;
+}
 
+/* Simulator controls - stack on mobile */
 @media (max-width: 768px) {
+    .simulator-controls {
+        grid-template-columns: 1fr !important;
+    }
+    .simulator-results-grid {
+        grid-template-columns: 1fr !important;
+        gap: 6px;
+    }
     #workerBonusSliders > div {
         min-width: 160px !important;
         max-width: 200px !important;
         padding: 10px 12px !important;
     }
-    
     #workerBonusSliders > div .sim-worker-credits {
         font-size: 16px !important;
     }
@@ -2403,16 +1225,225 @@ body::before {
         max-width: 170px !important;
         padding: 8px 10px !important;
     }
-    
     #workerBonusSliders > div .sim-worker-credits {
         font-size: 14px !important;
     }
-    
     #workerBonusSliders > div .sim-worker-name {
         font-size: 10px !important;
     }
 }
-    </style>
+
+/* ============================================================
+   📱 MONTHLY PAY 7-COLUMN SCROLLABLE
+   ============================================================ */
+
+#tabMyPerformance [style*="grid-template-columns:repeat(7,1fr)"] {
+    display: flex !important;
+    flex-wrap: nowrap !important;
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    gap: 4px !important;
+    padding: 4px 0 !important;
+    grid-template-columns: unset !important;
+}
+
+#tabMyPerformance [style*="grid-template-columns:repeat(7,1fr)"] > div {
+    min-width: 60px !important;
+    flex: 0 0 auto !important;
+    padding: 4px 6px !important;
+}
+
+#tabMyPerformance [style*="grid-template-columns:repeat(7,1fr)"] > div div[style*="font-size:16px"] {
+    font-size: 12px !important;
+}
+
+#tabMyPerformance [style*="grid-template-columns:repeat(7,1fr)"]::after {
+    content: '⇢ SWIPE →' !important;
+    position: sticky !important;
+    right: 0 !important;
+    top: 50% !important;
+    transform: translateY(-50%) !important;
+    background: rgba(0,0,0,0.7) !important;
+    color: rgba(255,255,255,0.3) !important;
+    font-size: 7px !important;
+    padding: 2px 6px !important;
+    border-radius: 4px !important;
+    pointer-events: none !important;
+    white-space: nowrap !important;
+    z-index: 10 !important;
+}
+
+/* ============================================================
+   📱 FIX: PAY REDUCTION GRID SCROLLABLE
+   ============================================================ */
+
+.pay-reduction-grid {
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    display: flex !important;
+    gap: 8px !important;
+    padding: 4px 0 !important;
+    width: 100% !important;
+}
+
+.pay-reduction-grid .stat-box {
+    min-width: 120px !important;
+    flex: 0 0 auto !important;
+    padding: 10px !important;
+}
+
+@media (max-width: 480px) {
+    .pay-reduction-grid .stat-box {
+        min-width: 100px !important;
+        padding: 6px !important;
+    }
+    .pay-reduction-grid .stat-box .number {
+        font-size: 14px !important;
+    }
+    .pay-reduction-grid .stat-box .label {
+        font-size: 8px !important;
+    }
+}
+
+/* ============================================================
+   📱 FIX: DISTRIBUTION BREAKDOWN SCROLLABLE
+   ============================================================ */
+
+#simDistribution {
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    width: 100% !important;
+}
+
+#simDistribution > div {
+    min-width: 350px !important;
+    white-space: nowrap !important;
+}
+
+#simDistribution::after {
+    content: '⇢ SWIPE →' !important;
+    position: sticky !important;
+    right: 0 !important;
+    top: 50% !important;
+    transform: translateY(-50%) !important;
+    background: rgba(0,0,0,0.7) !important;
+    color: rgba(255,255,255,0.3) !important;
+    font-size: 7px !important;
+    padding: 2px 8px !important;
+    border-radius: 4px !important;
+    pointer-events: none !important;
+    white-space: nowrap !important;
+    z-index: 10 !important;
+}
+
+/* ============================================================
+   📱 FIX: POOL BREAKDOWN SCROLLABLE
+   ============================================================ */
+
+#simTotalBreakdown {
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    width: 100% !important;
+}
+
+#simTotalBreakdown > div {
+    min-width: 300px !important;
+}
+
+#simTotalBreakdown::after {
+    content: '⇢ SWIPE →' !important;
+    position: sticky !important;
+    right: 0 !important;
+    top: 50% !important;
+    transform: translateY(-50%) !important;
+    background: rgba(0,0,0,0.7) !important;
+    color: rgba(255,255,255,0.3) !important;
+    font-size: 7px !important;
+    padding: 2px 8px !important;
+    border-radius: 4px !important;
+    pointer-events: none !important;
+    white-space: nowrap !important;
+    z-index: 10 !important;
+}
+
+/* ============================================================
+   📱 SCROLLABLE TABS (No scrollbar visible)
+   ============================================================ */
+
+.tabs {
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+}
+.tabs::-webkit-scrollbar {
+    display: none;
+}
+
+/* ============================================================
+   📱 NOTIFICATION MOBILE
+   ============================================================ */
+
+@media (max-width: 768px) {
+    .branch-notification-container {
+        padding: 20px 14px 16px;
+        border-radius: 16px;
+        max-width: 95%;
+        margin: 10px;
+    }
+    .notif-winner-name { font-size: 28px; }
+    .notif-winner-amount { font-size: 20px; }
+    .notif-branch-name { font-size: 14px; }
+    .notif-result-item { 
+        font-size: 10px; 
+        flex-wrap: wrap; 
+        gap: 2px; 
+        padding: 4px 0;
+    }
+    .notif-result-item .bonus { min-width: 50px; font-size: 10px; }
+    .notif-footer { flex-direction: column; gap: 3px; text-align: center; }
+    .notif-trophy { font-size: 36px; }
+}
+
+/* ============================================================
+   📱 LOCATION TRACKING MOBILE
+   ============================================================ */
+
+@media (max-width: 768px) {
+    .location-indicator { font-size: 9px; padding: 2px 8px; }
+    .tracking-status { font-size: 9px; padding: 4px 8px; }
+    #locationStatus { font-size: 11px; padding: 8px 12px; }
+    .modal-overlay { padding: 10px; }
+    .modal-content { border-radius: 12px; padding: 16px; width: 100%; }
+    .modal-header .subtitle { font-size: 10px; }
+}
+
+/* ============================================================
+   📱 TAB CONTENT MOBILE
+   ============================================================ */
+
+@media (max-width: 768px) {
+    .tab-content { padding: 12px; border-radius: 10px; }
+    .tab-content h3 { font-size: 16px; }
+    .tab-content h3 small { font-size: 10px; }
+}
+
+/* ============================================================
+   📱 NOTIFICATION (640px)
+   ============================================================ */
+
+@media (max-width: 640px) {
+    .branch-notification-container {
+        padding: 24px 16px 18px;
+        border-radius: 16px;
+        max-width: 95%;
+    }
+    .notif-winner-name { font-size: 30px; }
+    .notif-winner-amount { font-size: 20px; }
+    .notif-branch-name { font-size: 14px; }
+    .notif-result-item { font-size: 10px; flex-wrap: wrap; gap: 2px; }
+    .notif-result-item .bonus { min-width: 55px; }
+    .notif-footer { flex-direction: column; gap: 3px; text-align: center; }
+}
+</style>
 </head>
 <body>
 <div class="container" id="app">
