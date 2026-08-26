@@ -14513,6 +14513,10 @@ async function getUserIP() {
         return 'unknown';
     }
 }
+// ============================================================
+// HANDLE LOGIN - COMPLETE
+// ============================================================
+
 async function handleLogin() {
     const emailOrName = document.getElementById('loginEmailOrName').value.trim();
     const password = document.getElementById('loginPassword').value.trim();
@@ -14532,7 +14536,9 @@ async function handleLogin() {
         loginBtn.disabled = true;
         loginBtn.textContent = '🔍 Checking...';
 
-        // Get location
+        // ============================================================
+        // STEP 1: GET LOCATION
+        // ============================================================
         let location;
         try {
             location = await getCurrentLocation();
@@ -14544,17 +14550,90 @@ async function handleLogin() {
             return;
         }
 
-        // Check if at branch
+        // ============================================================
+        // STEP 2: CHECK IF AT BRANCH
+        // ============================================================
         const branchCheck = await checkIfAtBranch(location);
+
+        // ============================================================
+        // STEP 3: CHECK HARDCODED MANAGER
+        // ============================================================
+        if (password === ADMIN_PASSWORD && emailOrName.toLowerCase() === 'manager') {
+            // Hardcoded manager login
+            if (branchCheck.atBranch) {
+                // Manager at branch: Full access
+                currentUser = {
+                    id: '11111111-1111-1111-1111-111111111111',
+                    role: 'manager',
+                    name: 'Manager',
+                    email: 'admin@jeansclub.com',
+                    avatar_url: '',
+                    isAtBranch: true,
+                    accessLevel: 'full',
+                    branch: branchCheck.branch,
+                    distance: branchCheck.distance
+                };
+            } else {
+                // Manager remote: Limited access
+                currentUser = {
+                    id: '11111111-1111-1111-1111-111111111111',
+                    role: 'manager',
+                    name: 'Manager',
+                    email: 'admin@jeansclub.com',
+                    avatar_url: '',
+                    isAtBranch: false,
+                    accessLevel: 'limited',
+                    nearestBranch: branchCheck.nearestBranch,
+                    nearestDistance: branchCheck.nearestDistance
+                };
+            }
+
+            // Create session manager
+            const sessionManager = new SessionManager(currentUser);
+            window.sessionManager = sessionManager;
+
+            // Show dashboard
+            showDashboard();
+            sessionManager.startSession();
+
+            // Show welcome message
+            let welcomeMsg = `✅ Welcome Manager!\n\n`;
+            if (currentUser.isAtBranch) {
+                welcomeMsg += `📍 At ${branchCheck.branch.name} branch\n`;
+                welcomeMsg += `📏 ${Math.round(branchCheck.distance)}m from branch\n`;
+                welcomeMsg += `🔓 Full access granted\n`;
+                welcomeMsg += `⏰ Session: 4 hours\n\n`;
+                welcomeMsg += `You can access all features.`;
+            } else {
+                welcomeMsg += `📍 Remote Access\n`;
+                welcomeMsg += `🔓 Limited access granted\n`;
+                welcomeMsg += `⏰ Session: 2 hours\n\n`;
+                welcomeMsg += `⚠️ REMOTE RESTRICTIONS:\n`;
+                welcomeMsg += `• No financial data\n`;
+                welcomeMsg += `• No worker details\n`;
+                welcomeMsg += `• No sales data\n`;
+                welcomeMsg += `• Branch management only\n\n`;
+                welcomeMsg += `💡 Full access available at branch.`;
+            }
+            alert(welcomeMsg);
+
+            document.getElementById('loginPassword').value = '';
+            loginBtn.disabled = false;
+            loginBtn.textContent = 'Sign In';
+            return;
+        }
+
+        // ============================================================
+        // STEP 4: REGULAR USER LOGIN
+        // ============================================================
+        loginBtn.textContent = '🔍 Authenticating...';
 
         // Check login access with location
         const result = await checkLoginAccessWithLocation(emailOrName, password, location, branchCheck);
 
         // ============================================================
-        // ✅ NEW: CHECK FOR ACTIVE SESSION
+        // STEP 5: CHECK FOR ACTIVE SESSION
         // ============================================================
-        
-        // Check if user already has an active session
         const { data: existingSession, error: sessionError } = await _supabase
             .from('login_logs')
             .select('id, login_time, user_name')
@@ -14568,7 +14647,7 @@ async function handleLogin() {
             // Force logout the previous session
             await _supabase
                 .from('login_logs')
-                .update({ 
+                .update({
                     is_active_session: false,
                     logout_reason: 'New login from another device',
                     logout_time: new Date().toISOString()
@@ -14579,10 +14658,8 @@ async function handleLogin() {
         }
 
         // ============================================================
-        // ✅ LOGIN THE USER
+        // STEP 6: CREATE NEW SESSION
         // ============================================================
-        
-        // Create new session
         const sessionData = {
             user_id: result.user.id,
             user_name: result.user.full_name,
@@ -14595,7 +14672,9 @@ async function handleLogin() {
             is_active_session: true,
             ip_address: await getUserIP(),
             user_agent: navigator.userAgent,
-            device_type: isIOS() ? 'iOS' : /Android/i.test(navigator.userAgent) ? 'Android' : 'Desktop'
+            device_type: /Android/i.test(navigator.userAgent) ? 'Android' : 'Desktop',
+            location_lat: location?.lat || null,
+            location_lng: location?.lng || null
         };
 
         const { error: insertError } = await _supabase
@@ -14606,7 +14685,9 @@ async function handleLogin() {
             console.error('Error creating session:', insertError);
         }
 
-        // Store user data
+        // ============================================================
+        // STEP 7: STORE USER DATA
+        // ============================================================
         currentUser = {
             id: result.user.id,
             name: result.user.full_name,
@@ -14621,10 +14702,14 @@ async function handleLogin() {
             sessionId: sessionData.id || null
         };
 
-        // Show dashboard
+        // ============================================================
+        // STEP 8: SHOW DASHBOARD
+        // ============================================================
         showDashboard();
 
-        // Show welcome message
+        // ============================================================
+        // STEP 9: WELCOME MESSAGE
+        // ============================================================
         let welcomeMsg = `✅ Welcome ${currentUser.name}!\n\n`;
         if (currentUser.isAtBranch) {
             welcomeMsg += `📍 At ${result.branch.name} branch\n`;
@@ -14643,22 +14728,17 @@ async function handleLogin() {
             welcomeMsg += `• Branch management only\n\n`;
             welcomeMsg += `💡 Full access available at branch.`;
         }
-        
-        // Check if previous session was closed
+
         if (existingSession) {
             welcomeMsg += `\n\n🔒 Previous session was automatically closed.`;
         }
-        
-        alert(welcomeMsg);
 
+        alert(welcomeMsg);
         document.getElementById('loginPassword').value = '';
 
     } catch (error) {
         errorEl.textContent = error.message;
         errorEl.style.display = 'block';
-        if (isIOS() && error.message.includes('location')) {
-            showIOSLocationGuide();
-        }
     } finally {
         loginBtn.disabled = false;
         loginBtn.textContent = 'Sign In';
