@@ -1051,6 +1051,285 @@ table td strong { color: #f0ebe6; font-weight: 500; }
     .notif-result-item .bonus { min-width: 55px; }
     .notif-footer { flex-direction: column; gap: 3px; text-align: center; }
 }
+/* ============================================================
+   📱 COMPLETE MOBILE RESPONSIVENESS FIXES
+   ============================================================ */
+
+@media (max-width: 768px) {
+    /* Layout */
+    .chart-grid { grid-template-columns: 1fr; }
+    .chart-row { grid-template-columns: 1fr; }
+    .stats-grid { grid-template-columns: 1fr 1fr; }
+    .login-container { margin: 20px 12px; padding: 25px 18px; }
+    .tab-content { padding: 14px; }
+    
+    /* Header */
+    .header { 
+        padding: 14px 16px; 
+        flex-direction: column; 
+        align-items: stretch;
+        gap: 10px;
+    }
+    .header h1 { font-size: 18px; text-align: center; }
+    .header-user { 
+        flex-wrap: wrap; 
+        justify-content: center; 
+        gap: 8px;
+        font-size: 12px;
+    }
+    .header-user .user-name { font-size: 12px; }
+    #sessionTimer { font-size: 10px; padding: 2px 10px; }
+    .btn-logout { padding: 5px 14px; font-size: 11px; }
+    
+    /* Tabs */
+    .tabs { 
+        padding: 4px 6px; 
+        gap: 2px;
+        overflow-x: auto;
+        flex-wrap: nowrap;
+        -webkit-overflow-scrolling: touch;
+    }
+    .tabs button { 
+        padding: 6px 12px; 
+        font-size: 10px; 
+        white-space: nowrap;
+        flex-shrink: 0;
+    }
+    
+    /* Worker Profile */
+    .worker-profile-section { 
+        flex-direction: column; 
+        text-align: center; 
+        padding: 16px;
+        gap: 12px;
+    }
+    .worker-profile-info .pay-info { 
+        justify-content: center; 
+        flex-wrap: wrap;
+        gap: 10px;
+    }
+    .worker-profile-info h2 { font-size: 18px; }
+    .worker-avatar-large { width: 60px; height: 60px; }
+    
+    /* Cards and Grids */
+    .branch-grid { 
+        grid-template-columns: 1fr 1fr; 
+        gap: 8px;
+    }
+    .branch-card { padding: 12px 10px; }
+    .branch-card .branch-name { font-size: 13px; }
+    
+    /* Pay Summary Grids */
+    .pay-reduction-grid { 
+        grid-template-columns: 1fr 1fr; 
+        gap: 8px;
+    }
+    .pay-summary-grid { grid-template-columns: 1fr 1fr; }
+    .bonus-accrual-grid { grid-template-columns: 1fr 1fr; }
+    
+    /* Tables */
+    .table-wrap { 
+        overflow-x: auto; 
+        -webkit-overflow-scrolling: touch;
+        margin: 8px -8px;
+        padding: 0 8px;
+    }
+    table { 
+        font-size: 10px; 
+        min-width: 500px;
+    }
+    table th, table td { 
+        padding: 6px 8px; 
+        font-size: 9px;
+    }
+    
+    /* Leaderboard */
+    .leaderboard-item { 
+        flex-wrap: wrap; 
+        padding: 10px 12px;
+        gap: 4px;
+    }
+    .leaderboard-item .name { font-size: 12px; }
+    .leaderboard-item .value { font-size: 12px; }
+    
+    /* Modal */
+    .modal-content { 
+        padding: 18px 16px; 
+        margin: 10px;
+        max-height: 95vh;
+    }
+    .modal-header { 
+        flex-direction: column; 
+        align-items: flex-start;
+        gap: 10px;
+    }
+    .modal-header h3 { font-size: 18px; }
+    .modal-close-btn { align-self: flex-end; }
+    
+    /* Stats */
+    .stat-card .number { font-size: 22px; }
+    .stat-card .label { font-size: 9px; }
+    
+    /* Simulator */
+    .simulator-controls { grid-template-columns: 1fr; }
+    .simulator-results-grid { grid-template-columns: 1fr; gap: 6px; }
+    #workerBonusSliders { grid-template-columns: 1fr !important; }
+    
+    /* Charts */
+    .chart-box canvas { max-height: 150px; }
+    
+    /* Branch Ranking */
+    .branch-rank-card { padding: 12px 14px; }
+    .branch-rank-card .rank-number { font-size: 20px; }
+    .branch-rank-card .branch-name { font-size: 14px; }
+    
+    /* Team Dynamics */
+    .team-pair-card { padding: 10px 12px; }
+    
+    /* Forms */
+    .form-group input, .form-group select { font-size: 16px; padding: 10px 12px; }
+    input, select, textarea { font-size: 16px !important; }
+    
+    /* Buttons */
+    .btn-primary, .btn-success, .btn-danger, .btn-warning, .btn-outline {
+        padding: 6px 14px;
+        font-size: 10px;
+    }
+    
+    /* Compact Grid */
+    .compact-grid { grid-template-columns: 1fr 1fr; }
+    
+    /* Pay Cards */
+    .pay-card { padding: 12px; }
+    .pay-card .pay-row { font-size: 12px; }
+}
+
+/* ============================================================
+   📱 EXTRA SMALL PHONES (under 480px)
+   ============================================================ */
+
+@media (max-width: 480px) {
+    .login-container { padding: 20px 14px; margin: 10px 8px; }
+    .login-container h2 { font-size: 24px; }
+    .login-container input { padding: 10px 12px; font-size: 14px; }
+    .login-container .btn-login { padding: 12px; font-size: 14px; }
+    
+    .header h1 { font-size: 16px; letter-spacing: 1px; }
+    .header-user { font-size: 10px; }
+    .header-user .user-name { font-size: 10px; }
+    .header-user .role-badge { font-size: 8px; padding: 2px 10px; }
+    .btn-logout { font-size: 10px; padding: 4px 10px; }
+    
+    .stats-grid { grid-template-columns: 1fr 1fr; gap: 6px; }
+    .stat-card { padding: 12px 8px; }
+    .stat-card .number { font-size: 18px; }
+    .stat-card .label { font-size: 8px; }
+    
+    .branch-grid { grid-template-columns: 1fr; }
+    .tabs button { font-size: 9px; padding: 4px 8px; }
+    
+    .pay-reduction-grid { grid-template-columns: 1fr; }
+    .pay-summary-grid { grid-template-columns: 1fr; }
+    .bonus-accrual-grid { grid-template-columns: 1fr; }
+    
+    .worker-profile-section { padding: 12px; }
+    .worker-profile-info h2 { font-size: 16px; }
+    .worker-avatar-large { width: 50px; height: 50px; }
+    
+    .modal-content { padding: 14px 12px; }
+    .modal-header h3 { font-size: 16px; }
+    
+    .compact-grid { grid-template-columns: 1fr 1fr; gap: 4px; }
+    .compact-card { padding: 8px; }
+    .compact-card .value { font-size: 14px; }
+    
+    .chart-box { padding: 10px; }
+    .chart-box h4 { font-size: 11px; }
+    .chart-box canvas { max-height: 120px; }
+    
+    .leaderboard-item .rank { font-size: 14px; width: 28px; }
+    .leaderboard-item .name { font-size: 11px; }
+    .leaderboard-item .value { font-size: 11px; }
+}
+
+/* ============================================================
+   📱 FIX FOR TABLES ON MOBILE
+   ============================================================ */
+
+@media (max-width: 768px) {
+    .table-wrap table {
+        min-width: 400px;
+    }
+    .table-wrap table th,
+    .table-wrap table td {
+        white-space: nowrap;
+        padding: 4px 6px;
+        font-size: 9px;
+    }
+}
+
+/* ============================================================
+   📱 FIX FOR MODAL OVERLAY ON MOBILE
+   ============================================================ */
+
+@media (max-width: 768px) {
+    .modal-overlay { padding: 10px; }
+    .modal-content { 
+        border-radius: 12px; 
+        padding: 16px;
+        width: 100%;
+    }
+    .modal-header .subtitle { font-size: 10px; }
+}
+
+/* ============================================================
+   📱 FIX FOR LOCATION TRACKING
+   ============================================================ */
+
+@media (max-width: 768px) {
+    .location-indicator { font-size: 9px; padding: 2px 8px; }
+    .tracking-status { font-size: 9px; padding: 4px 8px; }
+    #locationStatus { font-size: 11px; padding: 8px 12px; }
+    #locationStatus .location-indicator { font-size: 9px; }
+}
+
+/* ============================================================
+   📱 FIX FOR NOTIFICATION
+   ============================================================ */
+
+@media (max-width: 768px) {
+    .notif-winner-name { font-size: 28px; }
+    .notif-winner-amount { font-size: 20px; }
+    .notif-results { padding: 8px 10px; }
+    .notif-result-item { font-size: 9px; }
+    .notif-result-item .bonus { min-width: 45px; font-size: 9px; }
+    .notif-stress { padding: 8px 10px; }
+}
+
+/* ============================================================
+   📱 FIX FOR TAB CONTENT PADDING
+   ============================================================ */
+
+@media (max-width: 768px) {
+    .tab-content { 
+        padding: 12px; 
+        border-radius: 10px;
+    }
+    .tab-content h3 { font-size: 16px; }
+    .tab-content h3 small { font-size: 10px; }
+}
+
+/* ============================================================
+   📱 FIX FOR SCROLLABLE TABS
+   ============================================================ */
+
+.tabs {
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+}
+.tabs::-webkit-scrollbar {
+    display: none;
+}
     </style>
 </head>
 <body>
@@ -1087,7 +1366,89 @@ table td strong { color: #f0ebe6; font-weight: 500; }
 
                 <div class="toggle-mode" id="showSignupBtn">Don't have an account? Sign up as a Worker</div>
             </div>
-
+                       <!-- ============================================================ -->
+            <!-- 📱 QR CODE - SCAN TO ACCESS                                   -->
+            <!-- ============================================================ -->
+            
+            <div id="qrCodeSection" style="
+                margin-top: 20px;
+                padding: 16px 20px;
+                background: rgba(255,255,255,0.03);
+                border-radius: 14px;
+                border: 1px solid rgba(255,255,255,0.06);
+                text-align: center;
+            ">
+                <div style="
+                    display: flex;
+                    justify-content: center;
+                    align-items: center;
+                    gap: 16px;
+                    flex-wrap: wrap;
+                ">
+                    <!-- QR Code Image -->
+                    <div id="qrCodeContainer" style="
+                        background: white;
+                        padding: 6px;
+                        border-radius: 10px;
+                        display: inline-block;
+                        box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+                    ">
+                        <img id="qrCodeImage" 
+                             src="" 
+                             alt="Scan to access JEANS CLUB" 
+                             style="
+                                 width: 80px;
+                                 height: 80px;
+                                 display: block;
+                                 border-radius: 4px;
+                             "
+                        />
+                    </div>
+                    
+                    <div style="text-align: left;">
+                        <div style="
+                            font-size: 10px;
+                            color: rgba(255,255,255,0.3);
+                            letter-spacing: 2px;
+                            text-transform: uppercase;
+                        ">
+                            📱 Mobile Access
+                        </div>
+                        <div style="
+                            font-family: 'Playfair Display', serif;
+                            font-size: 16px;
+                            color: #d4a574;
+                            font-weight: 400;
+                        ">
+                            JEANS CLUB Equity
+                        </div>
+                        <div style="
+                            font-size: 10px;
+                            color: rgba(255,255,255,0.2);
+                            margin-top: 2px;
+                        ">
+                            Scan to log in from your phone
+                        </div>
+                        <div style="
+                            font-size: 9px;
+                            color: rgba(255,255,255,0.1);
+                            margin-top: 2px;
+                            font-family: monospace;
+                        ">
+                            tinglej283-cyber.github.io
+                        </div>
+                    </div>
+                </div>
+                
+                <div style="
+                    margin-top: 8px;
+                    font-size: 9px;
+                    color: rgba(255,255,255,0.12);
+                    letter-spacing: 0.5px;
+                ">
+                    Scan QR code with your phone camera
+                </div>
+            </div>
             <div id="signupForm" style="display:none;">
                 <h3 style="font-family:'Playfair Display',serif;color:#f0ebe6;font-weight:400;font-size:20px;text-align:center;margin-bottom:4px;">Join the Club</h3>
                 <p style="text-align:center;color:rgba(255,255,255,0.3);font-size:11px;margin-bottom:18px;letter-spacing:1px;">You'll receive a JC ID automatically</p>
@@ -15503,6 +15864,46 @@ function generateShareText(workersArray, timeData) {
 // Add tab click handler for Time & Performance
 document.querySelector('[data-tab="tabTimePerformance"]')?.addEventListener('click', function() {
     setTimeout(loadTimePerformanceTab, 100);
+});
+function generateQRCode() {
+    const url = 'https://tinglej283-cyber.github.io/';
+    
+    // Alternative QR API
+    const qrApiUrl = `https://quickchart.io/qr?text=${encodeURIComponent(url)}&size=200&margin=4&dark=1a1a2e&light=ffffff`;
+    
+    const qrImage = document.getElementById('qrCodeImage');
+    if (qrImage) {
+        qrImage.src = qrApiUrl;
+        qrImage.alt = `Scan to access JEANS CLUB Equity`;
+        console.log('✅ QR Code generated for:', url);
+    }
+}
+// ============================================================
+// 📱 GENERATE QR CODE ON PAGE LOAD
+// ============================================================
+
+// This runs when the page first loads
+document.addEventListener('DOMContentLoaded', function() {
+    // Wait a moment for the page to render
+    setTimeout(function() {
+        generateQRCode();
+        console.log('✅ QR Code generated on page load');
+    }, 500);
+});
+
+// This runs when switching between login and signup
+document.addEventListener('click', function(e) {
+    if (e.target.id === 'showSignupBtn' || e.target.id === 'showLoginBtn') {
+        setTimeout(function() {
+            generateQRCode();
+            console.log('✅ QR Code regenerated');
+        }, 300);
+    }
+});
+
+// Also run it when the page is fully loaded
+window.addEventListener('load', function() {
+    setTimeout(generateQRCode, 300);
 });
 </script>
 </body>
