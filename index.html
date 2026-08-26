@@ -2179,6 +2179,57 @@ body::before {
     pointer-events: none !important;
     white-space: nowrap !important;
 }
+/* ============================================================
+   📱 FORCE MONTHLY PAY 7-COLUMN TO BE SCROLLABLE
+   ============================================================ */
+
+/* Target the specific 7-column monthly pay section */
+#tabMyPerformance .monthly-pay-grid,
+[style*="grid-template-columns:repeat(7,1fr)"] {
+    display: flex !important;
+    flex-wrap: nowrap !important;
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    gap: 4px !important;
+    padding: 4px 0 !important;
+    width: 100% !important;
+    grid-template-columns: unset !important;
+}
+
+[style*="grid-template-columns:repeat(7,1fr)"] > div {
+    min-width: 60px !important;
+    flex: 0 0 auto !important;
+    padding: 4px 6px !important;
+}
+
+[style*="grid-template-columns:repeat(7,1fr)"] > div div[style*="font-size:16px"] {
+    font-size: 12px !important;
+}
+
+[style*="grid-template-columns:repeat(7,1fr)"] > div div[style*="font-size:9px"] {
+    font-size: 7px !important;
+}
+
+/* Add scroll hint */
+[style*="grid-template-columns:repeat(7,1fr)"] {
+    position: relative !important;
+}
+
+[style*="grid-template-columns:repeat(7,1fr)"]::after {
+    content: '⇢ SWIPE →' !important;
+    position: sticky !important;
+    right: 0 !important;
+    top: 50% !important;
+    transform: translateY(-50%) !important;
+    background: rgba(0,0,0,0.7) !important;
+    color: rgba(255,255,255,0.3) !important;
+    font-size: 7px !important;
+    padding: 2px 6px !important;
+    border-radius: 4px !important;
+    pointer-events: none !important;
+    white-space: nowrap !important;
+    z-index: 10 !important;
+}
     </style>
 </head>
 <body>
