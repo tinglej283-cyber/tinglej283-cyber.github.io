@@ -9,7 +9,7 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js">
     </script>
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-  <style>
+ <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
 body {
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
@@ -151,11 +151,6 @@ h1, h2, h3, h4, .brand-font { font-family: 'Playfair Display', Georgia, serif; l
     padding: 6px 10px;
     border-radius: 14px;
     overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
-    scrollbar-width: none;
-}
-.tabs::-webkit-scrollbar {
-    display: none;
 }
 .tabs button {
     padding: 8px 18px;
@@ -169,7 +164,6 @@ h1, h2, h3, h4, .brand-font { font-family: 'Playfair Display', Georgia, serif; l
     color: rgba(255,255,255,0.5);
     font-family: 'Inter', sans-serif;
     white-space: nowrap;
-    flex-shrink: 0;
 }
 .tabs button:hover { background: rgba(255,255,255,0.08); color: rgba(255,255,255,0.8); }
 .tabs button.active { background: rgba(212,165,116,0.2); color: #d4a574; box-shadow: 0 2px 12px rgba(212,165,116,0.05); }
@@ -209,8 +203,8 @@ h1, h2, h3, h4, .brand-font { font-family: 'Playfair Display', Georgia, serif; l
 .branch-card .branch-status.open { color: #7bcfa6; }
 .branch-card .branch-status.closed { color: #e94560; }
 
-.table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; margin: 4px -8px; padding: 0 8px; }
-table { width: 100%; border-collapse: collapse; font-size: 12px; min-width: 500px; }
+.table-wrap { overflow-x: auto; margin-top: 4px; }
+table { width: 100%; border-collapse: collapse; font-size: 12px; }
 table th { color: rgba(255,255,255,0.4); font-weight: 500; padding: 12px 14px; text-align: left; border-bottom: 1px solid rgba(255,255,255,0.06); font-size: 10px; text-transform: uppercase; letter-spacing: 1px; }
 table td { padding: 10px 14px; border-bottom: 1px solid rgba(255,255,255,0.04); color: rgba(255,255,255,0.7); }
 table tr:hover td { background: rgba(255,255,255,0.03); }
@@ -486,16 +480,11 @@ table td strong { color: #f0ebe6; font-weight: 500; }
     font-weight: 700;
 }
 .pay-reduction-grid {
-    display: flex;
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
     gap: 12px;
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
-    padding: 4px 0;
-    width: 100%;
 }
 .pay-reduction-grid .stat-box {
-    min-width: 120px;
-    flex: 0 0 auto;
     text-align: center;
     padding: 12px;
     background: rgba(255,255,255,0.03);
@@ -691,100 +680,6 @@ table td strong { color: #f0ebe6; font-weight: 500; }
     text-align: center;
 }
 
-/* WHAT-IF SIMULATOR - WORKER BOXES SCROLLABLE */
-#workerBonusSliders {
-    display: flex !important;
-    flex-wrap: nowrap !important;
-    gap: 10px !important;
-    overflow-x: auto !important;
-    -webkit-overflow-scrolling: touch !important;
-    padding: 8px 4px !important;
-    width: 100% !important;
-    scroll-snap-type: x mandatory !important;
-}
-#workerBonusSliders > div {
-    min-width: 200px !important;
-    max-width: 250px !important;
-    flex: 0 0 auto !important;
-    scroll-snap-align: start !important;
-    padding: 12px 14px !important;
-    background: rgba(255,255,255,0.03) !important;
-    border-radius: 10px !important;
-    border: 1px solid rgba(255,255,255,0.08) !important;
-}
-#workerBonusSliders > div .sim-worker-name {
-    font-size: 11px !important;
-    font-weight: 600 !important;
-    color: #f0ebe6 !important;
-}
-#workerBonusSliders > div .sim-worker-credits {
-    font-size: 18px !important;
-    font-weight: 700 !important;
-    color: #ffd700 !important;
-}
-
-/* BOTTOM INFO BAR */
-.what-if-simulator > div:last-child {
-    display: flex !important;
-    flex-wrap: wrap !important;
-    gap: 8px !important;
-    padding: 10px 12px !important;
-    margin-top: 10px !important;
-    background: rgba(255,255,255,0.03) !important;
-    border-radius: 8px !important;
-    border: 1px solid rgba(255,255,255,0.06) !important;
-    justify-content: center !important;
-    align-items: center !important;
-}
-.what-if-simulator > div:last-child span {
-    display: inline-flex !important;
-    align-items: center !important;
-    gap: 4px !important;
-    padding: 4px 12px !important;
-    background: rgba(255,255,255,0.04) !important;
-    border-radius: 20px !important;
-    border: 1px solid rgba(255,255,255,0.06) !important;
-    font-size: 9px !important;
-    color: rgba(255,255,255,0.4) !important;
-    white-space: nowrap !important;
-    flex-shrink: 0 !important;
-}
-.what-if-simulator > div:last-child span:nth-child(1) {
-    color: #7bcfa6 !important;
-    border-color: rgba(123,207,166,0.2) !important;
-}
-.what-if-simulator > div:last-child span:nth-child(2) {
-    color: #ffd700 !important;
-    border-color: rgba(255,215,0,0.2) !important;
-}
-.what-if-simulator > div:last-child span:nth-child(3) {
-    color: #d4a574 !important;
-    border-color: rgba(212,165,116,0.2) !important;
-}
-.what-if-simulator > div:last-child span:nth-child(4) {
-    color: #e94560 !important;
-    border-color: rgba(233,69,96,0.2) !important;
-}
-
-/* SCROLLABLE CONTAINERS */
-#simDistribution {
-    overflow-x: auto !important;
-    -webkit-overflow-scrolling: touch !important;
-    width: 100% !important;
-}
-#simDistribution > div {
-    min-width: 350px !important;
-}
-
-#simTotalBreakdown {
-    overflow-x: auto !important;
-    -webkit-overflow-scrolling: touch !important;
-    width: 100% !important;
-}
-#simTotalBreakdown > div {
-    min-width: 300px !important;
-}
-
 .branch-notification-overlay {
     position: fixed;
     top: 0;
@@ -800,7 +695,11 @@ table td strong { color: #f0ebe6; font-weight: 500; }
     align-items: center;
     animation: notifFadeIn 0.5s ease;
 }
-.branch-notification-overlay.active { display: flex; }
+
+.branch-notification-overlay.active {
+    display: flex;
+}
+
 .branch-notification-container {
     position: relative;
     max-width: 580px;
@@ -809,9 +708,13 @@ table td strong { color: #f0ebe6; font-weight: 500; }
     border: 1px solid rgba(212, 165, 116, 0.3);
     border-radius: 24px;
     padding: 35px 30px 25px;
-    box-shadow: 0 0 60px rgba(212, 165, 116, 0.1), 0 0 120px rgba(212, 165, 116, 0.05), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+    box-shadow:
+        0 0 60px rgba(212, 165, 116, 0.1),
+        0 0 120px rgba(212, 165, 116, 0.05),
+        inset 0 1px 0 rgba(255, 255, 255, 0.05);
     animation: notifSlideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1);
 }
+
 .notif-sparkles {
     position: absolute;
     top: 0;
@@ -821,6 +724,7 @@ table td strong { color: #f0ebe6; font-weight: 500; }
     pointer-events: none;
     overflow: hidden;
 }
+
 .notif-sparkle {
     position: absolute;
     color: #d4a574;
@@ -828,16 +732,24 @@ table td strong { color: #f0ebe6; font-weight: 500; }
     opacity: 0.3;
     animation: notifSparkleFloat 4s infinite alternate;
 }
+
 .notif-sparkle:nth-child(1) { top: 10%; left: 5%; animation-delay: 0s; }
 .notif-sparkle:nth-child(2) { top: 20%; right: 10%; animation-delay: 0.8s; }
 .notif-sparkle:nth-child(3) { bottom: 30%; left: 15%; animation-delay: 1.6s; }
 .notif-sparkle:nth-child(4) { bottom: 20%; right: 5%; animation-delay: 2.4s; }
 .notif-sparkle:nth-child(5) { top: 50%; left: 50%; animation-delay: 3.2s; }
+
 @keyframes notifSparkleFloat {
     0% { opacity: 0.2; transform: translateY(0) rotate(0deg); }
     100% { opacity: 0.8; transform: translateY(-20px) rotate(180deg); }
 }
-.notif-content { position: relative; z-index: 1; text-align: center; }
+
+.notif-content {
+    position: relative;
+    z-index: 1;
+    text-align: center;
+}
+
 .notif-header {
     display: flex;
     justify-content: space-between;
@@ -846,6 +758,7 @@ table td strong { color: #f0ebe6; font-weight: 500; }
     padding-bottom: 12px;
     border-bottom: 1px solid rgba(255, 255, 255, 0.05);
 }
+
 .notif-branch-name {
     font-family: 'Playfair Display', Georgia, serif;
     font-size: 18px;
@@ -853,6 +766,7 @@ table td strong { color: #f0ebe6; font-weight: 500; }
     color: #d4a574;
     letter-spacing: 3px;
 }
+
 .notif-closed-badge {
     font-size: 10px;
     font-weight: 600;
@@ -865,23 +779,31 @@ table td strong { color: #f0ebe6; font-weight: 500; }
     letter-spacing: 1px;
     animation: notifPulse 2s infinite;
 }
-@keyframes notifPulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+
+@keyframes notifPulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+}
+
 .notif-trophy {
     font-size: 48px;
     display: block;
     margin-bottom: 2px;
     animation: notifTrophyBounce 1s ease infinite;
 }
+
 @keyframes notifTrophyBounce {
     0%, 100% { transform: scale(1) rotate(0deg); }
     50% { transform: scale(1.05) rotate(-3deg); }
 }
+
 .notif-trophy-label {
     font-size: 10px;
     color: rgba(255, 255, 255, 0.3);
     text-transform: uppercase;
     letter-spacing: 4px;
 }
+
 .notif-winner-name {
     font-family: 'Playfair Display', Georgia, serif;
     font-size: 44px;
@@ -891,12 +813,14 @@ table td strong { color: #f0ebe6; font-weight: 500; }
     letter-spacing: 4px;
     margin: 4px 0 2px;
 }
+
 .notif-winner-id {
     font-size: 12px;
     color: rgba(255, 255, 255, 0.3);
     letter-spacing: 2px;
     margin-bottom: 4px;
 }
+
 .notif-winner-amount {
     font-family: 'Playfair Display', Georgia, serif;
     font-size: 28px;
@@ -904,6 +828,7 @@ table td strong { color: #f0ebe6; font-weight: 500; }
     color: #ffd700;
     text-shadow: 0 0 30px rgba(255, 215, 0, 0.15);
 }
+
 .notif-reason {
     margin: 10px 0 16px;
     display: flex;
@@ -911,6 +836,7 @@ table td strong { color: #f0ebe6; font-weight: 500; }
     align-items: center;
     gap: 4px;
 }
+
 .notif-reason-badge {
     display: inline-block;
     padding: 3px 18px;
@@ -923,17 +849,20 @@ table td strong { color: #f0ebe6; font-weight: 500; }
     color: #ffd700;
     border: 1px solid rgba(255, 215, 0, 0.2);
 }
+
 .notif-reason-detail {
     font-size: 11px;
     color: rgba(255, 255, 255, 0.3);
     letter-spacing: 0.5px;
 }
+
 .notif-divider {
     color: rgba(212, 165, 116, 0.2);
     font-size: 11px;
     letter-spacing: 8px;
     margin: 12px 0;
 }
+
 .notif-results {
     background: rgba(255, 255, 255, 0.02);
     border-radius: 12px;
@@ -941,6 +870,7 @@ table td strong { color: #f0ebe6; font-weight: 500; }
     margin-bottom: 12px;
     border: 1px solid rgba(255, 255, 255, 0.04);
 }
+
 .notif-results-header {
     font-size: 9px;
     color: rgba(255, 255, 255, 0.2);
@@ -949,6 +879,7 @@ table td strong { color: #f0ebe6; font-weight: 500; }
     text-align: left;
     margin-bottom: 6px;
 }
+
 .notif-result-item {
     display: flex;
     justify-content: space-between;
@@ -957,14 +888,23 @@ table td strong { color: #f0ebe6; font-weight: 500; }
     font-size: 11px;
     border-bottom: 1px solid rgba(255, 255, 255, 0.02);
 }
-.notif-result-item:last-child { border-bottom: none; }
+
+.notif-result-item:last-child {
+    border-bottom: none;
+}
+
 .notif-result-item.winner {
     background: rgba(255, 215, 0, 0.05);
     border-radius: 6px;
     padding: 5px 8px;
     border: 1px solid rgba(255, 215, 0, 0.1);
 }
-.notif-result-item .rank { min-width: 28px; font-size: 13px; }
+
+.notif-result-item .rank {
+    min-width: 28px;
+    font-size: 13px;
+}
+
 .notif-result-item .name {
     flex: 1;
     color: rgba(255, 255, 255, 0.7);
@@ -972,12 +912,18 @@ table td strong { color: #f0ebe6; font-weight: 500; }
     padding-left: 4px;
     font-size: 11px;
 }
-.notif-result-item.winner .name { color: #ffd700; font-weight: 600; }
+
+.notif-result-item.winner .name {
+    color: #ffd700;
+    font-weight: 600;
+}
+
 .notif-result-item .credits {
     color: rgba(255, 255, 255, 0.25);
     font-size: 9px;
     padding: 0 6px;
 }
+
 .notif-result-item .bonus {
     color: rgba(255, 215, 0, 0.5);
     font-weight: 500;
@@ -985,7 +931,12 @@ table td strong { color: #f0ebe6; font-weight: 500; }
     text-align: right;
     font-size: 11px;
 }
-.notif-result-item.winner .bonus { color: #ffd700; font-weight: 700; }
+
+.notif-result-item.winner .bonus {
+    color: #ffd700;
+    font-weight: 700;
+}
+
 .notif-stress {
     background: rgba(123, 207, 166, 0.03);
     border-radius: 12px;
@@ -993,6 +944,7 @@ table td strong { color: #f0ebe6; font-weight: 500; }
     margin-bottom: 14px;
     border: 1px solid rgba(123, 207, 166, 0.08);
 }
+
 .notif-stress-header {
     font-size: 9px;
     color: rgba(255, 255, 255, 0.2);
@@ -1001,6 +953,7 @@ table td strong { color: #f0ebe6; font-weight: 500; }
     text-align: left;
     margin-bottom: 4px;
 }
+
 .notif-stress-item {
     display: flex;
     justify-content: space-between;
@@ -1008,8 +961,16 @@ table td strong { color: #f0ebe6; font-weight: 500; }
     font-size: 11px;
     padding: 2px 0;
 }
-.notif-stress-name { color: rgba(255, 255, 255, 0.5); }
-.notif-stress-bonus { color: #ffd700; font-weight: 500; }
+
+.notif-stress-name {
+    color: rgba(255, 255, 255, 0.5);
+}
+
+.notif-stress-bonus {
+    color: #ffd700;
+    font-weight: 500;
+}
+
 .notif-footer {
     display: flex;
     justify-content: space-between;
@@ -1019,11 +980,16 @@ table td strong { color: #f0ebe6; font-weight: 500; }
     font-size: 9px;
     color: rgba(255, 255, 255, 0.12);
 }
+
 .notif-timestamp {
     font-family: 'Playfair Display', Georgia, serif;
     letter-spacing: 1px;
 }
-.notif-stats { letter-spacing: 0.5px; }
+
+.notif-stats {
+    letter-spacing: 0.5px;
+}
+
 .notif-close-btn {
     position: absolute;
     top: 10px;
@@ -1038,281 +1004,41 @@ table td strong { color: #f0ebe6; font-weight: 500; }
     border-radius: 6px;
     font-family: 'Inter', sans-serif;
 }
+
 .notif-close-btn:hover {
     color: rgba(255, 255, 255, 0.5);
     background: rgba(255, 255, 255, 0.05);
 }
-@keyframes notifFadeIn { from { opacity: 0; } to { opacity: 1; } }
-@keyframes notifSlideUp {
-    from { opacity: 0; transform: translateY(30px) scale(0.95); }
-    to { opacity: 1; transform: translateY(0) scale(1); }
+
+@keyframes notifFadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
 }
 
-/* ============================================================
-   📱 MOBILE RESPONSIVENESS
-   ============================================================ */
+@keyframes notifSlideUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px) scale(0.95);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
 
 @media (max-width: 768px) {
     .chart-grid { grid-template-columns: 1fr; }
     .chart-row { grid-template-columns: 1fr; }
-    .stats-grid { grid-template-columns: 1fr 1fr; gap: 8px; }
-    .login-container { margin: 20px 12px; padding: 25px 18px; }
-    .tab-content { padding: 14px; }
-    
-    .header { 
-        padding: 14px 16px; 
-        flex-direction: column; 
-        align-items: stretch;
-        gap: 10px;
-    }
-    .header h1 { font-size: 18px; text-align: center; }
-    .header-user { 
-        flex-wrap: wrap; 
-        justify-content: center; 
-        gap: 8px;
-        font-size: 12px;
-    }
-    .header-user .user-name { font-size: 12px; }
-    #sessionTimer { font-size: 10px; padding: 2px 10px; }
-    .btn-logout { padding: 5px 14px; font-size: 11px; }
-    
-    .tabs { 
-        padding: 4px 6px; 
-        gap: 2px;
-        overflow-x: auto;
-        flex-wrap: nowrap;
-        -webkit-overflow-scrolling: touch;
-    }
-    .tabs button { 
-        padding: 6px 12px; 
-        font-size: 10px; 
-        white-space: nowrap;
-        flex-shrink: 0;
-    }
-    
-    .worker-profile-section { 
-        flex-direction: column; 
-        text-align: center; 
-        padding: 16px;
-        gap: 12px;
-    }
-    .worker-profile-info .pay-info { 
-        justify-content: center; 
-        flex-wrap: wrap;
-        gap: 10px;
-    }
-    .worker-profile-info h2 { font-size: 18px; }
-    .worker-avatar-large { width: 60px; height: 60px; }
-    
-    .branch-grid { grid-template-columns: 1fr 1fr; gap: 8px; }
-    .branch-card { padding: 12px 10px; }
-    .branch-card .branch-name { font-size: 13px; }
-    .pay-reduction-grid { gap: 8px; }
-    .pay-reduction-grid .stat-box { min-width: 100px; }
-    .pay-summary-grid { grid-template-columns: 1fr 1fr; }
-    .bonus-accrual-grid { grid-template-columns: 1fr 1fr; }
-    .compact-grid { grid-template-columns: 1fr 1fr; }
-    
-    .table-wrap { 
-        overflow-x: auto; 
-        -webkit-overflow-scrolling: touch;
-        margin: 8px -8px;
-        padding: 0 8px;
-    }
-    table { font-size: 10px; min-width: 500px; }
-    table th, table td { padding: 6px 8px; font-size: 9px; }
-    
-    .leaderboard-item { 
-        flex-wrap: wrap; 
-        padding: 10px 12px;
-        gap: 4px;
-    }
-    .leaderboard-item .name { font-size: 12px; }
-    .leaderboard-item .value { font-size: 12px; }
-    
-    .modal-content { padding: 18px 16px; margin: 10px; max-height: 95vh; }
-    .modal-header { flex-direction: column; align-items: flex-start; gap: 10px; }
-    .modal-header h3 { font-size: 18px; }
-    .modal-close-btn { align-self: flex-end; }
-    
-    .stat-card .number { font-size: 22px; }
-    .stat-card .label { font-size: 9px; }
-    
-    .chart-box canvas { max-height: 150px; }
-    
-    .branch-rank-card { padding: 12px 14px; }
-    .branch-rank-card .rank-number { font-size: 20px; }
-    .branch-rank-card .branch-name { font-size: 14px; }
-    
-    .team-pair-card { padding: 10px 12px; }
-    
-    .form-group input, .form-group select { font-size: 16px; padding: 10px 12px; }
-    input, select, textarea { font-size: 16px !important; }
-    
-    .btn-primary, .btn-success, .btn-danger, .btn-warning, .btn-outline {
-        padding: 6px 14px;
-        font-size: 10px;
-    }
-    
-    .pay-card { padding: 12px; }
-    .pay-card .pay-row { font-size: 12px; }
-    
-    .container {
-        max-width: 100% !important;
-        padding: 0 8px !important;
-        margin: 0 !important;
-        width: 100% !important;
-        overflow-x: hidden !important;
-    }
-    body { padding: 4px !important; margin: 0 !important; overflow-x: hidden !important; }
-    body::before { display: none !important; }
-    
-    * { max-width: 100% !important; box-sizing: border-box !important; }
-    html { overflow-x: hidden !important; width: 100% !important; }
-    
-    .login-container {
-        max-width: 100% !important;
-        margin: 8px !important;
-        padding: 20px 16px !important;
-        width: auto !important;
-        border-radius: 16px !important;
-    }
-
-    #workerBonusSliders > div {
-        min-width: 160px !important;
-        max-width: 200px !important;
-        padding: 10px 12px !important;
-    }
-    #workerBonusSliders > div .sim-worker-credits {
-        font-size: 16px !important;
-    }
-    
-    .what-if-simulator > div:last-child {
-        gap: 6px !important;
-        padding: 8px 10px !important;
-    }
-    .what-if-simulator > div:last-child span {
-        font-size: 8px !important;
-        padding: 3px 10px !important;
-    }
-
-    .branch-notification-container {
-        padding: 20px 14px 16px;
-        border-radius: 16px;
-        max-width: 95%;
-        margin: 10px;
-    }
-    .notif-winner-name { font-size: 28px; }
-    .notif-winner-amount { font-size: 20px; }
-    .notif-branch-name { font-size: 14px; }
-    .notif-result-item { 
-        font-size: 10px; 
-        flex-wrap: wrap; 
-        gap: 2px; 
-        padding: 4px 0;
-    }
-    .notif-result-item .bonus { min-width: 50px; font-size: 10px; }
-    .notif-footer { flex-direction: column; gap: 3px; text-align: center; }
-    .notif-trophy { font-size: 36px; }
-
-    .location-indicator { font-size: 9px; padding: 2px 8px; }
-    .tracking-status { font-size: 9px; padding: 4px 8px; }
-    #locationStatus { font-size: 11px; padding: 8px 12px; }
-    .modal-overlay { padding: 10px; }
-    .modal-content { border-radius: 12px; padding: 16px; width: 100%; }
-    .modal-header .subtitle { font-size: 10px; }
-
-    .tab-content { padding: 12px; border-radius: 10px; }
-    .tab-content h3 { font-size: 16px; }
-    .tab-content h3 small { font-size: 10px; }
-
-    #tabMyPerformance [style*="grid-template-columns:repeat(7,1fr)"] {
-        display: flex !important;
-        flex-wrap: nowrap !important;
-        overflow-x: auto !important;
-        -webkit-overflow-scrolling: touch !important;
-        gap: 4px !important;
-        padding: 4px 0 !important;
-        grid-template-columns: unset !important;
-    }
-    #tabMyPerformance [style*="grid-template-columns:repeat(7,1fr)"] > div {
-        min-width: 60px !important;
-        flex: 0 0 auto !important;
-        padding: 4px 6px !important;
-    }
-    #tabMyPerformance [style*="grid-template-columns:repeat(7,1fr)"] > div div[style*="font-size:16px"] {
-        font-size: 12px !important;
-    }
+    .header h1 { font-size: 20px; }
+    .stats-grid { grid-template-columns: 1fr 1fr; }
+    .login-container { margin: 30px 16px; padding: 30px 24px; }
+    .tabs button { padding: 6px 12px; font-size: 11px; }
+    .tab-content { padding: 16px; }
+    .worker-profile-section { flex-direction: column; text-align: center; }
+    .worker-profile-info .pay-info { justify-content: center; }
 }
 
-/* ============================================================
-   📱 EXTRA SMALL PHONES (under 480px)
-   ============================================================ */
-
-@media (max-width: 480px) {
-    .login-container { padding: 20px 14px; margin: 10px 8px; }
-    .login-container h2 { font-size: 24px; }
-    .login-container input { padding: 10px 12px; font-size: 14px; }
-    .login-container .btn-login { padding: 12px; font-size: 14px; }
-    
-    .header h1 { font-size: 16px; letter-spacing: 1px; }
-    .header-user { font-size: 10px; }
-    .header-user .user-name { font-size: 10px; }
-    .header-user .role-badge { font-size: 8px; padding: 2px 10px; }
-    .btn-logout { font-size: 10px; padding: 4px 10px; }
-    
-    .stats-grid { grid-template-columns: 1fr 1fr; gap: 6px; }
-    .stat-card { padding: 12px 8px; }
-    .stat-card .number { font-size: 18px; }
-    .stat-card .label { font-size: 8px; }
-    
-    .branch-grid { grid-template-columns: 1fr; }
-    .tabs button { font-size: 9px; padding: 4px 8px; }
-    
-    .pay-reduction-grid .stat-box { min-width: 80px; }
-    .pay-summary-grid { grid-template-columns: 1fr; }
-    .bonus-accrual-grid { grid-template-columns: 1fr; }
-    .compact-grid { grid-template-columns: 1fr 1fr; gap: 4px; }
-    
-    .worker-profile-section { padding: 12px; }
-    .worker-profile-info h2 { font-size: 16px; }
-    .worker-avatar-large { width: 50px; height: 50px; }
-    
-    .modal-content { padding: 14px 12px; }
-    .modal-header h3 { font-size: 16px; }
-    
-    .compact-card { padding: 8px; }
-    .compact-card .value { font-size: 14px; }
-    
-    .chart-box { padding: 10px; }
-    .chart-box h4 { font-size: 11px; }
-    .chart-box canvas { max-height: 120px; }
-    
-    .leaderboard-item .rank { font-size: 14px; width: 28px; }
-    .leaderboard-item .name { font-size: 11px; }
-    .leaderboard-item .value { font-size: 11px; }
-
-    #workerBonusSliders > div {
-        min-width: 140px !important;
-        max-width: 170px !important;
-        padding: 8px 10px !important;
-    }
-    #workerBonusSliders > div .sim-worker-credits {
-        font-size: 14px !important;
-    }
-    #workerBonusSliders > div .sim-worker-name {
-        font-size: 10px !important;
-    }
-    
-    .what-if-simulator > div:last-child {
-        gap: 4px !important;
-        padding: 6px 8px !important;
-    }
-    .what-if-simulator > div:last-child span {
-        font-size: 7px !important;
-        padding: 2px 8px !important;
-    }
-
+@media (max-width: 640px) {
     .branch-notification-container {
         padding: 24px 16px 18px;
         border-radius: 16px;
