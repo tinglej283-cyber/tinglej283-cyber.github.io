@@ -1396,6 +1396,21 @@ table td strong { color: #f0ebe6; font-weight: 500; }
     .notif-footer { flex-direction: column; gap: 2px; text-align: center; }
     .notif-trophy { font-size: 24px; }
 }
+/* FULL SCREEN ON PHONES */
+@media (max-width: 768px) {
+    .container, body { 
+        padding: 0 !important; 
+        margin: 0 !important; 
+        max-width: 100% !important;
+        width: 100% !important;
+        overflow-x: hidden !important;
+    }
+    .header, .tab-content, .login-container, .modal-content { 
+        border-radius: 0 !important; 
+        margin: 0 !important; 
+        padding: 12px !important;
+    }
+}
 </style>
 </head>
 <body>
