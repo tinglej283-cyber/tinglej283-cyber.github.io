@@ -2541,14 +2541,28 @@ body::before {
     white-space: nowrap !important;
     z-index: 10 !important;
 }
-
-/* ============================================================
-   📱 HIDE BOTTOM TEXT (COMPETING, WINNER TAKES 80%, ETC)
-   ============================================================ */
-
-/* Hide the conflicting bottom text */
+/* Or if you want to keep it but make it scrollable: */
 .what-if-simulator > div:last-child {
-    display: none !important;
+    display: flex !important;
+    flex-wrap: nowrap !important;
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    gap: 6px !important;
+    padding: 6px 4px !important;
+    font-size: 8px !important;
+    color: rgba(255,255,255,0.15) !important;
+    white-space: nowrap !important;
+    background: rgba(255,255,255,0.02) !important;
+    border-radius: 6px !important;
+    margin-top: 8px !important;
+}
+
+.what-if-simulator > div:last-child span {
+    flex-shrink: 0 !important;
+    padding: 2px 8px !important;
+    background: rgba(255,255,255,0.03) !important;
+    border-radius: 4px !important;
+    border: 1px solid rgba(255,255,255,0.04) !important;
 }
 
     </style>
