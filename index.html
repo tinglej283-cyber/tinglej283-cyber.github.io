@@ -2331,6 +2331,226 @@ body::before {
         grid-template-columns: 1fr !important;
     }
 }
+/* ============================================================
+   📱 FIX: WHAT-IF SIMULATOR - WORKER CREDIT DISTRIBUTION
+   ============================================================ */
+
+/* Make the worker sliders container scrollable */
+#workerBonusSliders {
+    display: flex !important;
+    flex-wrap: nowrap !important;
+    gap: 8px !important;
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    padding: 8px 4px !important;
+    width: 100% !important;
+    scroll-snap-type: x mandatory !important;
+}
+
+#workerBonusSliders > div {
+    min-width: 160px !important;
+    flex: 0 0 auto !important;
+    scroll-snap-align: start !important;
+    padding: 10px 12px !important;
+    background: rgba(255,255,255,0.02) !important;
+    border-radius: 8px !important;
+    border: 1px solid rgba(255,255,255,0.06) !important;
+}
+
+/* Make the bottom info bar scrollable and clean */
+.what-if-simulator > div:last-child {
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    display: flex !important;
+    flex-wrap: nowrap !important;
+    gap: 8px !important;
+    padding: 8px 4px !important;
+    font-size: 8px !important;
+    color: rgba(255,255,255,0.2) !important;
+    white-space: nowrap !important;
+}
+
+.what-if-simulator > div:last-child span {
+    flex-shrink: 0 !important;
+    padding: 2px 6px !important;
+    background: rgba(255,255,255,0.03) !important;
+    border-radius: 4px !important;
+    border: 1px solid rgba(255,255,255,0.04) !important;
+}
+
+/* The info bar inside simulator */
+#workerBonusSliders + div {
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    display: flex !important;
+    flex-wrap: nowrap !important;
+    gap: 4px !important;
+    padding: 6px 4px !important;
+    font-size: 7px !important;
+    color: rgba(255,255,255,0.2) !important;
+    white-space: nowrap !important;
+}
+
+#workerBonusSliders + div span {
+    flex-shrink: 0 !important;
+    padding: 2px 6px !important;
+    background: rgba(255,255,255,0.02) !important;
+    border-radius: 4px !important;
+    border: 1px solid rgba(255,255,255,0.03) !important;
+}
+
+/* Add scroll hint */
+#workerBonusSliders::after {
+    content: '⇢ SWIPE →' !important;
+    position: sticky !important;
+    right: 0 !important;
+    top: 50% !important;
+    transform: translateY(-50%) !important;
+    background: rgba(0,0,0,0.7) !important;
+    color: rgba(255,255,255,0.3) !important;
+    font-size: 7px !important;
+    padding: 2px 8px !important;
+    border-radius: 4px !important;
+    pointer-events: none !important;
+    white-space: nowrap !important;
+    z-index: 10 !important;
+    margin-left: 4px !important;
+    flex-shrink: 0 !important;
+}
+
+/* ============================================================
+   📱 WHAT-IF SIMULATOR - MOBILE ADJUSTMENTS
+   ============================================================ */
+
+@media (max-width: 768px) {
+    .what-if-simulator {
+        padding: 12px !important;
+        overflow: visible !important;
+    }
+    
+    .simulator-controls {
+        display: grid !important;
+        grid-template-columns: 1fr !important;
+        gap: 8px !important;
+        overflow: visible !important;
+    }
+    
+    .simulator-results {
+        overflow: visible !important;
+    }
+    
+    .simulator-results-grid {
+        display: grid !important;
+        grid-template-columns: 1fr !important;
+        gap: 6px !important;
+    }
+    
+    #workerBonusSliders > div {
+        min-width: 140px !important;
+        padding: 8px 10px !important;
+    }
+    
+    /* Make the "You" badge visible */
+    #workerBonusSliders > div .sim-worker-name {
+        font-size: 10px !important;
+    }
+    
+    #workerBonusSliders > div .sim-worker-credits {
+        font-size: 14px !important;
+    }
+}
+
+@media (max-width: 480px) {
+    #workerBonusSliders > div {
+        min-width: 120px !important;
+        padding: 6px 8px !important;
+    }
+    
+    .what-if-simulator > div:last-child {
+        font-size: 7px !important;
+    }
+    .what-if-simulator > div:last-child span {
+        padding: 2px 4px !important;
+    }
+    
+    #workerBonusSliders + div {
+        font-size: 6px !important;
+    }
+    #workerBonusSliders + div span {
+        padding: 1px 4px !important;
+    }
+}
+
+/* ============================================================
+   📱 SCROLL HINT FOR DISTRIBUTION BREAKDOWN
+   ============================================================ */
+
+#simDistribution {
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    width: 100% !important;
+}
+
+#simDistribution > div {
+    min-width: 350px !important;
+    white-space: nowrap !important;
+}
+
+#simDistribution::after {
+    content: '⇢ SWIPE →' !important;
+    position: sticky !important;
+    right: 0 !important;
+    top: 50% !important;
+    transform: translateY(-50%) !important;
+    background: rgba(0,0,0,0.7) !important;
+    color: rgba(255,255,255,0.3) !important;
+    font-size: 7px !important;
+    padding: 2px 8px !important;
+    border-radius: 4px !important;
+    pointer-events: none !important;
+    white-space: nowrap !important;
+    z-index: 10 !important;
+}
+
+/* ============================================================
+   📱 POOL BREAKDOWN SCROLLABLE
+   ============================================================ */
+
+#simTotalBreakdown {
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    width: 100% !important;
+}
+
+#simTotalBreakdown > div {
+    min-width: 300px !important;
+}
+
+#simTotalBreakdown::after {
+    content: '⇢ SWIPE →' !important;
+    position: sticky !important;
+    right: 0 !important;
+    top: 50% !important;
+    transform: translateY(-50%) !important;
+    background: rgba(0,0,0,0.7) !important;
+    color: rgba(255,255,255,0.3) !important;
+    font-size: 7px !important;
+    padding: 2px 8px !important;
+    border-radius: 4px !important;
+    pointer-events: none !important;
+    white-space: nowrap !important;
+    z-index: 10 !important;
+}
+
+/* ============================================================
+   📱 HIDE BOTTOM TEXT (COMPETING, WINNER TAKES 80%, ETC)
+   ============================================================ */
+
+/* Hide the conflicting bottom text */
+.what-if-simulator > div:last-child {
+    display: none !important;
+}
+
     </style>
 </head>
 <body>
