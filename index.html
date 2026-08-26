@@ -1411,6 +1411,78 @@ table td strong { color: #f0ebe6; font-weight: 500; }
         padding: 12px !important;
     }
 }
+/* ============================================================
+   📱 FIX: DISTRIBUTION BREAKDOWN - PHONE FRIENDLY
+   ============================================================ */
+
+@media (max-width: 768px) {
+    /* Fix the distribution breakdown container */
+    #simDistribution {
+        overflow-x: auto !important;
+        -webkit-overflow-scrolling: touch !important;
+        width: 100% !important;
+        padding: 4px 0 !important;
+    }
+    
+    #simDistribution > div {
+        min-width: 320px !important;
+        font-size: 10px !important;
+    }
+    
+    /* Make each row compact on phones */
+    #simDistribution > div > div {
+        display: flex !important;
+        align-items: center !important;
+        gap: 4px !important;
+        padding: 4px 6px !important;
+        font-size: 9px !important;
+        flex-wrap: nowrap !important;
+    }
+    
+    /* Rank emoji */
+    #simDistribution > div > div span:first-child {
+        font-size: 12px !important;
+        min-width: 28px !important;
+    }
+    
+    /* Worker name */
+    #simDistribution > div > div span:nth-child(2) {
+        font-size: 9px !important;
+        min-width: 40px !important;
+        white-space: nowrap !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+        max-width: 60px !important;
+    }
+    
+    /* Credits */
+    #simDistribution > div > div span:nth-child(3) {
+        font-size: 8px !important;
+        min-width: 50px !important;
+    }
+    
+    /* Lifetime */
+    #simDistribution > div > div span:nth-child(4) {
+        font-size: 7px !important;
+        min-width: 50px !important;
+        display: none !important; /* Hide on phones to save space */
+    }
+    
+    /* Percentage */
+    #simDistribution > div > div span:nth-child(6) {
+        font-size: 9px !important;
+        min-width: 35px !important;
+        font-weight: 700 !important;
+    }
+    
+    /* Amount */
+    #simDistribution > div > div span:last-child {
+        font-size: 9px !important;
+        min-width: 55px !important;
+        font-weight: 600 !important;
+        text-align: right !important;
+    }
+}
 </style>
 </head>
 <body>
