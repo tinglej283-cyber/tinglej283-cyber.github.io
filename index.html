@@ -1483,6 +1483,43 @@ table td strong { color: #f0ebe6; font-weight: 500; }
         text-align: right !important;
     }
 }
+/* ============================================================
+   📱 MAKE DISTRIBUTION BREAKDOWN SCROLLABLE ON PHONES
+   ============================================================ */
+
+@media (max-width: 768px) {
+    /* Make the distribution container scrollable */
+    #simDistribution {
+        overflow-x: auto !important;
+        -webkit-overflow-scrolling: touch !important;
+        width: 100% !important;
+        padding: 4px 0 !important;
+        white-space: nowrap !important;
+    }
+    
+    /* Make the inner content wider so it scrolls */
+    #simDistribution > div {
+        min-width: 500px !important;
+        display: block !important;
+    }
+    
+    /* Each row - keep them in one line */
+    #simDistribution > div > div {
+        display: flex !important;
+        align-items: center !important;
+        gap: 8px !important;
+        padding: 6px 10px !important;
+        font-size: 10px !important;
+        flex-wrap: nowrap !important;
+        width: 100% !important;
+        min-width: 480px !important;
+    }
+    
+    /* Hide the lifetime column to save space */
+    #simDistribution > div > div span:nth-child(4) {
+        display: none !important;
+    }
+}
 </style>
 </head>
 <body>
