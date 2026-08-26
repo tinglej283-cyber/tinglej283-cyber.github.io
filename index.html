@@ -1330,6 +1330,181 @@ table td strong { color: #f0ebe6; font-weight: 500; }
 .tabs::-webkit-scrollbar {
     display: none;
 }
+/* ============================================================
+   📱 FORCE EVERYTHING TO FIT PHONE SCREEN
+   ============================================================ */
+
+/* Make everything fit the screen */
+* {
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+}
+
+/* Prevent horizontal scrolling */
+html, body {
+    overflow-x: hidden !important;
+    width: 100% !important;
+    padding: 8px !important;
+    margin: 0 !important;
+}
+
+/* Container takes FULL width on mobile */
+.container {
+    max-width: 100% !important;
+    padding: 0 4px !important;
+    margin: 0 !important;
+    width: 100% !important;
+    overflow-x: hidden !important;
+}
+
+/* Headers and cards take full width */
+.header, .tab-content, .stat-card, .branch-card {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+}
+
+/* Tables become scrollable ONLY when needed */
+.table-wrap {
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    max-width: 100% !important;
+}
+.table-wrap table {
+    min-width: 100% !important;
+    width: 100% !important;
+}
+
+/* Grids stack vertically on phones */
+.stats-grid, .branch-grid, .pay-reduction-grid, .bonus-accrual-grid {
+    grid-template-columns: 1fr 1fr !important;
+    gap: 8px !important;
+}
+
+/* Make tabs scroll horizontally if needed, but show all */
+.tabs {
+    overflow-x: auto !important;
+    flex-wrap: nowrap !important;
+    -webkit-overflow-scrolling: touch !important;
+    padding: 4px 8px !important;
+}
+.tabs button {
+    flex-shrink: 0 !important;
+    font-size: 10px !important;
+    padding: 6px 10px !important;
+}
+
+/* Login screen fills the screen */
+.login-container {
+    max-width: 100% !important;
+    margin: 10px !important;
+    padding: 20px 16px !important;
+    width: auto !important;
+}
+
+/* Charts fit */
+.chart-box canvas {
+    max-height: 150px !important;
+    width: 100% !important;
+}
+.chart-grid {
+    grid-template-columns: 1fr !important;
+}
+
+/* Remove any blue boundary */
+body::before {
+    display: none !important;
+}
+
+/* Cards and boxes don't overflow */
+.worker-profile-section, .branch-rank-card, .team-pair-card {
+    width: 100% !important;
+    max-width: 100% !important;
+    padding: 12px !important;
+}
+
+/* Pay cards fit */
+.pay-summary-grid, .compact-grid {
+    grid-template-columns: 1fr 1fr !important;
+    gap: 6px !important;
+}
+
+/* Modals fit */
+.modal-content {
+    max-width: 95% !important;
+    margin: 10px !important;
+    padding: 16px !important;
+}
+
+/* Simulator fits */
+.simulator-controls {
+    grid-template-columns: 1fr !important;
+}
+.simulator-results-grid {
+    grid-template-columns: 1fr !important;
+}
+
+/* What-if simulator worker sliders */
+#workerBonusSliders {
+    grid-template-columns: 1fr !important;
+}
+
+/* Leaderboard items fit */
+.leaderboard-item {
+    flex-wrap: wrap !important;
+    padding: 8px 10px !important;
+}
+
+/* Notification fits */
+.branch-notification-container {
+    max-width: 95% !important;
+    margin: 10px !important;
+    padding: 16px !important;
+}
+
+/* ============================================================
+   📱 EXTRA SMALL PHONES (under 400px)
+   ============================================================ */
+
+@media (max-width: 400px) {
+    .stats-grid, .branch-grid, .pay-reduction-grid, .bonus-accrual-grid {
+        grid-template-columns: 1fr !important;
+    }
+    .pay-summary-grid, .compact-grid {
+        grid-template-columns: 1fr !important;
+    }
+    .header-user {
+        flex-direction: column !important;
+        align-items: center !important;
+        gap: 4px !important;
+    }
+    .header h1 {
+        font-size: 16px !important;
+        text-align: center !important;
+    }
+    .login-container {
+        padding: 16px 12px !important;
+        margin: 8px !important;
+    }
+    .login-container h2 {
+        font-size: 22px !important;
+    }
+    .tab-content {
+        padding: 8px !important;
+    }
+    .tabs button {
+        font-size: 8px !important;
+        padding: 4px 6px !important;
+    }
+    table {
+        font-size: 8px !important;
+    }
+    table th, table td {
+        padding: 3px 4px !important;
+        font-size: 8px !important;
+    }
+}
     </style>
 </head>
 <body>
