@@ -1718,6 +1718,7 @@ table td strong { color: #f0ebe6; font-weight: 500; }
                 <button data-tab="tabTimePerformance">⏱️ Time & Performance</button>
                 <button data-tab="tabSettings">⚙️ Settings</button>
                 <button data-tab="tabLocationMonitoring">📍 Live Tracking</button>
+                <button data-tab="tabClearBonuses">💰 Balances</button>
             </div>
 
             <!-- TABS - WORKER -->
@@ -1846,6 +1847,34 @@ table td strong { color: #f0ebe6; font-weight: 500; }
         </div>
         <div id="workerBonusSliders"></div>
     </div>
+    <!-- Add this inside the What-If Simulator section -->
+<div style="margin-top:12px;display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+    <!-- Time Display -->
+    <div style="background:rgba(255,255,255,0.03);border-radius:6px;padding:8px 12px;border:1px solid rgba(255,255,255,0.06);">
+        <div style="font-size:8px;color:rgba(255,255,255,0.3);text-transform:uppercase;letter-spacing:1px;">⏰ Check-In Time</div>
+        <div id="simCheckInTime" style="font-size:13px;color:#f0ebe6;font-weight:600;">6:45 AM</div>
+        <div id="simTimeStatus" style="font-size:9px;color:#7bcfa6;">✅ Before 7AM (10% Tier 2)</div>
+    </div>
+    
+    <!-- Beat & Streak Display -->
+    <div style="background:rgba(255,255,255,0.03);border-radius:6px;padding:8px 12px;border:1px solid rgba(255,255,255,0.06);">
+        <div style="font-size:8px;color:rgba(255,255,255,0.3);text-transform:uppercase;letter-spacing:1px;">🧪 Stress Details</div>
+        <div style="display:flex;gap:12px;justify-content:center;">
+            <div>
+                <div style="font-size:9px;color:rgba(255,255,255,0.3);">Beat%</div>
+                <div id="simBeatPercent" style="font-size:13px;color:#ffd700;font-weight:600;">80%</div>
+            </div>
+            <div>
+                <div style="font-size:9px;color:rgba(255,255,255,0.3);">Streak</div>
+                <div id="simStreak" style="font-size:13px;color:#7bcfa6;font-weight:600;">5 days</div>
+            </div>
+            <div>
+                <div style="font-size:9px;color:rgba(255,255,255,0.3);">Score</div>
+                <div id="simStressScore" style="font-size:13px;color:#d4a574;font-weight:600;">85</div>
+            </div>
+        </div>
+    </div>
+</div>
     
     <div class="simulator-results" id="simulatorResults">
         <div class="simulator-results-grid">
@@ -2162,6 +2191,22 @@ table td strong { color: #f0ebe6; font-weight: 500; }
                     <div id="tpSummaryContent" style="overflow-x:auto;max-height:350px;overflow-y:auto;"></div>
                 </div>
             </div>
+            <!-- ===== TAB: CLEAR BONUSES ===== -->
+<div id="tabClearBonuses" class="tab-content">
+    <h3>💰 Clear Bonuses <small>— view and clear worker balances</small></h3>
+    <p style="color:rgba(255,255,255,0.3);font-size:11px;margin-bottom:16px;">
+        📊 View all workers' bonus balances and clear them when paid.
+    </p>
+    
+    <div style="display:flex;gap:10px;flex-wrap:wrap;margin:14px 0;">
+        <button class="btn-primary" onclick="loadBonusBalances()">🔄 Refresh</button>
+        <button class="btn-success" onclick="clearAllBonuses()">✅ Clear All Balances</button>
+    </div>
+    
+    <div id="bonusBalancesContent">
+        <div class="loading">Loading bonus balances...</div>
+    </div>
+</div> 
 
         </div><!-- end dashboard -->
 
@@ -6369,13 +6414,28 @@ function updateSimulator() {
     }
     
     // ============================================================
-    // STEP 2: GENERATE WORKER DATA
+    // STEP 2: GENERATE WORKER DATA WITH TIME, BEAT, STREAK
     // ============================================================
     const simulatedWorkers = [];
     let maxDailyCredits = 0;
     const checkInTimes = {};
     const now = new Date();
     const target = 5000;
+    
+    // Define check-in times for variety (so we can see before/after 7AM)
+    const checkInOptions = [
+        { hour: 6, minute: 15 },  // 6:15 AM - Before 7AM
+        { hour: 6, minute: 45 },  // 6:45 AM - Before 7AM
+        { hour: 7, minute: 5 },   // 7:05 AM - After 7AM
+        { hour: 7, minute: 30 },  // 7:30 AM - After 7AM
+        { hour: 8, minute: 0 },   // 8:00 AM - After 7AM
+        { hour: 8, minute: 30 },  // 8:30 AM - After 7AM
+        { hour: 9, minute: 0 },   // 9:00 AM - After 7AM
+        { hour: 9, minute: 30 },  // 9:30 AM - After 7AM
+    ];
+    
+    // Shuffle check-in options for random assignment
+    const shuffledOptions = [...checkInOptions].sort(() => Math.random() - 0.5);
     
     for (let i = 0; i < workerCount; i++) {
         const inputId = `simWorkerCredits_${i}`;
@@ -6398,23 +6458,32 @@ function updateSimulator() {
             lifetimeCredits = dailyCredits * 30;
         }
         
-        // Simulate check-in times (6AM - 10AM)
-        const hourOffset = Math.random() * 4;
-        const checkInHour = 6 + hourOffset;
-        const checkInMinute = Math.floor((checkInHour % 1) * 60);
+        // Assign check-in time from shuffled options
+        const option = shuffledOptions[i % shuffledOptions.length];
         const checkInDate = new Date(now);
-        checkInDate.setHours(Math.floor(checkInHour), checkInMinute, 0, 0);
+        checkInDate.setHours(option.hour, option.minute, 0, 0);
+        const checkInTimeStr = checkInDate.toLocaleTimeString('en-US', { 
+            hour: '2-digit', 
+            minute: '2-digit',
+            hour12: true 
+        });
         checkInTimes[i] = checkInDate.toISOString();
-        const isBefore7AM = checkInHour < 7 || (checkInHour === 7 && checkInMinute === 0);
+        const isBefore7AM = option.hour < 7 || (option.hour === 7 && option.minute === 0);
         
-        // Stress test: PASS if credits >= target
+        // 🆕 CALCULATE BEAT % (based on credits vs target)
         const passed = dailyCredits >= target;
         const beatPercent = passed ? Math.min(((dailyCredits - target) / target) * 100, 100) : 0;
+        
+        // 🆕 CALCULATE STREAK (simulated based on credits)
         let streak = 0;
         if (passed) {
-            // Simulate streak: 0-10 days
-            streak = Math.floor(Math.random() * 11);
+            // Higher credits = longer potential streak
+            const maxStreak = Math.floor(dailyCredits / 1000);
+            streak = Math.min(Math.floor(Math.random() * maxStreak) + 1, 50);
+            if (dailyCredits >= 10000) streak = Math.min(streak + 5, 50);
         }
+        
+        // 🆕 STRESS SCORE = Beat% + Streak
         const stressScore = passed ? beatPercent + streak : 0;
         
         simulatedWorkers.push({
@@ -6425,11 +6494,13 @@ function updateSimulator() {
             isFullPay: dailyCredits >= 1000,
             isYou: i === 0,
             checkInTime: checkInDate,
+            checkInTimeStr: checkInTimeStr,
             isBefore7AM: isBefore7AM,
             passed: passed,
             beatPercent: beatPercent,
             streak: streak,
-            stressScore: stressScore
+            stressScore: stressScore,
+            target: target
         });
         
         if (dailyCredits > maxDailyCredits) maxDailyCredits = dailyCredits;
@@ -6525,16 +6596,22 @@ function updateSimulator() {
         const t3 = tier3Results.find(r => r.worker.id === w.id);
         if (t3) tier3 = t3.share || 0;
         
-        return { ...w, tier1, tier2, tier3, total: tier1 + tier2 + tier3, isTier1Winner, isTier2Winner };
+        return { 
+            ...w, 
+            tier1, 
+            tier2, 
+            tier3, 
+            total: tier1 + tier2 + tier3, 
+            isTier1Winner, 
+            isTier2Winner 
+        };
     });
     
     const sortedByTotal = [...results].sort((a, b) => b.total - a.total);
     
     // ============================================================
-    // STEP 7: UPDATE UI
+    // STEP 7: UPDATE UI - WORKER BARS
     // ============================================================
-    
-    // Update bars
     for (let i = 0; i < workerCount; i++) {
         const bar = document.getElementById(`simWorkerBar_${i}`);
         const creditDisplay = document.getElementById(`simWorkerCreditsDisplay_${i}`);
@@ -6552,7 +6629,9 @@ function updateSimulator() {
         }
     }
     
-    // Your results
+    // ============================================================
+    // STEP 8: UPDATE YOUR RESULTS
+    // ============================================================
     const yourResult = results.find(r => r.isYou);
     if (yourResult) {
         document.getElementById('simCredits').textContent = Math.round(yourResult.dailyCredits).toLocaleString();
@@ -6567,7 +6646,9 @@ function updateSimulator() {
     
     document.getElementById('simPoolSize').textContent = 'UGX ' + Math.round(bonusPool).toLocaleString();
     
-    // Tier status
+    // ============================================================
+    // STEP 9: TIER STATUS
+    // ============================================================
     let tierStatus = '🏆 ';
     if (tier1Winner) {
         tierStatus += `T1: ${tier1Winner.name} (30%) `;
@@ -6575,13 +6656,15 @@ function updateSimulator() {
         tierStatus += 'T1: TIE → Rolled to T3 ';
     }
     if (tier2Winner) {
-        tierStatus += `| ⏰ T2: ${tier2Winner.name} (${tier2Winner.isBefore7AM ? '10%' : '5%'})`;
+        tierStatus += `| ⏰ T2: ${tier2Winner.name} (${tier2Winner.isBefore7AM ? '10% ✅ Before 7AM' : '5% ⚠️ After 7AM'})`;
     } else if (tier2Vanished) {
         tierStatus += '| ⏰ T2: TIE → Vanished';
     }
     document.getElementById('simSnatchLevel').textContent = tierStatus || '🎯 Unified Bonus System';
     
-    // Distribution
+    // ============================================================
+    // STEP 10: DISTRIBUTION BREAKDOWN
+    // ============================================================
     const rankEmojis = ['🥇', '🥈', '🥉'];
     let breakdownHTML = '';
     for (let i = 0; i < sortedByTotal.length; i++) {
@@ -6596,18 +6679,24 @@ function updateSimulator() {
         const maxBonus = sortedByTotal[0]?.total || 1;
         const barWidth = (r.total / maxBonus) * 100;
         
+        // 🆕 Show time, beat, streak
+        const timeBadge = r.isBefore7AM ? '🟢' : '🟡';
+        const stressBadge = r.passed ? '✅' : '❌';
+        
         breakdownHTML += `
-            <div style="display:flex;align-items:center;gap:8px;padding:4px 0;border-bottom:1px solid rgba(255,255,255,0.03);">
-                <span style="font-size:14px;min-width:40px;">${rankIcon}</span>
-                <span style="font-size:12px;color:#f0ebe6;min-width:80px;">${r.name}${isYou}</span>
-                <span style="font-size:10px;color:rgba(255,255,255,0.4);min-width:70px;">${Math.round(r.dailyCredits).toLocaleString()} cr</span>
-                <span style="font-size:9px;color:rgba(255,255,255,0.2);min-width:60px;">
-                    🏆 ${r.tier1.toFixed(0)} | ⏰ ${r.tier2.toFixed(0)} | 🧪 ${r.tier3.toFixed(0)}
+            <div style="display:flex;align-items:center;gap:6px;padding:4px 0;border-bottom:1px solid rgba(255,255,255,0.03);flex-wrap:wrap;">
+                <span style="font-size:14px;min-width:36px;">${rankIcon}</span>
+                <span style="font-size:11px;color:#f0ebe6;min-width:70px;">${r.name}${isYou}</span>
+                <span style="font-size:9px;color:rgba(255,255,255,0.4);min-width:60px;">${Math.round(r.dailyCredits).toLocaleString()} cr</span>
+                <span style="font-size:8px;color:${r.isBefore7AM ? '#7bcfa6' : '#d4a574'};min-width:70px;">${timeBadge} ${r.checkInTimeStr}</span>
+                <span style="font-size:8px;color:${r.passed ? '#7bcfa6' : '#e94560'};min-width:60px;">${stressBadge} ${r.passed ? 'B' + Math.round(r.beatPercent) + '% S' + r.streak : 'FAILED'}</span>
+                <span style="font-size:8px;color:rgba(255,255,255,0.2);min-width:50px;">
+                    🏆${r.tier1.toFixed(0)} ⏰${r.tier2.toFixed(0)} 🧪${r.tier3.toFixed(0)}
                 </span>
-                <div style="flex:1;height:8px;background:rgba(255,255,255,0.06);border-radius:4px;overflow:hidden;">
-                    <div style="height:100%;background:${color};border-radius:4px;width:${Math.max(barWidth, 2)}%;"></div>
+                <div style="flex:1;height:6px;background:rgba(255,255,255,0.06);border-radius:3px;overflow:hidden;min-width:40px;">
+                    <div style="height:100%;background:${color};border-radius:3px;width:${Math.max(barWidth, 2)}%;"></div>
                 </div>
-                <span style="font-size:11px;color:${color};min-width:80px;text-align:right;">
+                <span style="font-size:10px;color:${color};min-width:70px;text-align:right;">
                     ${r.total >= 1000000 ? 'UGX ' + (r.total/1000000).toFixed(2) + 'M' : 'UGX ' + Math.round(r.total).toLocaleString()}
                 </span>
             </div>
@@ -6615,7 +6704,9 @@ function updateSimulator() {
     }
     document.getElementById('simDistribution').innerHTML = breakdownHTML;
     
-    // Pool Breakdown
+    // ============================================================
+    // STEP 11: POOL BREAKDOWN
+    // ============================================================
     const tier1Actual = tier1Amount;
     const tier2Actual = tier2Amount;
     const tier3Actual = tier3Pool;
@@ -6625,17 +6716,17 @@ function updateSimulator() {
             <div style="text-align:center;padding:8px;background:rgba(255,215,0,0.05);border-radius:6px;border:1px solid ${tier1Actual > 0 ? 'rgba(255,215,0,0.3)' : 'rgba(255,215,0,0.1)'};">
                 <div style="font-size:9px;color:rgba(255,255,255,0.3);">🏆 Tier 1 (30%)</div>
                 <div style="font-size:14px;font-weight:700;color:#ffd700;">UGX ${Math.round(tier1Actual).toLocaleString()}</div>
-                <div style="font-size:8px;color:rgba(255,255,255,0.15);">${tier1Winner ? tier1Winner.name : 'TIE → Rolled to T3'}</div>
+                <div style="font-size:8px;color:rgba(255,255,255,0.15);">${tier1Winner ? tier1Winner.name + ' (' + Math.round(tier1Winner.dailyCredits).toLocaleString() + ' cr)' : 'TIE → Rolled to T3'}</div>
             </div>
             <div style="text-align:center;padding:8px;background:rgba(123,207,166,0.05);border-radius:6px;border:1px solid ${tier2Actual > 0 ? 'rgba(123,207,166,0.3)' : 'rgba(123,207,166,0.1)'};">
                 <div style="font-size:9px;color:rgba(255,255,255,0.3);">⏰ Tier 2 (10%)</div>
                 <div style="font-size:14px;font-weight:700;color:#7bcfa6;">UGX ${Math.round(tier2Actual).toLocaleString()}</div>
-                <div style="font-size:8px;color:rgba(255,255,255,0.15);">${tier2Winner ? tier2Winner.name + (tier2Winner.isBefore7AM ? ' ✅' : ' ⚠️') : 'TIE → Vanished'}</div>
+                <div style="font-size:8px;color:rgba(255,255,255,0.15);">${tier2Winner ? tier2Winner.name + ' (' + tier2Winner.checkInTimeStr + ')' + (tier2Winner.isBefore7AM ? ' ✅ 10%' : ' ⚠️ 5%') : 'TIE → Vanished'}</div>
             </div>
             <div style="text-align:center;padding:8px;background:rgba(212,165,116,0.05);border-radius:6px;border:1px solid rgba(212,165,116,0.2);">
                 <div style="font-size:9px;color:rgba(255,255,255,0.3);">🧪 Tier 3 (60%)</div>
                 <div style="font-size:14px;font-weight:700;color:#d4a574;">UGX ${Math.round(tier3Actual).toLocaleString()}</div>
-                <div style="font-size:8px;color:rgba(255,255,255,0.15);">${tier1RolledToTier3 ? '🔄 +30% from Tier 1' : 'Stress Champions'}</div>
+                <div style="font-size:8px;color:rgba(255,255,255,0.15);">${tier1RolledToTier3 ? '🔄 +30% from Tier 1' : 'Stress Champions'} (${passingWorkers.length} passer${passingWorkers.length !== 1 ? 's' : ''})</div>
             </div>
         </div>
         <div style="text-align:center;padding:8px;background:rgba(255,215,0,0.05);border-radius:6px;border:1px solid rgba(255,215,0,0.1);">
@@ -6646,7 +6737,35 @@ function updateSimulator() {
     `;
     document.getElementById('simTotalBreakdown').innerHTML = poolBreakdownHTML;
     
-    // Message
+    // ============================================================
+    // STEP 12: UPDATE YOUR DETAILS SECTION (Time, Beat, Streak)
+    // ============================================================
+    if (yourResult) {
+        // Update Time Display
+        document.getElementById('simCheckInTime').textContent = yourResult.checkInTimeStr;
+        const timeStatus = document.getElementById('simTimeStatus');
+        if (yourResult.isBefore7AM) {
+            timeStatus.textContent = '✅ Before 7AM (10% Tier 2)';
+            timeStatus.style.color = '#7bcfa6';
+        } else {
+            timeStatus.textContent = '⚠️ After 7AM (5% Tier 2)';
+            timeStatus.style.color = '#d4a574';
+        }
+        
+        // Update Beat & Streak Display
+        document.getElementById('simBeatPercent').textContent = yourResult.passed ? Math.round(yourResult.beatPercent) + '%' : '❌ FAILED';
+        document.getElementById('simBeatPercent').style.color = yourResult.passed ? '#ffd700' : '#e94560';
+        
+        document.getElementById('simStreak').textContent = yourResult.passed ? yourResult.streak + ' days' : '❌ FAILED';
+        document.getElementById('simStreak').style.color = yourResult.passed ? '#7bcfa6' : '#e94560';
+        
+        document.getElementById('simStressScore').textContent = yourResult.passed ? Math.round(yourResult.stressScore) : '❌ FAILED';
+        document.getElementById('simStressScore').style.color = yourResult.passed ? '#d4a574' : '#e94560';
+    }
+    
+    // ============================================================
+    // STEP 13: MESSAGE
+    // ============================================================
     const message = document.getElementById('simMessage');
     if (yourResult) {
         const rank = sortedByTotal.findIndex(r => r.isYou) + 1;
@@ -6686,14 +6805,15 @@ function updateSimulator() {
         
         const stressInfo = yourResult.passed ? 
             `🧪 PASSED! Beat ${Math.round(yourResult.beatPercent)}% • Streak ${yourResult.streak} • Score ${Math.round(yourResult.stressScore)}` :
-            `🧪 FAILED • No Tier 3`;
+            `🧪 FAILED • No Tier 3 (Need ${yourResult.target.toLocaleString()} credits)`;
         
         message.innerHTML = `
             <div style="color:${statusColor};font-weight:600;font-size:14px;">📊 Rank #${rank} of ${totalWorkers}</div>
-            <div style="margin-top:4px;font-size:12px;">
+            <div style="margin-top:4px;font-size:11px;">
                 Daily Credits: ${Math.round(yourResult.dailyCredits).toLocaleString()} 
                 | Daily Pay: ${isFullPay ? '✅ UGX 10,000 (Full)' : '❌ UGX ' + Math.round(yourResult.dailyCredits * 0.9).toLocaleString()}
                 | Lifetime: ${Math.round(yourResult.lifetimeCredits).toLocaleString()}
+                | ⏰ ${yourResult.checkInTimeStr} ${yourResult.isBefore7AM ? '✅ Before 7AM' : '⚠️ After 7AM'}
             </div>
             <div style="margin-top:4px;font-size:11px;color:rgba(255,255,255,0.5);">
                 🏆 Tier 1: UGX ${Math.round(yourResult.tier1).toLocaleString()} 
@@ -15787,6 +15907,301 @@ document.addEventListener('click', function(e) {
 window.addEventListener('load', function() {
     setTimeout(generateQRCode, 300);
 });
+// ============================================================
+// 💰 BONUS BALANCES - VIEW AND CLEAR
+// ============================================================
+
+async function loadBonusBalances() {
+    if (!currentUser || currentUser.role !== 'manager') {
+        alert('Only managers can view bonus balances.');
+        return;
+    }
+    
+    const container = document.getElementById('bonusBalancesContent');
+    container.innerHTML = '<div class="loading">Loading balances...</div>';
+    
+    try {
+        const { data: workers, error: workersError } = await _supabase
+            .from('workers')
+            .select('id, full_name, jc_id, is_active')
+            .eq('is_active', true)
+            .order('full_name');
+        
+        if (workersError) throw workersError;
+        
+        let html = `
+            <div style="overflow-x:auto;">
+                <table style="width:100%;font-size:12px;">
+                    <thead>
+                        <tr style="background:rgba(255,255,255,0.03);">
+                            <th style="padding:8px 12px;text-align:left;color:rgba(255,255,255,0.4);">Worker</th>
+                            <th style="padding:8px 12px;text-align:left;color:rgba(255,255,255,0.4);">JC ID</th>
+                            <th style="padding:8px 12px;text-align:right;color:#ffd700;">🏆 Tier 1</th>
+                            <th style="padding:8px 12px;text-align:right;color:#7bcfa6;">⏰ Tier 2</th>
+                            <th style="padding:8px 12px;text-align:right;color:#d4a574;">🧪 Tier 3</th>
+                            <th style="padding:8px 12px;text-align:right;color:#ffd700;">💰 Total</th>
+                            <th style="padding:8px 12px;text-align:center;color:rgba(255,255,255,0.4);">Status</th>
+                            <th style="padding:8px 12px;text-align:center;color:rgba(255,255,255,0.4);">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+        `;
+        
+        let grandTotal = 0;
+        
+        for (const worker of workers) {
+            const { data: accrual } = await _supabase
+                .from('worker_bonus_accrual')
+                .select('*')
+                .eq('worker_id', worker.id)
+                .maybeSingle();
+            
+            const tier1 = accrual?.total_tier1 || 0;
+            const tier2 = accrual?.total_tier2 || 0;
+            const tier3 = accrual?.total_tier3 || 0;
+            const total = accrual?.total_bonus || 0;
+            const isPaid = accrual?.is_paid || false;
+            
+            grandTotal += total;
+            
+            const statusColor = isPaid ? '#7bcfa6' : '#ffd700';
+            const statusText = isPaid ? '✅ Paid' : '💰 Due';
+            
+            html += `
+                <tr style="border-bottom:1px solid rgba(255,255,255,0.03);${!isPaid && total > 0 ? 'background:rgba(255,215,0,0.03);' : ''}">
+                    <td style="padding:6px 12px;color:#f0ebe6;font-weight:500;">${worker.full_name}</td>
+                    <td style="padding:6px 12px;color:rgba(255,255,255,0.4);">${worker.jc_id}</td>
+                    <td style="padding:6px 12px;text-align:right;color:#ffd700;">UGX ${tier1.toFixed(2)}</td>
+                    <td style="padding:6px 12px;text-align:right;color:#7bcfa6;">UGX ${tier2.toFixed(2)}</td>
+                    <td style="padding:6px 12px;text-align:right;color:#d4a574;">UGX ${tier3.toFixed(2)}</td>
+                    <td style="padding:6px 12px;text-align:right;color:#ffd700;font-weight:700;">UGX ${total.toFixed(2)}</td>
+                    <td style="padding:6px 12px;text-align:center;color:${statusColor};font-weight:600;">${statusText}</td>
+                    <td style="padding:6px 12px;text-align:center;">
+                        ${!isPaid && total > 0 ? 
+                            `<button class="btn-success btn-sm" onclick="clearWorkerBonus('${worker.id}')" style="padding:3px 10px;font-size:9px;">
+                                ✅ Clear
+                            </button>` : 
+                            `<span style="color:rgba(255,255,255,0.2);font-size:9px;">${isPaid ? 'Cleared' : 'No balance'}</span>`
+                        }
+                    </td>
+                </tr>
+            `;
+        }
+        
+        html += `
+                    </tbody>
+                </table>
+            </div>
+            <div style="margin-top:12px;padding:12px 16px;background:rgba(255,215,0,0.05);border-radius:8px;border:1px solid rgba(255,215,0,0.1);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+                <span style="color:rgba(255,255,255,0.3);font-size:12px;">👥 Total Workers: ${workers.length}</span>
+                <span style="color:#ffd700;font-size:14px;font-weight:700;">💰 Grand Total Due: UGX ${grandTotal.toFixed(2)}</span>
+                ${grandTotal > 0 ? `<button class="btn-success" onclick="clearAllBonuses()" style="padding:6px 16px;">✅ Clear All</button>` : ''}
+            </div>
+        `;
+        
+        container.innerHTML = html;
+        
+    } catch (error) {
+        console.error('Error loading bonus balances:', error);
+        container.innerHTML = `<p style="color:#e94560;">Error: ${error.message}</p>`;
+    }
+}
+
+// ============================================================
+// 💰 CLEAR A SINGLE WORKER'S BONUS
+// ============================================================
+
+async function clearWorkerBonus(workerId) {
+    if (!currentUser || currentUser.role !== 'manager') {
+        alert('Only managers can clear bonuses.');
+        return;
+    }
+    
+    const { data: worker } = await _supabase
+        .from('workers')
+        .select('full_name, jc_id')
+        .eq('id', workerId)
+        .single();
+    
+    if (!worker) {
+        alert('Worker not found.');
+        return;
+    }
+    
+    const { data: accrual } = await _supabase
+        .from('worker_bonus_accrual')
+        .select('*')
+        .eq('worker_id', workerId)
+        .maybeSingle();
+    
+    if (!accrual || accrual.total_bonus === 0) {
+        alert(`${worker.full_name} has no balance to clear.`);
+        return;
+    }
+    
+    const confirmMsg = `💰 Clear Bonus for ${worker.full_name} (${worker.jc_id})?\n\n` +
+        `🏆 Tier 1: UGX ${(accrual.total_tier1 || 0).toFixed(2)}\n` +
+        `⏰ Tier 2: UGX ${(accrual.total_tier2 || 0).toFixed(2)}\n` +
+        `🧪 Tier 3: UGX ${(accrual.total_tier3 || 0).toFixed(2)}\n` +
+        `💰 Total: UGX ${(accrual.total_bonus || 0).toFixed(2)}\n\n` +
+        `⚠️ This will mark the bonus as PAID and reset the balance to ZERO.`;
+    
+    if (!confirm(confirmMsg)) {
+        return;
+    }
+    
+    try {
+        const { error } = await _supabase
+            .from('worker_bonus_accrual')
+            .update({
+                is_paid: true,
+                last_paid_date: new Date().toISOString(),
+                last_paid_by: currentUser.id,
+                last_paid_amount: accrual.total_bonus,
+                total_bonus: 0,
+                total_tier1: 0,
+                total_tier2: 0,
+                total_tier3: 0,
+                last_updated: new Date().toISOString()
+            })
+            .eq('worker_id', workerId);
+        
+        if (error) {
+            console.error('Error clearing bonus:', error);
+            alert('Error: ' + error.message);
+            return;
+        }
+        
+        alert(`✅ ${worker.full_name}'s bonus of UGX ${(accrual.total_bonus || 0).toFixed(2)} has been cleared!\n\n📅 Paid on: ${new Date().toLocaleString()}`);
+        
+        loadBonusBalances();
+        
+    } catch (error) {
+        console.error('Error:', error);
+        alert('Error: ' + error.message);
+    }
+}
+
+// ============================================================
+// 💰 CLEAR ALL BONUSES
+// ============================================================
+
+async function clearAllBonuses() {
+    if (!currentUser || currentUser.role !== 'manager') {
+        alert('Only managers can clear bonuses.');
+        return;
+    }
+    
+    const { data: workers } = await _supabase
+        .from('workers')
+        .select('id, full_name, jc_id')
+        .eq('is_active', true);
+    
+    if (!workers || workers.length === 0) {
+        alert('No workers found.');
+        return;
+    }
+    
+    let totalCleared = 0;
+    let workersWithBalance = [];
+    
+    for (const worker of workers) {
+        const { data: accrual } = await _supabase
+            .from('worker_bonus_accrual')
+            .select('total_bonus, total_tier1, total_tier2, total_tier3')
+            .eq('worker_id', worker.id)
+            .maybeSingle();
+        
+        if (accrual && (accrual.total_bonus || 0) > 0) {
+            workersWithBalance.push({
+                ...worker,
+                ...accrual
+            });
+            totalCleared += accrual.total_bonus || 0;
+        }
+    }
+    
+    if (workersWithBalance.length === 0) {
+        alert('✅ No balances to clear. All workers are up to date!');
+        return;
+    }
+    
+    let confirmMsg = `💰 CLEAR ALL BONUSES?\n\n`;
+    confirmMsg += `📊 ${workersWithBalance.length} worker(s) have balances:\n\n`;
+    
+    for (const w of workersWithBalance) {
+        confirmMsg += `   👤 ${w.full_name} (${w.jc_id}): UGX ${(w.total_bonus || 0).toFixed(2)}\n`;
+    }
+    
+    confirmMsg += `\n💳 TOTAL: UGX ${totalCleared.toFixed(2)}\n\n`;
+    confirmMsg += `⚠️ This will mark ALL bonuses as PAID and reset ALL balances to ZERO.\n`;
+    confirmMsg += `⚠️ This action cannot be undone!`;
+    
+    if (!confirm(confirmMsg)) {
+        return;
+    }
+    
+    if (!confirm(`🔴 FINAL CONFIRMATION: Are you ABSOLUTELY sure you want to clear UGX ${totalCleared.toFixed(2)} in bonuses?`)) {
+        return;
+    }
+    
+    try {
+        let cleared = 0;
+        let errors = 0;
+        
+        for (const w of workersWithBalance) {
+            const { error } = await _supabase
+                .from('worker_bonus_accrual')
+                .update({
+                    is_paid: true,
+                    last_paid_date: new Date().toISOString(),
+                    last_paid_by: currentUser.id,
+                    last_paid_amount: w.total_bonus || 0,
+                    total_bonus: 0,
+                    total_tier1: 0,
+                    total_tier2: 0,
+                    total_tier3: 0,
+                    last_updated: new Date().toISOString()
+                })
+                .eq('worker_id', w.id);
+            
+            if (error) {
+                console.error(`Error clearing ${w.full_name}:`, error);
+                errors++;
+            } else {
+                cleared++;
+            }
+        }
+        
+        alert(`✅ ${cleared} worker(s) cleared!\n💰 Total cleared: UGX ${totalCleared.toFixed(2)}\n❌ Errors: ${errors}`);
+        
+        loadBonusBalances();
+        
+    } catch (error) {
+        console.error('Error clearing all bonuses:', error);
+        alert('Error: ' + error.message);
+    }
+}
+
+// ============================================================
+// 💰 ADD PAYMENT HISTORY (Optional)
+// ============================================================
+
+async function getPaymentHistory(workerId) {
+    try {
+        const { data: history } = await _supabase
+            .from('bonus_payment_history')
+            .select('*')
+            .eq('worker_id', workerId)
+            .order('paid_date', { ascending: false })
+            .limit(10);
+        
+        return history || [];
+    } catch (error) {
+        console.error('Error getting payment history:', error);
+        return [];
+    }
+}
 </script>
 </body>
 </html>
