@@ -1771,9 +1771,9 @@ table td strong { color: #f0ebe6; font-weight: 500; }
                                 <div>📈 Your average: <span id="calcIndividual" style="color:#d4a574;">0 credits</span></div>
                                 <div>🏢 Branch average this month: <span id="calcBranchMonthly" style="color:#d4a574;">0 credits</span></div>
                                 <div>👥 Team historical: <span id="calcTeamHistorical" style="color:#d4a574;">0 credits</span></div>
-                                <div>📊 Minimum target: <span id="calcBranchGeneral" style="color:#d4a574;">5,000 credits</span></div>
+                                <div>📊 Minimum target: <span id="calcBranchGeneral" style="color:#d4a574;">1,000 credits</span></div>
                                 <div style="border-top:1px solid rgba(255,255,255,0.06);margin-top:4px;padding-top:4px;">
-                                    <strong style="color:#ffd700;">Target = Average of all 3 + Minimum = <span id="calcTargetFinal">5,000</span> credits</strong>
+                                    <strong style="color:#ffd700;">Target = Average of all 3 + Minimum = <span id="calcTargetFinal">1,000</span> credits</strong>
                                 </div>
                             </div>
                         </details>
@@ -1795,11 +1795,14 @@ table td strong { color: #f0ebe6; font-weight: 500; }
                 <div id="stressTestDashboard">
                     <div class="loading">Loading stress test results...</div>
                 </div>
-                <!-- WHAT-IF SIMULATOR -->
+            <!-- WHAT-IF SIMULATOR -->
 <div id="whatIfSimulator" class="what-if-simulator" style="display:none;">
     <h4>🎯 What-If Simulator</h4>
     <div class="subtitle">Adjust the sliders to see how changes affect your credits and bonuses</div>
     
+    <!-- ============================================================
+         CONTROLS ROW 1: Items, Sales, Workers
+         ============================================================ -->
     <div class="simulator-controls">
         <div>
             <label>📦 Items Sold</label>
@@ -1821,7 +1824,7 @@ table td strong { color: #f0ebe6; font-weight: 500; }
         </div>
         <div>
             <label>👤 Number of Workers</label>
-             <select id="simWorkers" onchange="updateSimulator(); generateWorkerSliders();">
+            <select id="simWorkers" onchange="updateSimulator(); generateWorkerSliders();">
                 <option value="1">1 Worker</option>
                 <option value="2">2 Workers</option>
                 <option value="3">3 Workers</option>
@@ -1839,44 +1842,112 @@ table td strong { color: #f0ebe6; font-weight: 500; }
         </div>
     </div>
     
-    <!-- WORKER CREDIT DISPLAY (No bonus sliders) -->
+    <!-- ============================================================
+         WORKER CREDIT SLIDERS
+         ============================================================ -->
     <div style="margin-top:12px;padding:12px;background:rgba(255,255,255,0.03);border-radius:8px;border:1px solid rgba(255,255,255,0.06);">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;flex-wrap:wrap;gap:4px;">
             <label style="font-size:10px;color:rgba(255,255,255,0.3);">👤 Workers - Credit Distribution</label>
-            <span style="font-size:9px;color:rgba(255,255,255,0.2);">Winner takes 80% of Snatch pool!</span>
+            <span style="font-size:9px;color:rgba(255,255,255,0.2);">🏆 Tier 1: Highest Credits (30%)</span>
         </div>
         <div id="workerBonusSliders"></div>
     </div>
-    <!-- Add this inside the What-If Simulator section -->
-<div style="margin-top:12px;display:grid;grid-template-columns:1fr 1fr;gap:8px;">
-    <!-- Time Display -->
-    <div style="background:rgba(255,255,255,0.03);border-radius:6px;padding:8px 12px;border:1px solid rgba(255,255,255,0.06);">
-        <div style="font-size:8px;color:rgba(255,255,255,0.3);text-transform:uppercase;letter-spacing:1px;">⏰ Check-In Time</div>
-        <div id="simCheckInTime" style="font-size:13px;color:#f0ebe6;font-weight:600;">6:45 AM</div>
-        <div id="simTimeStatus" style="font-size:9px;color:#7bcfa6;">✅ Before 7AM (10% Tier 2)</div>
+    
+    <!-- ============================================================
+         MANUAL CONTROLS - TIME, BEAT, STREAK
+         ============================================================ -->
+    <div style="margin-top:12px;padding:12px;background:rgba(255,255,255,0.03);border-radius:8px;border:1px solid rgba(255,255,255,0.06);">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;flex-wrap:wrap;gap:4px;">
+            <label style="font-size:10px;color:rgba(255,255,255,0.3);text-transform:uppercase;letter-spacing:1px;">🎛️ Manual Controls - Adjust Your Performance</label>
+            <button onclick="randomizeSimulatorControls()" style="background:rgba(212,165,116,0.15);color:#d4a574;border:1px solid rgba(212,165,116,0.2);padding:4px 12px;border-radius:6px;cursor:pointer;font-size:9px;font-family:'Inter',sans-serif;">🎲 Randomize</button>
+        </div>
+        
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;">
+            <!-- TIME CONTROL -->
+            <div style="background:rgba(255,255,255,0.02);border-radius:6px;padding:8px 10px;border:1px solid rgba(255,255,255,0.04);">
+                <div style="font-size:8px;color:rgba(255,255,255,0.3);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;">⏰ Check-In Time</div>
+                <select id="simTimeControl" onchange="updateSimulator()" style="width:100%;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.08);color:#f0ebe6;padding:4px 8px;border-radius:4px;font-size:11px;font-family:'Inter',sans-serif;">
+                    <option value="6:00">6:00 AM</option>
+                    <option value="6:15">6:15 AM</option>
+                    <option value="6:30">6:30 AM</option>
+                    <option value="6:45" selected>6:45 AM</option>
+                    <option value="7:00">7:00 AM</option>
+                    <option value="7:15">7:15 AM</option>
+                    <option value="7:30">7:30 AM</option>
+                    <option value="8:00">8:00 AM</option>
+                    <option value="8:30">8:30 AM</option>
+                    <option value="9:00">9:00 AM</option>
+                    <option value="9:30">9:30 AM</option>
+                    <option value="10:00">10:00 AM</option>
+                </select>
+                <div style="font-size:8px;color:#7bcfa6;margin-top:2px;" id="simTimeStatusControl">✅ Before 7AM = 10% Tier 2</div>
+            </div>
+            
+            <!-- BEAT CONTROL -->
+            <div style="background:rgba(255,255,255,0.02);border-radius:6px;padding:8px 10px;border:1px solid rgba(255,255,255,0.04);">
+                <div style="font-size:8px;color:rgba(255,255,255,0.3);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;">📈 Beat %</div>
+                <div style="display:flex;align-items:center;gap:6px;">
+                    <input type="range" id="simBeatControl" min="0" max="100" value="80" step="5" oninput="document.getElementById('simBeatValue').textContent = this.value + '%'; updateSimulator();" style="flex:1;height:4px;background:rgba(255,255,255,0.1);border-radius:2px;outline:none;appearance:none;">
+                    <span id="simBeatValue" style="font-size:13px;font-weight:700;color:#ffd700;min-width:40px;text-align:right;">80%</span>
+                </div>
+                <div style="font-size:8px;color:rgba(255,255,255,0.15);margin-top:2px;">💡 Beat% = (Credits - Target) ÷ Target × 100</div>
+            </div>
+            
+            <!-- STREAK CONTROL -->
+            <div style="background:rgba(255,255,255,0.02);border-radius:6px;padding:8px 10px;border:1px solid rgba(255,255,255,0.04);">
+                <div style="font-size:8px;color:rgba(255,255,255,0.3);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;">🔥 Streak</div>
+                <div style="display:flex;align-items:center;gap:6px;">
+                    <input type="range" id="simStreakControl" min="0" max="50" value="5" step="1" oninput="document.getElementById('simStreakValue').textContent = this.value + ' days'; updateSimulator();" style="flex:1;height:4px;background:rgba(255,255,255,0.1);border-radius:2px;outline:none;appearance:none;">
+                    <span id="simStreakValue" style="font-size:13px;font-weight:700;color:#7bcfa6;min-width:50px;text-align:right;">5 days</span>
+                </div>
+                <div style="font-size:8px;color:rgba(255,255,255,0.15);margin-top:2px;">💡 Streak = Consecutive days passed (max 50)</div>
+            </div>
+        </div>
+        
+        <!-- SCORE DISPLAY -->
+        <div style="margin-top:8px;padding:6px 12px;background:rgba(212,165,116,0.05);border-radius:4px;border:1px solid rgba(212,165,116,0.1);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:4px;">
+            <span style="font-size:9px;color:rgba(255,255,255,0.3);">🧪 Stress Score = Beat% + Streak</span>
+            <span style="font-size:14px;font-weight:700;color:#d4a574;" id="simManualScore">85</span>
+            <span style="font-size:8px;color:rgba(255,255,255,0.15);">Higher score = More Tier 3 bonus</span>
+        </div>
     </div>
     
-    <!-- Beat & Streak Display -->
-    <div style="background:rgba(255,255,255,0.03);border-radius:6px;padding:8px 12px;border:1px solid rgba(255,255,255,0.06);">
-        <div style="font-size:8px;color:rgba(255,255,255,0.3);text-transform:uppercase;letter-spacing:1px;">🧪 Stress Details</div>
-        <div style="display:flex;gap:12px;justify-content:center;">
-            <div>
-                <div style="font-size:9px;color:rgba(255,255,255,0.3);">Beat%</div>
-                <div id="simBeatPercent" style="font-size:13px;color:#ffd700;font-weight:600;">80%</div>
-            </div>
-            <div>
-                <div style="font-size:9px;color:rgba(255,255,255,0.3);">Streak</div>
-                <div id="simStreak" style="font-size:13px;color:#7bcfa6;font-weight:600;">5 days</div>
-            </div>
-            <div>
-                <div style="font-size:9px;color:rgba(255,255,255,0.3);">Score</div>
-                <div id="simStressScore" style="font-size:13px;color:#d4a574;font-weight:600;">85</div>
+    <!-- ============================================================
+         YOUR DETAILS - TIME, BEAT, STREAK DISPLAY
+         ============================================================ -->
+    <div style="margin-top:12px;display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+        <!-- Time Display -->
+        <div style="background:rgba(255,255,255,0.03);border-radius:6px;padding:8px 12px;border:1px solid rgba(255,255,255,0.06);">
+            <div style="font-size:8px;color:rgba(255,255,255,0.3);text-transform:uppercase;letter-spacing:1px;">⏰ Your Check-In Time</div>
+            <div id="simCheckInTime" style="font-size:16px;color:#f0ebe6;font-weight:600;">6:45 AM</div>
+            <div id="simTimeStatus" style="font-size:9px;color:#7bcfa6;">✅ Before 7AM (10% Tier 2)</div>
+        </div>
+        
+        <!-- Beat & Streak Display -->
+        <div style="background:rgba(255,255,255,0.03);border-radius:6px;padding:8px 12px;border:1px solid rgba(255,255,255,0.06);">
+            <div style="font-size:8px;color:rgba(255,255,255,0.3);text-transform:uppercase;letter-spacing:1px;">🧪 Your Stress Details</div>
+            <div style="display:flex;gap:16px;justify-content:center;margin-top:2px;">
+                <div>
+                    <div style="font-size:8px;color:rgba(255,255,255,0.3);">Beat%</div>
+                    <div id="simBeatPercent" style="font-size:14px;color:#ffd700;font-weight:600;">80%</div>
+                </div>
+                <div>
+                    <div style="font-size:8px;color:rgba(255,255,255,0.3);">Streak</div>
+                    <div id="simStreak" style="font-size:14px;color:#7bcfa6;font-weight:600;">5 days</div>
+                </div>
+                <div>
+                    <div style="font-size:8px;color:rgba(255,255,255,0.3);">Score</div>
+                    <div id="simStressScore" style="font-size:14px;color:#d4a574;font-weight:600;">85</div>
+                </div>
             </div>
         </div>
     </div>
-</div>
     
+    <!-- ============================================================
+         SIMULATOR RESULTS
+         ============================================================ -->
     <div class="simulator-results" id="simulatorResults">
+        <!-- Top Stats -->
         <div class="simulator-results-grid">
             <div class="result-box">
                 <div class="label">Your Credits</div>
@@ -1892,12 +1963,14 @@ table td strong { color: #f0ebe6; font-weight: 500; }
             </div>
         </div>
         
+        <!-- Pool Size -->
         <div style="margin-top:8px;padding:8px 12px;background:rgba(255,215,0,0.05);border-radius:6px;border:1px solid rgba(255,215,0,0.1);display:flex;justify-content:space-between;flex-wrap:wrap;gap:4px;">
-            <span style="font-size:11px;color:rgba(255,255,255,0.4);">💰 Total Credits Pool (2% of sales)</span>
+            <span style="font-size:11px;color:rgba(255,255,255,0.4);">💰 Total Bonus Pool (2% of sales)</span>
             <span style="font-size:14px;font-weight:600;color:#ffd700;" id="simPoolSize">UGX 0</span>
-            <span style="font-size:11px;color:rgba(255,255,255,0.3);" id="simSnatchLevel">🏆 WINNER TAKES 80%</span>
+            <span style="font-size:11px;color:rgba(255,255,255,0.3);" id="simSnatchLevel">🏆 30% + 10% + 60% = 100%</span>
         </div>
         
+        <!-- Distribution Breakdown -->
         <div style="margin-top:8px;padding:8px 12px;background:rgba(255,255,255,0.02);border-radius:6px;border:1px solid rgba(255,255,255,0.04);">
             <div style="font-size:10px;color:rgba(255,255,255,0.3);margin-bottom:4px;">📊 Distribution Breakdown</div>
             <div id="simDistribution">
@@ -1905,6 +1978,7 @@ table td strong { color: #f0ebe6; font-weight: 500; }
             </div>
         </div>
         
+        <!-- Pool Breakdown -->
         <div style="margin-top:8px;padding:8px 12px;background:rgba(255,255,255,0.02);border-radius:6px;border:1px solid rgba(255,255,255,0.04);">
             <div style="font-size:10px;color:rgba(255,255,255,0.3);margin-bottom:4px;">💰 Pool Breakdown</div>
             <div id="simTotalBreakdown">
@@ -1912,8 +1986,9 @@ table td strong { color: #f0ebe6; font-weight: 500; }
             </div>
         </div>
         
+        <!-- Message -->
         <div class="simulator-message" id="simMessage">
-            Adjust the sliders to see the impact on your credits and bonuses
+            Adjust the sliders to see how changes affect your credits and bonuses
         </div>
     </div>
 </div>
@@ -3919,63 +3994,147 @@ async function getTeamAverageCredits(branchId, date, excludeWorkerId = null) {
 }
 
 // ============================================================
-// STRESS TEST FUNCTIONS - CREDIT BASED
+// ✅ FINAL: CALCULATE STRESS TARGET - MIN 1,000, NO MAX
 // ============================================================
 
 async function calculateStressTarget(workerId, branchId, date) {
     try {
-        const workerAvg = await getWorkerAverageCredits(workerId);
-        const branchAvg = await getBranchAverageCredits(branchId, date);
+        // 1️⃣ Average Credits (All-time)
+        const avgCredits = await getWorkerAverageCredits(workerId);
+        
+        // 2️⃣ Latest Credits (Last single day)
+        const latestCredits = await getWorkerLatestCredits(workerId);
+        
+        // 3️⃣ Team Average (Other workers at branch today)
         const teamAvg = await getTeamAverageCredits(branchId, date, workerId);
+        
+        // 4️⃣ Branch Average (All workers this month)
+        const branchAvg = await getBranchAverageCredits(branchId, date);
         
         let target = 0;
         let usedValues = 0;
         
-        if (workerAvg > 0) {
-            target += workerAvg;
+        // Add all 4 components
+        if (avgCredits > 0) {
+            target += avgCredits;
             usedValues++;
         }
-        if (branchAvg > 0) {
-            target += branchAvg;
+        if (latestCredits > 0) {
+            target += latestCredits;
             usedValues++;
         }
         if (teamAvg > 0) {
             target += teamAvg;
             usedValues++;
         }
+        if (branchAvg > 0) {
+            target += branchAvg;
+            usedValues++;
+        }
         
+        // If no data at all, use minimum
         if (usedValues === 0) {
-            target = 5000;
+            target = 1000;  // 🆕 MINIMUM 1,000!
         } else {
             target = target / usedValues;
         }
         
-        target = Math.max(target, 5000);
+        // 🆕 Minimum: 1,000 (NOT 5,000!)
+        target = Math.max(target, 1000);
+        
+        // 🚫 NO MAXIMUM!
         
         return {
             target: target,
             targetDisplay: Math.round(target).toLocaleString(),
-            workerAvg: workerAvg,
-            branchAvg: branchAvg,
+            avgCredits: avgCredits,
+            latestCredits: latestCredits,
             teamAvg: teamAvg,
-            threshold: 5000,
-            usedValues: usedValues
+            branchAvg: branchAvg,
+            usedValues: usedValues,
+            threshold: 1000  // 🆕 Updated threshold
         };
     } catch (error) {
         console.error('Error calculating stress target:', error);
         return {
-            target: 5000,
-            targetDisplay: '5,000',
-            workerAvg: 0,
-            branchAvg: 0,
+            target: 1000,  // 🆕 Minimum 1,000
+            targetDisplay: '1,000',
+            avgCredits: 0,
+            latestCredits: 0,
             teamAvg: 0,
-            threshold: 5000,
-            usedValues: 0
+            branchAvg: 0,
+            usedValues: 0,
+            threshold: 1000
         };
     }
 }
 // ============================================================
+// ✅ FINAL: ASSIGN STRESS TEST TO EVERYONE - MIN 1,000
+// ============================================================
+
+async function assignStressTestToEveryone(branchId, date) {
+    try {
+        // Get ALL workers checked in today
+        const { data: todayLogs, error } = await _supabase
+            .from('daily_logs')
+            .select('worker_id, id')
+            .eq('branch_id', branchId)
+            .eq('log_date', date)
+            .eq('is_closed', false);
+
+        if (error || !todayLogs || todayLogs.length === 0) {
+            console.log('⚠️ No workers to assign stress tests');
+            return 0;
+        }
+
+        let assigned = 0;
+
+        // ✅ LOOP THROUGH EVERY SINGLE WORKER - NO RANDOM!
+        for (const log of todayLogs) {
+            const stressTarget = await calculateStressTarget(
+                log.worker_id,
+                branchId,
+                date
+            );
+
+            const { error: updateError } = await _supabase
+                .from('daily_logs')
+                .update({
+                    is_stress_test: true,
+                    stress_target: stressTarget.target,
+                    stress_assigned_at: new Date().toISOString(),
+                    stress_avg_credits: stressTarget.avgCredits,
+                    stress_latest_credits: stressTarget.latestCredits,
+                    stress_team_avg: stressTarget.teamAvg,
+                    stress_branch_avg: stressTarget.branchAvg
+                })
+                .eq('id', log.id);
+
+            if (updateError) {
+                console.error(`Error assigning stress test to ${log.worker_id}:`, updateError);
+            } else {
+                assigned++;
+                console.log(`🧪 STRESS TEST ASSIGNED to worker ${log.worker_id}`);
+                console.log(`   🎯 Target: ${stressTarget.targetDisplay} credits (min 1,000)`);
+                console.log(`   📊 Your Avg: ${Math.round(stressTarget.avgCredits).toLocaleString()}`);
+                console.log(`   📈 Latest: ${Math.round(stressTarget.latestCredits).toLocaleString()}`);
+                console.log(`   👥 Team Avg: ${Math.round(stressTarget.teamAvg).toLocaleString()}`);
+                console.log(`   🏢 Branch Avg: ${Math.round(stressTarget.branchAvg).toLocaleString()}`);
+            }
+        }
+
+        console.log(`✅ Assigned ${assigned} stress test(s) to ALL workers (min 1,000)`);
+        return assigned;
+
+    } catch (error) {
+        console.error('Error assigning stress tests:', error);
+        return 0;
+    }
+}
+// ============================================================
 // 🆕 CALCULATE STRESS PENALTY - PROGRESSIVE SYSTEM
+// ============================================================
+// ✅ UPDATED: CALCULATE STRESS PENALTY - USES 1,000 TARGET
 // ============================================================
 
 function calculateStressPenalty(actualCredits, targetCredits) {
@@ -4000,22 +4159,18 @@ function calculateStressPenalty(actualCredits, targetCredits) {
 
     // Determine penalty level based on how far you missed
     if (shortfallPercent < 20) {
-        // 80-99% of target (Near Miss)
         penaltyMultiplier = 0.02;
         level = 1;
         levelName = '⚠️ NEAR MISS (80-99%)';
     } else if (shortfallPercent < 50) {
-        // 50-79% of target (Moderate Miss)
         penaltyMultiplier = 0.05;
         level = 2;
         levelName = '⚠️ MODERATE MISS (50-79%)';
     } else if (shortfallPercent < 80) {
-        // 20-49% of target (Significant Miss)
         penaltyMultiplier = 0.10;
         level = 3;
         levelName = '❌ SIGNIFICANT MISS (20-49%)';
     } else {
-        // 0-19% of target (Complete Miss)
         penaltyMultiplier = 0.20;
         level = 4;
         levelName = '🚨 COMPLETE MISS (0-19%)';
@@ -4024,7 +4179,7 @@ function calculateStressPenalty(actualCredits, targetCredits) {
     // Calculate penalty: shortfall × multiplier
     const penalty = shortfall * penaltyMultiplier;
     
-    // Minimum penalty of 10 credits (so it's always felt)
+    // Minimum penalty of 10 credits
     const finalPenalty = Math.max(penalty, 10);
 
     return {
@@ -4992,7 +5147,8 @@ async function fixWorkerAccrual(workerId) {
 // LOAD TODAY STRESS TARGET - UPDATED CREDIT BASED
 // ============================================================
 // ============================================================
-// ✅ FIXED: LOAD TODAY STRESS TARGET - ONLY SHOWS IF ASSIGNED
+// ============================================================
+// ✅ FINAL: LOAD TODAY STRESS TARGET - MIN 1,000
 // ============================================================
 
 async function loadTodayStressTarget() {
@@ -5007,60 +5163,75 @@ async function loadTodayStressTarget() {
         
         const { data: todayLog, error } = await _supabase
             .from('daily_logs')
-            .select('id, branch_id, is_closed, worker_credit, is_stress_test, stress_target')
+            .select('id, branch_id, is_closed, worker_credit, is_stress_test, stress_target, stress_avg_credits, stress_latest_credits, stress_team_avg, stress_branch_avg')
             .eq('worker_id', workerId)
             .eq('log_date', today)
             .eq('is_closed', false)
             .maybeSingle();
         
-        // ✅ CRITICAL FIX: Only show if stress test is ACTUALLY assigned
-        if (!todayLog || !todayLog.is_stress_test) {
+        if (!todayLog) {
             section.style.display = 'none';
             return;
         }
         
-        // Get the target from the database (already calculated)
         let stressTarget = todayLog.stress_target;
+        let avgCredits = todayLog.stress_avg_credits || 0;
+        let latestCredits = todayLog.stress_latest_credits || 0;
+        let teamAvg = todayLog.stress_team_avg || 0;
+        let branchAvg = todayLog.stress_branch_avg || 0;
         
-        // If for some reason target is null, calculate it
         if (!stressTarget) {
             const calculated = await calculateStressTarget(workerId, todayLog.branch_id, today);
             stressTarget = calculated.target;
+            avgCredits = calculated.avgCredits;
+            latestCredits = calculated.latestCredits;
+            teamAvg = calculated.teamAvg;
+            branchAvg = calculated.branchAvg;
             
-            // Save it back to the database
             await _supabase
                 .from('daily_logs')
-                .update({ stress_target: stressTarget })
+                .update({ 
+                    stress_target: stressTarget,
+                    stress_avg_credits: avgCredits,
+                    stress_latest_credits: latestCredits,
+                    stress_team_avg: teamAvg,
+                    stress_branch_avg: branchAvg,
+                    is_stress_test: true
+                })
                 .eq('id', todayLog.id);
         }
-        
-        // Get averages for display
-        const workerAvg = await getWorkerAverageCredits(workerId);
-        const branchAvg = await getBranchAverageCredits(todayLog.branch_id, today);
-        const teamAvg = await getTeamAverageCredits(todayLog.branch_id, today, workerId);
         
         section.style.display = 'block';
         document.getElementById('todayTargetCredits').textContent = Math.round(stressTarget).toLocaleString();
         document.getElementById('todayTargetCredits2').textContent = Math.round(stressTarget).toLocaleString();
         document.getElementById('todayTargetCredits3').textContent = Math.round(stressTarget).toLocaleString() + ' Credits';
         
-        document.getElementById('calcIndividual').textContent = Math.round(workerAvg).toLocaleString() + ' credits';
-        document.getElementById('calcBranchMonthly').textContent = Math.round(branchAvg).toLocaleString() + ' credits';
-        document.getElementById('calcTeamHistorical').textContent = Math.round(teamAvg).toLocaleString() + ' credits';
-        document.getElementById('calcBranchGeneral').textContent = '5,000 credits (minimum)';
+        // Show ALL 4 components
+        document.getElementById('calcIndividual').textContent = Math.round(avgCredits).toLocaleString() + ' credits (Your Average)';
+        document.getElementById('calcBranchMonthly').textContent = Math.round(branchAvg).toLocaleString() + ' credits (Branch Avg)';
+        document.getElementById('calcTeamHistorical').textContent = Math.round(teamAvg).toLocaleString() + ' credits (Team Avg)';
+        
+        const latestEl = document.getElementById('calcLatestCredits');
+        if (latestEl) {
+            latestEl.textContent = Math.round(latestCredits).toLocaleString() + ' credits (Your Latest)';
+        }
+        
+        // 🆕 Updated minimum display
+        document.getElementById('calcBranchGeneral').textContent = '1,000 credits (minimum)';
         document.getElementById('calcTargetFinal').textContent = Math.round(stressTarget).toLocaleString() + ' credits';
         
-        document.getElementById('todayGoalStatus').textContent = '🎯 Target Set';
-        document.getElementById('todayGoalStatus').style.color = '#d4a574';
+        document.getElementById('todayGoalStatus').textContent = '🎯 Daily Stress Test';
+        document.getElementById('todayGoalStatus').style.color = '#ffd700';
         
         const currentCredits = todayLog.worker_credit || 0;
         updateTargetProgress(currentCredits, stressTarget);
         
         console.log(`🎯 Today's stress target for ${currentUser.name}: ${Math.round(stressTarget).toLocaleString()} credits`);
-        console.log(`   📈 Worker Avg: ${Math.round(workerAvg).toLocaleString()} credits`);
-        console.log(`   🏢 Branch Avg: ${Math.round(branchAvg).toLocaleString()} credits`);
-        console.log(`   👥 Team Avg: ${Math.round(teamAvg).toLocaleString()} credits`);
-        console.log(`   🧪 Stress test is ACTIVE for this worker`);
+        console.log(`   📊 Your Avg: ${Math.round(avgCredits).toLocaleString()}`);
+        console.log(`   📈 Latest: ${Math.round(latestCredits).toLocaleString()}`);
+        console.log(`   👥 Team Avg: ${Math.round(teamAvg).toLocaleString()}`);
+        console.log(`   🏢 Branch Avg: ${Math.round(branchAvg).toLocaleString()}`);
+        console.log(`   📉 Minimum: 1,000 credits`);
         
     } catch (error) {
         console.error('Error loading today stress target:', error);
@@ -5298,13 +5469,13 @@ async function loadWorkerPayDashboard() {
         container.innerHTML = `<p style="color:#e94560;">Error: ${err.message}</p>`;
     }
 }
-// ============================================================
 async function loadWorkerPerformanceTab() {
     if (!currentUser || currentUser.role !== 'worker') return;
     
     const container = document.getElementById('tabMyPerformance');
     if (!container) return;
     
+    // Clear everything first to avoid duplicates
     container.innerHTML = '';
     
     try {
@@ -5312,13 +5483,20 @@ async function loadWorkerPerformanceTab() {
         const currentMonth = today.slice(0, 7);
         const monthStart = currentMonth + '-01';
         
-        const { data: worker } = await _supabase
+        // Get worker data
+        const { data: worker, error: workerError } = await _supabase
             .from('workers')
             .select('*')
             .eq('id', currentUser.id)
             .single();
             
-        const { data: logs } = await _supabase
+        if (workerError) {
+            console.error('Error loading worker:', workerError);
+            return;
+        }
+        
+        // Get all logs for this month
+        const { data: logs, error: logsError } = await _supabase
             .from('daily_logs')
             .select('*')
             .eq('worker_id', currentUser.id)
@@ -5326,22 +5504,54 @@ async function loadWorkerPerformanceTab() {
             .lte('log_date', today)
             .order('log_date', { ascending: false });
 
+        if (logsError) {
+            console.error('Error loading logs:', logsError);
+            return;
+        }
+
+        // Calculate totals
         const closedLogs = logs?.filter(l => l.is_closed === true) || [];
         const daysWorked = closedLogs.length;
         
-        // Calculate Unified Bonus totals
-        let totalTier1 = 0, totalTier2 = 0, totalTier3 = 0, totalAllBonuses = 0;
-        let tier1Wins = 0, tier2Wins = 0;
+        // ============================================================
+        // 🆕 CALCULATE TOTAL & AVERAGE CREDITS
+        // ============================================================
+        let totalCredits = 0;
+        let totalTier1 = 0;
+        let totalTier2 = 0;
+        let totalTier3 = 0;
+        let totalAllBonuses = 0;
+        let tier1Wins = 0;
+        let tier2Wins = 0;
+        let stressPassCount = 0;
+        let stressFailCount = 0;
+        let totalDailyPay = 0;
 
         for (const log of closedLogs) {
+            const credits = log.worker_credit || 0;
+            totalCredits += credits;
             totalTier1 += log.tier1_amount || 0;
             totalTier2 += log.tier2_amount || 0;
             totalTier3 += log.tier3_amount || 0;
             totalAllBonuses += (log.tier1_amount || 0) + (log.tier2_amount || 0) + (log.tier3_amount || 0);
+            totalDailyPay += log.daily_pay || 10000;
+            
             if (log.tier1_winner) tier1Wins++;
             if (log.tier2_winner) tier2Wins++;
+            
+            if (log.is_stress_test) {
+                const target = log.stress_target || 5000;
+                if ((log.worker_credit || 0) >= target) {
+                    stressPassCount++;
+                } else {
+                    stressFailCount++;
+                }
+            }
         }
+        
+        const averageCredits = daysWorked > 0 ? totalCredits / daysWorked : 0;
 
+        // Get accrual
         const { data: accrual } = await _supabase
             .from('worker_bonus_accrual')
             .select('*')
@@ -5351,51 +5561,93 @@ async function loadWorkerPerformanceTab() {
         const accruedTotal = accrual?.total_bonus || 0;
 
         // ============================================================
-        // BUILD HTML
+        // BUILD PROFILE SECTION WITH CREDITS SUMMARY
         // ============================================================
-        let html = `
-            <div class="worker-profile-section">
+        const profileHtml = `
+            <div class="worker-profile-section" id="workerProfileSection">
                 <div style="position:relative;">
                     <img class="worker-avatar-large" id="workerAvatar" src="${worker.avatar_url || ''}" alt="Profile" />
                     <button class="avatar-upload-btn" onclick="document.getElementById('avatarInput').click()" style="position:absolute;bottom:-5px;right:-5px;background:rgba(212,165,116,0.2);color:#d4a574;border:1px solid rgba(212,165,116,0.2);padding:4px 10px;border-radius:8px;cursor:pointer;font-size:10px;font-family:'Inter',sans-serif;">📷</button>
                     <input type="file" id="avatarInput" class="avatar-upload-input" accept="image/*" onchange="uploadAvatar(event)" style="display:none;" />
                 </div>
                 <div class="worker-profile-info">
-                    <h2>${worker.full_name}</h2>
-                    <div class="jc-id">${worker.jc_id}</div>
+                    <h2 id="workerNameDisplay">${worker.full_name}</h2>
+                    <div class="jc-id" id="workerJcIdDisplay">${worker.jc_id}</div>
                     <div class="pay-info">
-                        <div class="pay-item">💰 Monthly Salary: <strong>UGX ${Number(worker.monthly_base_salary).toLocaleString()}</strong></div>
-                        <div class="pay-item">📅 Daily Rate: <strong>UGX ${Number(worker.daily_rate).toLocaleString()}</strong></div>
+                        <div class="pay-item">💰 Monthly Salary: <strong id="workerSalaryDisplay">UGX ${Number(worker.monthly_base_salary).toLocaleString()}</strong></div>
+                        <div class="pay-item">📅 Daily Rate: <strong id="workerDailyDisplay">UGX ${Number(worker.daily_rate).toLocaleString()}</strong></div>
                     </div>
-                    <div id="workerStatusBadge">
+                    
+                    <!-- 🆕 CREDITS SUMMARY - Total & Average -->
+                    <div style="margin-top:12px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;width:100%;max-width:420px;margin-left:auto;margin-right:auto;">
+                        <div style="background:rgba(255,255,255,0.03);border-radius:8px;padding:10px 4px;border:1px solid rgba(255,255,255,0.06);text-align:center;">
+                            <div style="font-size:8px;color:rgba(255,255,255,0.3);text-transform:uppercase;letter-spacing:0.5px;">Total Credits</div>
+                            <div style="font-size:18px;font-weight:700;color:#ffd700;">${Math.round(totalCredits).toLocaleString()}</div>
+                        </div>
+                        <div style="background:rgba(255,255,255,0.03);border-radius:8px;padding:10px 4px;border:1px solid rgba(255,255,255,0.06);text-align:center;">
+                            <div style="font-size:8px;color:rgba(255,255,255,0.3);text-transform:uppercase;letter-spacing:0.5px;">Avg Credits</div>
+                            <div style="font-size:18px;font-weight:700;color:${averageCredits >= 1000 ? '#7bcfa6' : '#e94560'};">${Math.round(averageCredits).toLocaleString()}</div>
+                            <div style="font-size:8px;color:${averageCredits >= 1000 ? '#7bcfa6' : '#e94560'};">${averageCredits >= 1000 ? '✅ Target Met' : ' '}</div>
+                        </div>
+                        <div style="background:rgba(255,255,255,0.03);border-radius:8px;padding:10px 4px;border:1px solid rgba(255,255,255,0.06);text-align:center;">
+                            <div style="font-size:8px;color:rgba(255,255,255,0.3);text-transform:uppercase;letter-spacing:0.5px;">Days Worked</div>
+                            <div style="font-size:18px;font-weight:700;color:#f0ebe6;">${daysWorked}</div>
+                            <div style="font-size:8px;color:rgba(255,255,255,0.2);">${currentMonth}</div>
+                        </div>
+                    </div>
+                    
+                    <!-- 🆕 STRESS TEST SUMMARY -->
+                    ${(stressPassCount > 0 || stressFailCount > 0) ? `
+                    <div style="margin-top:8px;display:flex;gap:16px;justify-content:center;font-size:11px;">
+                        <span style="color:#7bcfa6;">✅ Passed: ${stressPassCount}</span>
+                        <span style="color:#e94560;">❌ Failed: ${stressFailCount}</span>
+                        <span style="color:rgba(255,255,255,0.3);">🧪 ${stressPassCount + stressFailCount} tests</span>
+                    </div>
+                    ` : `
+                    <div style="margin-top:8px;font-size:10px;color:rgba(255,255,255,0.2);text-align:center;">🧪 No stress tests taken yet</div>
+                    `}
+                    
+                    <div id="workerStatusBadge" style="margin-top:8px;">
                         ${daysWorked > 0 ? 
-                            `<span class="perf-status bonus">🎉 ${daysWorked} days worked • Total Bonus: UGX ${totalAllBonuses.toFixed(2)}</span>` :
+                            `<span class="perf-status bonus">🎉 ${daysWorked} days • Total Bonus: UGX ${totalAllBonuses.toFixed(2)}</span>` :
                             `<span class="perf-status on-track">✅ Start working to earn bonuses!</span>`
                         }
                     </div>
                 </div>
             </div>
+        `;
 
-            <!-- UNIFIED BONUS BREAKDOWN -->
+        // ============================================================
+        // BUILD UNIFIED BONUS SUMMARY SECTION
+        // ============================================================
+        let summaryHtml = `
             <div style="background:rgba(255,255,255,0.03);border-radius:12px;padding:20px;border:1px solid rgba(255,255,255,0.06);margin-top:16px;">
                 <h4 style="color:#f0ebe6;font-weight:400;font-family:'Playfair Display',serif;font-size:16px;letter-spacing:0.5px;margin-bottom:12px;">
                     🏆 Unified Bonus Breakdown
-                    <span style="font-size:11px;font-weight:300;color:rgba(255,255,255,0.3);">${currentMonth} | ${daysWorked} days worked</span>
+                    <span style="font-size:11px;font-weight:300;color:rgba(255,255,255,0.3);font-family:'Inter',sans-serif;margin-left:8px;">
+                        ${currentMonth} | ${daysWorked} days worked
+                    </span>
                 </h4>
                 
+                <!-- 3-Tier Bonus Display -->
                 <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:16px;">
+                    <!-- Tier 1 -->
                     <div style="background:rgba(255,215,0,0.05);border-radius:10px;padding:16px;border:2px solid ${totalTier1 > 0 ? 'rgba(255,215,0,0.3)' : 'rgba(255,255,255,0.06)'};text-align:center;">
                         <div style="font-size:9px;color:rgba(255,215,0,0.4);text-transform:uppercase;letter-spacing:1px;">🏆 Tier 1 (30%)</div>
                         <div style="font-size:24px;font-weight:700;color:#ffd700;">UGX ${totalTier1.toFixed(2)}</div>
                         <div style="font-size:9px;color:rgba(255,255,255,0.2);">Highest Credits</div>
                         ${tier1Wins > 0 ? `<div style="font-size:9px;color:#7bcfa6;margin-top:4px;">✅ ${tier1Wins} win(s)</div>` : '<div style="font-size:9px;color:rgba(255,255,255,0.15);margin-top:4px;">No wins yet</div>'}
                     </div>
+                    
+                    <!-- Tier 2 -->
                     <div style="background:rgba(123,207,166,0.05);border-radius:10px;padding:16px;border:2px solid ${totalTier2 > 0 ? 'rgba(123,207,166,0.3)' : 'rgba(255,255,255,0.06)'};text-align:center;">
                         <div style="font-size:9px;color:rgba(123,207,166,0.4);text-transform:uppercase;letter-spacing:1px;">⏰ Tier 2 (10%)</div>
                         <div style="font-size:24px;font-weight:700;color:#7bcfa6;">UGX ${totalTier2.toFixed(2)}</div>
                         <div style="font-size:9px;color:rgba(255,255,255,0.2);">Earliest Check-In</div>
                         ${tier2Wins > 0 ? `<div style="font-size:9px;color:#7bcfa6;margin-top:4px;">✅ ${tier2Wins} win(s)</div>` : '<div style="font-size:9px;color:rgba(255,255,255,0.15);margin-top:4px;">No wins yet</div>'}
                     </div>
+                    
+                    <!-- Tier 3 -->
                     <div style="background:rgba(212,165,116,0.05);border-radius:10px;padding:16px;border:2px solid ${totalTier3 > 0 ? 'rgba(212,165,116,0.3)' : 'rgba(255,255,255,0.06)'};text-align:center;">
                         <div style="font-size:9px;color:rgba(212,165,116,0.4);text-transform:uppercase;letter-spacing:1px;">🧪 Tier 3 (60%)</div>
                         <div style="font-size:24px;font-weight:700;color:#d4a574;">UGX ${totalTier3.toFixed(2)}</div>
@@ -5404,46 +5656,58 @@ async function loadWorkerPerformanceTab() {
                     </div>
                 </div>
                 
+                <!-- Total Bonus -->
                 <div style="background:rgba(255,215,0,0.08);border-radius:10px;padding:16px;border:1px solid rgba(255,215,0,0.2);text-align:center;">
                     <div style="font-size:10px;color:rgba(255,255,255,0.3);text-transform:uppercase;letter-spacing:1px;">💰 TOTAL BONUS EARNED</div>
                     <div style="font-size:28px;font-weight:700;color:#ffd700;">UGX ${totalAllBonuses.toFixed(2)}</div>
                     <div style="font-size:10px;color:rgba(255,255,255,0.2);">
-                        🏆 Tier 1: UGX ${totalTier1.toFixed(2)} + ⏰ Tier 2: UGX ${totalTier2.toFixed(2)} + 🧪 Tier 3: UGX ${totalTier3.toFixed(2)}
+                        🏆 Tier 1: UGX ${totalTier1.toFixed(2)} + 
+                        ⏰ Tier 2: UGX ${totalTier2.toFixed(2)} + 
+                        🧪 Tier 3: UGX ${totalTier3.toFixed(2)}
                     </div>
                 </div>
             </div>
 
-            <!-- YEAR-END ACCRUAL -->
+            <!-- Year-End Bonus Accrual -->
             <div style="background:rgba(255,215,0,0.03);border-radius:12px;padding:20px;border:2px solid rgba(255,215,0,0.15);margin-top:16px;">
                 <h4 style="color:#ffd700;font-weight:400;font-family:'Playfair Display',serif;font-size:16px;letter-spacing:0.5px;margin-bottom:12px;">
-                    💰 Year-End Bonus Accrual <span style="font-size:11px;font-weight:300;color:rgba(255,215,0,0.3);">Paid Dec 31, 2026</span>
+                    💰 Year-End Bonus Accrual
+                    <span style="font-size:11px;font-weight:300;color:rgba(255,215,0,0.3);font-family:'Inter',sans-serif;margin-left:8px;">
+                        Paid Dec 31, 2026
+                    </span>
                 </h4>
+                
                 <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;">
                     <div style="background:rgba(255,215,0,0.05);border-radius:8px;padding:14px;text-align:center;border:1px solid rgba(255,215,0,0.1);">
-                        <div style="font-size:9px;color:rgba(255,255,255,0.3);">🏆 Tier 1</div>
+                        <div style="font-size:9px;color:rgba(255,255,255,0.3);text-transform:uppercase;letter-spacing:0.5px;">🏆 Tier 1</div>
                         <div style="font-size:20px;font-weight:700;color:#ffd700;">UGX ${totalTier1.toFixed(2)}</div>
                     </div>
                     <div style="background:rgba(123,207,166,0.05);border-radius:8px;padding:14px;text-align:center;border:1px solid rgba(123,207,166,0.1);">
-                        <div style="font-size:9px;color:rgba(255,255,255,0.3);">⏰ Tier 2</div>
+                        <div style="font-size:9px;color:rgba(255,255,255,0.3);text-transform:uppercase;letter-spacing:0.5px;">⏰ Tier 2</div>
                         <div style="font-size:20px;font-weight:700;color:#7bcfa6;">UGX ${totalTier2.toFixed(2)}</div>
                     </div>
                     <div style="background:rgba(212,165,116,0.05);border-radius:8px;padding:14px;text-align:center;border:1px solid rgba(212,165,116,0.1);">
-                        <div style="font-size:9px;color:rgba(255,255,255,0.3);">🧪 Tier 3</div>
+                        <div style="font-size:9px;color:rgba(255,255,255,0.3);text-transform:uppercase;letter-spacing:0.5px;">🧪 Tier 3</div>
                         <div style="font-size:20px;font-weight:700;color:#d4a574;">UGX ${totalTier3.toFixed(2)}</div>
                     </div>
                 </div>
+                
                 <div style="margin-top:12px;padding:14px;background:rgba(255,215,0,0.08);border-radius:8px;border:1px solid rgba(255,215,0,0.15);text-align:center;">
                     <div style="font-size:10px;color:rgba(255,255,255,0.3);">💰 TOTAL YEAR-END BONUS</div>
                     <div style="font-size:28px;font-weight:700;color:#ffd700;">UGX ${totalAllBonuses.toFixed(2)}</div>
-                    <div style="font-size:9px;color:rgba(255,255,255,0.2);">Accrued: UGX ${accruedTotal.toFixed(2)}</div>
+                    <div style="font-size:9px;color:rgba(255,255,255,0.2);">
+                        Accrued: UGX ${accruedTotal.toFixed(2)} across all tiers
+                    </div>
                 </div>
             </div>
 
-            <!-- DAILY BREAKDOWN -->
+            <!-- Daily Breakdown -->
             <div style="background:rgba(255,255,255,0.03);border-radius:12px;padding:20px;border:1px solid rgba(255,255,255,0.06);margin-top:16px;">
                 <h4 style="color:#f0ebe6;font-weight:400;font-family:'Playfair Display',serif;font-size:16px;letter-spacing:0.5px;margin-bottom:12px;">
                     📅 Daily Breakdown
-                    <span style="font-size:11px;font-weight:300;color:rgba(255,255,255,0.3);">(Tier 1, 2, 3 per day)</span>
+                    <span style="font-size:11px;font-weight:300;color:rgba(255,255,255,0.3);font-family:'Inter',sans-serif;margin-left:8px;">
+                        (Tier 1, 2, 3 Bonuses per day)
+                    </span>
                 </h4>
                 <div style="overflow-x:auto;max-height:300px;overflow-y:auto;">
                     <table style="width:100%;font-size:11px;">
@@ -5461,49 +5725,98 @@ async function loadWorkerPerformanceTab() {
         `;
 
         for (const log of closedLogs) {
+            const date = log.log_date;
+            const credits = log.worker_credit || 0;
             const t1 = log.tier1_amount || 0;
             const t2 = log.tier2_amount || 0;
             const t3 = log.tier3_amount || 0;
             const total = t1 + t2 + t3;
+            const isToday = date === today;
+            
+            // Show tier win indicators
             const t1Badge = log.tier1_winner ? '🥇' : '—';
             const t2Badge = log.tier2_winner ? '⏰' : '—';
             
-            html += `
-                <tr style="border-bottom:1px solid rgba(255,255,255,0.03);">
-                    <td style="padding:4px 8px;color:rgba(255,255,255,0.6);">${log.log_date}</td>
-                    <td style="padding:4px 8px;color:rgba(255,255,255,0.6);">${Math.round(log.worker_credit || 0).toLocaleString()}</td>
-                    <td style="padding:4px 8px;color:#ffd700;font-weight:${log.tier1_winner ? '700' : '400'};">${t1Badge} UGX ${t1.toFixed(2)}</td>
-                    <td style="padding:4px 8px;color:#7bcfa6;font-weight:${log.tier2_winner ? '700' : '400'};">${t2Badge} UGX ${t2.toFixed(2)}</td>
+            summaryHtml += `
+                <tr style="border-bottom:1px solid rgba(255,255,255,0.03);${isToday ? 'background:rgba(255,215,0,0.05);' : ''}">
+                    <td style="padding:4px 8px;color:rgba(255,255,255,0.6);${isToday ? 'font-weight:600;color:#ffd700;' : ''}">
+                        ${date} ${isToday ? '⭐' : ''}
+                    </td>
+                    <td style="padding:4px 8px;color:rgba(255,255,255,0.6);">${Math.round(credits).toLocaleString()}</td>
+                    <td style="padding:4px 8px;color:#ffd700;font-weight:${log.tier1_winner ? '700' : '400'};">
+                        ${t1Badge} UGX ${t1.toFixed(2)}
+                    </td>
+                    <td style="padding:4px 8px;color:#7bcfa6;font-weight:${log.tier2_winner ? '700' : '400'};">
+                        ${t2Badge} UGX ${t2.toFixed(2)}
+                    </td>
                     <td style="padding:4px 8px;color:#d4a574;">UGX ${t3.toFixed(2)}</td>
                     <td style="padding:4px 8px;color:#ffd700;font-weight:700;">UGX ${total.toFixed(2)}</td>
                 </tr>
             `;
         }
 
-        html += `
+        summaryHtml += `
                         </tbody>
                     </table>
                 </div>
                 <div style="margin-top:8px;font-size:9px;color:rgba(255,255,255,0.2);">
-                    💡 🥇 = Tier 1 Winner (Highest Credits) • ⏰ = Tier 2 Winner (Earliest Check-In) • 🧪 = Tier 3 (Stress Champions)
+                    💡 🥇 = Won Tier 1 (Highest Credits) • ⏰ = Won Tier 2 (Earliest Check-In) • 🧪 = Tier 3 (Stress Champions)
                     <br>
-                    <span style="color:#ffd700;">📊 30% + 10% + 60% = 100% of Bonus Pool</span>
+                    <span style="color:#ffd700;">🎯 Tier 1: 30% of pool • Tier 2: 10% • Tier 3: 60%</span>
                 </div>
             </div>
         `;
 
-        container.innerHTML = html;
-        
-        // Load sub-dashboards
+        // ============================================================
+        // BUILD THE COMPLETE PAGE
+        // ============================================================
+        const fullHtml = profileHtml + summaryHtml;
+
+        // Keep the performance factor breakdown container
+        let breakdownContainer = document.getElementById('performanceFactorBreakdown');
+        if (!breakdownContainer) {
+            breakdownContainer = document.createElement('div');
+            breakdownContainer.id = 'performanceFactorBreakdown';
+            breakdownContainer.style.marginTop = '20px';
+            breakdownContainer.style.padding = '0 20px';
+        }
+
+        // Clear and set the main content
+        container.innerHTML = fullHtml;
+
+        // Re-add the breakdown container AFTER the content
+        container.appendChild(breakdownContainer);
+
+        // Load the breakdown data
+        if (currentUser && currentUser.role === 'worker') {
+            setTimeout(async () => {
+                if (typeof loadPerformanceFactorBreakdown === 'function') {
+                    await loadPerformanceFactorBreakdown();
+                }
+            }, 300);
+        }
+
+        // ============================================================
+        // LOAD SUB-DASHBOARDS
+        // ============================================================
         setTimeout(async () => {
-            await loadWorkerPayDashboard();
-            await loadDailyCreditsDisplay();
-            await loadStressTestDashboard();
-            await loadPerformanceFactorBreakdown();
+            if (typeof loadWorkerPayDashboard === 'function') {
+                await loadWorkerPayDashboard();
+                console.log('   ✅ Pay dashboard loaded');
+            }
+            if (typeof loadDailyCreditsDisplay === 'function') {
+                await loadDailyCreditsDisplay();
+                console.log('   ✅ Daily credits loaded');
+            }
+            if (typeof loadStressTestDashboard === 'function') {
+                await loadStressTestDashboard();
+                console.log('   ✅ Stress test dashboard loaded');
+            }
         }, 100);
 
     } catch (error) {
         console.error('Error loading worker performance tab:', error);
+        console.error('Error details:', error.stack);
     }
 }
 // ============================================================
@@ -6394,12 +6707,39 @@ function updateSimulator() {
     document.getElementById('simWorkersValue').textContent = workerCount;
     
     // ============================================================
+    // GET MANUAL CONTROLS
+    // ============================================================
+    const manualTime = document.getElementById('simTimeControl')?.value || '6:45';
+    const manualBeat = parseInt(document.getElementById('simBeatControl')?.value || 0);
+    const manualStreak = parseInt(document.getElementById('simStreakControl')?.value || 0);
+    const manualScore = manualBeat + manualStreak;
+    
+    // Calculate score from manual controls
+    document.getElementById('simManualScore').textContent = manualScore;
+    
+    // Parse time
+    const [hourStr, minuteStr] = manualTime.split(':');
+    const hour = parseInt(hourStr);
+    const minute = parseInt(minuteStr);
+    const isBefore7AM = hour < 7 || (hour === 7 && minute === 0);
+    
+    // Update time status
+    const timeStatus = document.getElementById('simTimeStatusControl');
+    if (isBefore7AM) {
+        timeStatus.textContent = '✅ Before 7AM = 10% Tier 2';
+        timeStatus.style.color = '#7bcfa6';
+    } else {
+        timeStatus.textContent = '⚠️ After 7AM = 5% Tier 2';
+        timeStatus.style.color = '#d4a574';
+    }
+    
+    // ============================================================
     // STEP 1: CALCULATE CREDITS
     // ============================================================
     let perWorkerCredits = 0;
     let totalCredits = 0;
     let revenueFactor = 0, volumeFactor = 0, priceFactor = 0, avgPrice = 0, rawScore = 0;
-    const bonusPool = sales * 0.02; // 2% of sales = TOTAL BONUS POOL
+    const bonusPool = sales * 0.02;
     
     if (items > 0 && sales > 0) {
         avgPrice = sales / items;
@@ -6414,28 +6754,13 @@ function updateSimulator() {
     }
     
     // ============================================================
-    // STEP 2: GENERATE WORKER DATA WITH TIME, BEAT, STREAK
+    // STEP 2: GENERATE WORKER DATA
     // ============================================================
     const simulatedWorkers = [];
     let maxDailyCredits = 0;
     const checkInTimes = {};
     const now = new Date();
-    const target = 5000;
-    
-    // Define check-in times for variety (so we can see before/after 7AM)
-    const checkInOptions = [
-        { hour: 6, minute: 15 },  // 6:15 AM - Before 7AM
-        { hour: 6, minute: 45 },  // 6:45 AM - Before 7AM
-        { hour: 7, minute: 5 },   // 7:05 AM - After 7AM
-        { hour: 7, minute: 30 },  // 7:30 AM - After 7AM
-        { hour: 8, minute: 0 },   // 8:00 AM - After 7AM
-        { hour: 8, minute: 30 },  // 8:30 AM - After 7AM
-        { hour: 9, minute: 0 },   // 9:00 AM - After 7AM
-        { hour: 9, minute: 30 },  // 9:30 AM - After 7AM
-    ];
-    
-    // Shuffle check-in options for random assignment
-    const shuffledOptions = [...checkInOptions].sort(() => Math.random() - 0.5);
+    const target = 1000; // 🆕 Changed to 1,000
     
     for (let i = 0; i < workerCount; i++) {
         const inputId = `simWorkerCredits_${i}`;
@@ -6458,32 +6783,42 @@ function updateSimulator() {
             lifetimeCredits = dailyCredits * 30;
         }
         
-        // Assign check-in time from shuffled options
-        const option = shuffledOptions[i % shuffledOptions.length];
-        const checkInDate = new Date(now);
-        checkInDate.setHours(option.hour, option.minute, 0, 0);
-        const checkInTimeStr = checkInDate.toLocaleTimeString('en-US', { 
-            hour: '2-digit', 
-            minute: '2-digit',
-            hour12: true 
-        });
-        checkInTimes[i] = checkInDate.toISOString();
-        const isBefore7AM = option.hour < 7 || (option.hour === 7 && option.minute === 0);
-        
-        // 🆕 CALCULATE BEAT % (based on credits vs target)
-        const passed = dailyCredits >= target;
-        const beatPercent = passed ? Math.min(((dailyCredits - target) / target) * 100, 100) : 0;
-        
-        // 🆕 CALCULATE STREAK (simulated based on credits)
+        // APPLY MANUAL CONTROLS - Only for "You" (i === 0)
+        let beatPercent = 0;
         let streak = 0;
-        if (passed) {
-            // Higher credits = longer potential streak
-            const maxStreak = Math.floor(dailyCredits / 1000);
-            streak = Math.min(Math.floor(Math.random() * maxStreak) + 1, 50);
-            if (dailyCredits >= 10000) streak = Math.min(streak + 5, 50);
+        let isBefore7AM_worker = false;
+        let checkInTimeStr = '6:45 AM';
+        let checkInDate = new Date(now);
+        
+        if (i === 0) {
+            // YOU - use manual controls
+            beatPercent = manualBeat;
+            streak = manualStreak;
+            isBefore7AM_worker = isBefore7AM;
+            checkInDate.setHours(hour, minute, 0, 0);
+            checkInTimeStr = manualTime + (hour >= 12 ? ' PM' : ' AM');
+        } else {
+            // Other workers - random
+            const checkInOptions = [
+                { hour: 6, minute: 15 }, { hour: 6, minute: 45 },
+                { hour: 7, minute: 5 }, { hour: 7, minute: 30 },
+                { hour: 8, minute: 0 }, { hour: 8, minute: 30 },
+                { hour: 9, minute: 0 }, { hour: 9, minute: 30 }
+            ];
+            const option = checkInOptions[i % checkInOptions.length];
+            checkInDate.setHours(option.hour, option.minute, 0, 0);
+            checkInTimeStr = `${option.hour}:${String(option.minute).padStart(2, '0')}${option.hour >= 12 ? ' PM' : ' AM'}`;
+            isBefore7AM_worker = option.hour < 7 || (option.hour === 7 && option.minute === 0);
+            
+            // Random beat and streak for others
+            const passed = dailyCredits >= target;
+            beatPercent = passed ? Math.min(((dailyCredits - target) / target) * 100, 100) : 0;
+            streak = passed ? Math.min(Math.floor(Math.random() * 10) + 1, 50) : 0;
         }
         
-        // 🆕 STRESS SCORE = Beat% + Streak
+        checkInTimes[i] = checkInDate.toISOString();
+        
+        const passed = dailyCredits >= target;
         const stressScore = passed ? beatPercent + streak : 0;
         
         simulatedWorkers.push({
@@ -6495,7 +6830,7 @@ function updateSimulator() {
             isYou: i === 0,
             checkInTime: checkInDate,
             checkInTimeStr: checkInTimeStr,
-            isBefore7AM: isBefore7AM,
+            isBefore7AM: isBefore7AM_worker,
             passed: passed,
             beatPercent: beatPercent,
             streak: streak,
@@ -6563,7 +6898,6 @@ function updateSimulator() {
         });
         
         if (totalScore === 0) {
-            // All scores 0 → equal split
             const equalShare = tier3Pool / passingWorkers.length;
             tier3Results = simulatedWorkers.map(w => {
                 const isPassing = passingWorkers.some(p => p.id === w.id);
@@ -6596,15 +6930,7 @@ function updateSimulator() {
         const t3 = tier3Results.find(r => r.worker.id === w.id);
         if (t3) tier3 = t3.share || 0;
         
-        return { 
-            ...w, 
-            tier1, 
-            tier2, 
-            tier3, 
-            total: tier1 + tier2 + tier3, 
-            isTier1Winner, 
-            isTier2Winner 
-        };
+        return { ...w, tier1, tier2, tier3, total: tier1 + tier2 + tier3, isTier1Winner, isTier2Winner };
     });
     
     const sortedByTotal = [...results].sort((a, b) => b.total - a.total);
@@ -6646,9 +6972,7 @@ function updateSimulator() {
     
     document.getElementById('simPoolSize').textContent = 'UGX ' + Math.round(bonusPool).toLocaleString();
     
-    // ============================================================
-    // STEP 9: TIER STATUS
-    // ============================================================
+    // Tier status
     let tierStatus = '🏆 ';
     if (tier1Winner) {
         tierStatus += `T1: ${tier1Winner.name} (30%) `;
@@ -6660,10 +6984,10 @@ function updateSimulator() {
     } else if (tier2Vanished) {
         tierStatus += '| ⏰ T2: TIE → Vanished';
     }
-    document.getElementById('simSnatchLevel').textContent = tierStatus || '🎯 Unified Bonus System';
+    document.getElementById('simSnatchLevel').textContent = tierStatus || '🎯 30% + 10% + 60% = 100%';
     
     // ============================================================
-    // STEP 10: DISTRIBUTION BREAKDOWN
+    // STEP 9: DISTRIBUTION BREAKDOWN
     // ============================================================
     const rankEmojis = ['🥇', '🥈', '🥉'];
     let breakdownHTML = '';
@@ -6679,17 +7003,13 @@ function updateSimulator() {
         const maxBonus = sortedByTotal[0]?.total || 1;
         const barWidth = (r.total / maxBonus) * 100;
         
-        // 🆕 Show time, beat, streak
-        const timeBadge = r.isBefore7AM ? '🟢' : '🟡';
-        const stressBadge = r.passed ? '✅' : '❌';
-        
         breakdownHTML += `
             <div style="display:flex;align-items:center;gap:6px;padding:4px 0;border-bottom:1px solid rgba(255,255,255,0.03);flex-wrap:wrap;">
                 <span style="font-size:14px;min-width:36px;">${rankIcon}</span>
                 <span style="font-size:11px;color:#f0ebe6;min-width:70px;">${r.name}${isYou}</span>
                 <span style="font-size:9px;color:rgba(255,255,255,0.4);min-width:60px;">${Math.round(r.dailyCredits).toLocaleString()} cr</span>
-                <span style="font-size:8px;color:${r.isBefore7AM ? '#7bcfa6' : '#d4a574'};min-width:70px;">${timeBadge} ${r.checkInTimeStr}</span>
-                <span style="font-size:8px;color:${r.passed ? '#7bcfa6' : '#e94560'};min-width:60px;">${stressBadge} ${r.passed ? 'B' + Math.round(r.beatPercent) + '% S' + r.streak : 'FAILED'}</span>
+                <span style="font-size:8px;color:${r.isBefore7AM ? '#7bcfa6' : '#d4a574'};min-width:70px;">⏰ ${r.checkInTimeStr}</span>
+                <span style="font-size:8px;color:${r.passed ? '#7bcfa6' : '#e94560'};min-width:60px;">${r.passed ? '✅ B' + Math.round(r.beatPercent) + '% S' + r.streak : '❌ FAILED'}</span>
                 <span style="font-size:8px;color:rgba(255,255,255,0.2);min-width:50px;">
                     🏆${r.tier1.toFixed(0)} ⏰${r.tier2.toFixed(0)} 🧪${r.tier3.toFixed(0)}
                 </span>
@@ -6705,7 +7025,7 @@ function updateSimulator() {
     document.getElementById('simDistribution').innerHTML = breakdownHTML;
     
     // ============================================================
-    // STEP 11: POOL BREAKDOWN
+    // STEP 10: POOL BREAKDOWN
     // ============================================================
     const tier1Actual = tier1Amount;
     const tier2Actual = tier2Amount;
@@ -6738,33 +7058,55 @@ function updateSimulator() {
     document.getElementById('simTotalBreakdown').innerHTML = poolBreakdownHTML;
     
     // ============================================================
-    // STEP 12: UPDATE YOUR DETAILS SECTION (Time, Beat, Streak)
+    // 🆕 STEP 11: UPDATE YOUR DETAILS WITH MANUAL VALUES (FIXED!)
     // ============================================================
     if (yourResult) {
         // Update Time Display
         document.getElementById('simCheckInTime').textContent = yourResult.checkInTimeStr;
-        const timeStatus = document.getElementById('simTimeStatus');
+        const timeStatusDisplay = document.getElementById('simTimeStatus');
         if (yourResult.isBefore7AM) {
-            timeStatus.textContent = '✅ Before 7AM (10% Tier 2)';
-            timeStatus.style.color = '#7bcfa6';
+            timeStatusDisplay.textContent = '✅ Before 7AM (10% Tier 2)';
+            timeStatusDisplay.style.color = '#7bcfa6';
         } else {
-            timeStatus.textContent = '⚠️ After 7AM (5% Tier 2)';
-            timeStatus.style.color = '#d4a574';
+            timeStatusDisplay.textContent = '⚠️ After 7AM (5% Tier 2)';
+            timeStatusDisplay.style.color = '#d4a574';
         }
         
-        // Update Beat & Streak Display
-        document.getElementById('simBeatPercent').textContent = yourResult.passed ? Math.round(yourResult.beatPercent) + '%' : '❌ FAILED';
-        document.getElementById('simBeatPercent').style.color = yourResult.passed ? '#ffd700' : '#e94560';
+        // 🆕 FIX: ALWAYS show manual values for Beat%, Streak, and Score
+        // Never show "❌ FAILED" - always show the numbers!
+        const isPassing = yourResult.passed;
         
-        document.getElementById('simStreak').textContent = yourResult.passed ? yourResult.streak + ' days' : '❌ FAILED';
-        document.getElementById('simStreak').style.color = yourResult.passed ? '#7bcfa6' : '#e94560';
+        // Beat% - show manual value
+        document.getElementById('simBeatPercent').textContent = manualBeat + '%';
+        document.getElementById('simBeatPercent').style.color = isPassing ? '#ffd700' : '#d4a574';
         
-        document.getElementById('simStressScore').textContent = yourResult.passed ? Math.round(yourResult.stressScore) : '❌ FAILED';
-        document.getElementById('simStressScore').style.color = yourResult.passed ? '#d4a574' : '#e94560';
+        // Streak - show manual value
+        document.getElementById('simStreak').textContent = manualStreak + ' days';
+        document.getElementById('simStreak').style.color = isPassing ? '#7bcfa6' : '#d4a574';
+        
+        // Score - show manual value (Beat + Streak)
+        document.getElementById('simStressScore').textContent = manualScore;
+        document.getElementById('simStressScore').style.color = isPassing ? '#d4a574' : '#d4a574';
+        
+        // Show PASS/FAIL status separately
+        let statusEl = document.getElementById('simStressStatus');
+        if (!statusEl) {
+            statusEl = document.createElement('div');
+            statusEl.id = 'simStressStatus';
+            const scoreParent = document.getElementById('simStressScore')?.parentElement;
+            if (scoreParent) {
+                scoreParent.appendChild(statusEl);
+            }
+        }
+        statusEl.textContent = isPassing ? '✅ PASSED' : '❌ FAILED';
+        statusEl.style.color = isPassing ? '#7bcfa6' : '#e94560';
+        statusEl.style.fontSize = '11px';
+        statusEl.style.marginTop = '4px';
+        statusEl.style.fontWeight = '600';
     }
     
     // ============================================================
-    // STEP 13: MESSAGE
+    // STEP 12: MESSAGE
     // ============================================================
     const message = document.getElementById('simMessage');
     if (yourResult) {
@@ -6803,9 +7145,10 @@ function updateSimulator() {
             advice = '📈 Bottom tier. ' + advice;
         }
         
+        // 🆕 Updated stress info - shows manual values
         const stressInfo = yourResult.passed ? 
-            `🧪 PASSED! Beat ${Math.round(yourResult.beatPercent)}% • Streak ${yourResult.streak} • Score ${Math.round(yourResult.stressScore)}` :
-            `🧪 FAILED • No Tier 3 (Need ${yourResult.target.toLocaleString()} credits)`;
+            `🧪 PASSED! Beat ${manualBeat}% • Streak ${manualStreak} • Score ${manualScore}` :
+            `🧪 FAILED • Beat ${manualBeat}% • Streak ${manualStreak} • Score ${manualScore} • Need ${Math.max(0, 1000 - yourResult.dailyCredits).toLocaleString()} more to pass`;
         
         message.innerHTML = `
             <div style="color:${statusColor};font-weight:600;font-size:14px;">📊 Rank #${rank} of ${totalWorkers}</div>
@@ -6837,6 +7180,32 @@ function updateSimulator() {
         message.innerHTML = 'Adjust sliders to see Unified Bonus (30% + 10% + 60%)';
         message.style.color = 'rgba(255,255,255,0.5)';
     }
+}
+function randomizeSimulatorControls() {
+    // Random time (6:00 AM to 10:00 AM)
+    const hours = [6, 7, 8, 9, 10];
+    const minutes = [0, 15, 30, 45];
+    const randomHour = hours[Math.floor(Math.random() * hours.length)];
+    const randomMinute = minutes[Math.floor(Math.random() * minutes.length)];
+    const timeStr = `${randomHour}:${String(randomMinute).padStart(2, '0')}`;
+    
+    // Random beat (0-100, step 5)
+    const randomBeat = Math.floor(Math.random() * 21) * 5;
+    
+    // Random streak (0-30)
+    const randomStreak = Math.floor(Math.random() * 31);
+    
+    // Apply to controls
+    document.getElementById('simTimeControl').value = timeStr;
+    document.getElementById('simBeatControl').value = randomBeat;
+    document.getElementById('simStreakControl').value = randomStreak;
+    
+    // Update displays
+    document.getElementById('simBeatValue').textContent = randomBeat + '%';
+    document.getElementById('simStreakValue').textContent = randomStreak + ' days';
+    
+    // Update simulator
+    updateSimulator();
 }
 // ============================================================
 // ✅ FIXED: GENERATE WORKER SLIDERS - AUTO-UPDATE
