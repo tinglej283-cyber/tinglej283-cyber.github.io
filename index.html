@@ -4725,6 +4725,10 @@ async function calculateStressBonus(workerId, stressTestResult) {
     }
 }
 
+// ============================================================
+// ✅ PERMANENT FIX: ACCRUE BONUS - CORRECT TOTAL CALCULATION
+// ============================================================
+
 async function accrueBonus(workerId, bonusType, amount, date, details) {
     try {
         if (!workerId || !bonusType || amount <= 0) {
@@ -4746,17 +4750,20 @@ async function accrueBonus(workerId, bonusType, amount, date, details) {
         let bonusData;
 
         if (existing) {
-            let totalBonus = existing.total_bonus || 0;
+            // Calculate ALL bonuses from existing + new
             let totalTier1 = existing.total_tier1 || 0;
             let totalTier2 = existing.total_tier2 || 0;
             let totalTier3 = existing.total_tier3 || 0;
             
             if (bonusType === 'daily_bonus') {
-                totalBonus += amount;
+                // ✅ FIX: Add tier amounts correctly
                 totalTier1 += details?.tier1 || 0;
                 totalTier2 += details?.tier2 || 0;
                 totalTier3 += details?.tier3 || 0;
             }
+
+            // ✅ CRITICAL FIX: Calculate total as SUM of all tiers
+            const totalBonus = totalTier1 + totalTier2 + totalTier3;
 
             bonusData = {
                 total_bonus: totalBonus,
@@ -4766,6 +4773,7 @@ async function accrueBonus(workerId, bonusType, amount, date, details) {
                 last_updated: new Date().toISOString()
             };
 
+            // Add daily details
             if (!bonusData.daily_bonus_details) {
                 bonusData.daily_bonus_details = {};
             }
@@ -4773,13 +4781,14 @@ async function accrueBonus(workerId, bonusType, amount, date, details) {
                 tier1: details?.tier1 || 0,
                 tier2: details?.tier2 || 0,
                 tier3: details?.tier3 || 0,
-                total: amount,
+                total: details?.tier1 + details?.tier2 + details?.tier3 || 0,  // ✅ Always sum of tiers
                 credits: details?.credits || 0,
                 tier1_winner: details?.tier1_winner || false,
                 tier2_winner: details?.tier2_winner || false,
                 tier3_score: details?.tier3_score || 0,
                 jackpot_bonus: details?.jackpot_bonus || 0,
-                stress_penalty: details?.stress_penalty || 0
+                stress_penalty: details?.stress_penalty || 0,
+                mercy_applied: details?.mercy_applied || false
             };
 
             const { error: updateError } = await _supabase
@@ -4795,24 +4804,32 @@ async function accrueBonus(workerId, bonusType, amount, date, details) {
             return bonusData;
 
         } else {
+            // NEW accrual
+            const tier1 = details?.tier1 || 0;
+            const tier2 = details?.tier2 || 0;
+            const tier3 = details?.tier3 || 0;
+            const totalBonus = tier1 + tier2 + tier3;  // ✅ Sum of tiers
+
             const newData = {
                 worker_id: workerId,
-                total_bonus: amount,
-                total_tier1: details?.tier1 || 0,
-                total_tier2: details?.tier2 || 0,
-                total_tier3: details?.tier3 || 0,
+                total_bonus: totalBonus,
+                total_tier1: tier1,
+                total_tier2: tier2,
+                total_tier3: tier3,
+                is_paid: false,
                 daily_bonus_details: {
                     [date]: {
-                        tier1: details?.tier1 || 0,
-                        tier2: details?.tier2 || 0,
-                        tier3: details?.tier3 || 0,
-                        total: amount,
+                        tier1: tier1,
+                        tier2: tier2,
+                        tier3: tier3,
+                        total: totalBonus,
                         credits: details?.credits || 0,
                         tier1_winner: details?.tier1_winner || false,
                         tier2_winner: details?.tier2_winner || false,
                         tier3_score: details?.tier3_score || 0,
                         jackpot_bonus: details?.jackpot_bonus || 0,
-                        stress_penalty: details?.stress_penalty || 0
+                        stress_penalty: details?.stress_penalty || 0,
+                        mercy_applied: details?.mercy_applied || false
                     }
                 },
                 last_updated: new Date().toISOString()
@@ -9606,32 +9623,12 @@ async function closeDayByWorker(branchId, branchName) {
     }
 
     // ============================================================
-    // STEP 6: SELECT WHO TO STRESS TEST (FAIR SYSTEM)
+    // STEP 6: ASSIGN STRESS TEST TO EVERYONE
     // ============================================================
     
-    console.log(`🧪 Selecting workers for stress test at ${branchName}...`);
-    const stressTestWorkers = await chooseWhoToTestFair(branchId, today);
-    
-    if (stressTestWorkers && stressTestWorkers.length > 0) {
-        console.log(`   ✅ Selected ${stressTestWorkers.length} worker(s) for stress test`);
-        
-        for (const workerId of stressTestWorkers) {
-            const stressTarget = await calculateStressTarget(workerId, branchId, today);
-            await _supabase
-                .from('daily_logs')
-                .update({ 
-                    is_stress_test: true,
-                    stress_target: stressTarget.target
-                })
-                .eq('worker_id', workerId)
-                .eq('log_date', today)
-                .eq('is_closed', false);
-            
-            console.log(`   🧪 ${workerId} - Target: ${stressTarget.targetDisplay} credits`);
-        }
-    } else {
-        console.log('   ❌ No workers selected for stress test today');
-    }
+    console.log(`🧪 Assigning stress test to ALL workers at ${branchName}...`);
+    const assignedCount = await assignStressTestToEveryone(branchId, today);
+    console.log(`   ✅ ${assignedCount} worker(s) assigned stress tests`);
 
     // ============================================================
     // STEP 7: CHECK IF MERCY SHOULD BE APPLIED
@@ -9676,7 +9673,7 @@ async function closeDayByWorker(branchId, branchName) {
         const priceFactor = Math.min(branchAvgPrice / MAX_PRICE, 1);
         const rawScore = revenueFactor * volumeFactor * priceFactor;
         const totalCredits = totalBranchSales * rawScore * 5;
-        const budget = totalBranchSales * 0.02; // 2% of sales = BONUS POOL
+        const budget = totalBranchSales * 0.02;
         const scalingFactor = totalCredits > 0 ? Math.min(budget / totalCredits, 1) : 0;
         const cappedCredits = totalCredits * scalingFactor;
 
@@ -9714,7 +9711,7 @@ async function closeDayByWorker(branchId, branchName) {
         }));
 
         // ============================================================
-        // 🆕 BUILD DATA FOR UNIFIED BONUS
+        // BUILD DATA FOR UNIFIED BONUS
         // ============================================================
         
         // Build workers array for bonus calculation
@@ -9741,7 +9738,7 @@ async function closeDayByWorker(branchId, branchName) {
         for (const w of workersForBonus) {
             const log = w.log;
             if (log.is_stress_test) {
-                const target = log.stress_target || 5000;
+                const target = log.stress_target || 1000;
                 const credits = w.credits || 0;
                 const passed = credits >= target;
                 const beatPercent = passed ? Math.min(((credits - target) / target) * 100, 100) : 0;
@@ -9758,7 +9755,7 @@ async function closeDayByWorker(branchId, branchName) {
                 
                 if (history) {
                     for (const h of history) {
-                        const hTarget = h.stress_target || 5000;
+                        const hTarget = h.stress_target || 1000;
                         if ((h.worker_credit || 0) >= hTarget) {
                             streak++;
                         } else {
@@ -9782,7 +9779,7 @@ async function closeDayByWorker(branchId, branchName) {
         }
 
         // ============================================================
-        // 🆕 CALCULATE UNIFIED BONUSES
+        // CALCULATE UNIFIED BONUSES
         // ============================================================
         
         const bonusResult = calculateUnifiedBonuses(
@@ -9809,10 +9806,12 @@ async function closeDayByWorker(branchId, branchName) {
             // Get bonus for this worker
             const workerBonus = bonusResult.results.find(r => r.worker.id === worker.id);
             
+            // ✅ FIX: Calculate total from tiers (NOT from workerBonus.total)
             const tier1Amount = workerBonus?.tier1 || 0;
             const tier2Amount = workerBonus?.tier2 || 0;
             const tier3Amount = workerBonus?.tier3 || 0;
-            const totalBonus = workerBonus?.total || 0;
+            const totalBonus = tier1Amount + tier2Amount + tier3Amount;  // ← RECALCULATE!
+            
             const isTier1Winner = workerBonus?.isTier1Winner || false;
             const isTier2Winner = workerBonus?.isTier2Winner || false;
             const tier3Score = workerBonus?.tier3Score || 0;
@@ -9835,7 +9834,7 @@ async function closeDayByWorker(branchId, branchName) {
             let stressTarget = null;
             
             if (log.is_stress_test) {
-                stressTarget = log.stress_target || 5000;
+                stressTarget = log.stress_target || 1000;
                 stressPassed = credits >= stressTarget;
                 
                 if (!stressPassed) {
@@ -9895,7 +9894,7 @@ async function closeDayByWorker(branchId, branchName) {
                     check_out_lng: location ? location.lng : null,
                     check_out_accuracy: location ? location.accuracy : null,
                     
-                    // 🆕 UNIFIED BONUS SYSTEM - TIER 1, 2, 3
+                    // UNIFIED BONUS SYSTEM - TIER 1, 2, 3
                     tier1_amount: tier1Amount,
                     tier2_amount: tier2Amount,
                     tier3_amount: tier3Amount,
@@ -9904,7 +9903,7 @@ async function closeDayByWorker(branchId, branchName) {
                     tier3_score: tier3Score,
                     tier3_beat_pct: tier3BeatPct,
                     tier3_streak: tier3Streak,
-                    total_bonus: totalBonus,
+                    total_bonus: totalBonus,  // ← NOW CORRECT!
                     bonus_accrued: false,
                     
                     // Backward compatibility
@@ -9989,12 +9988,12 @@ async function closeDayByWorker(branchId, branchName) {
                     }
                 }
 
-                // Accrue bonus with all 3 tiers
+                // ✅ FIXED: Accrue bonus with CORRECT total (calculated from tiers)
                 try {
                     await accrueBonus(
                         log.worker_id,
                         'daily_bonus',
-                        totalBonus,
+                        totalBonus,  // ← NOW CORRECT!
                         today,
                         {
                             tier1: tier1Amount,
@@ -10341,30 +10340,12 @@ async function closeDay(branchId, branchName) {
     }
 
     // ============================================================
-    // STEP 6: SELECT WHO TO STRESS TEST
+    // STEP 6: ASSIGN STRESS TEST TO EVERYONE
     // ============================================================
     
-    console.log(`🧪 Selecting workers for stress test at ${branchName}...`);
-    const stressTestWorkers = await chooseWhoToTestFair(branchId, today);
-    
-    if (stressTestWorkers && stressTestWorkers.length > 0) {
-        console.log(`   ✅ Selected ${stressTestWorkers.length} worker(s) for stress test`);
-        for (const workerId of stressTestWorkers) {
-            const stressTarget = await calculateStressTarget(workerId, branchId, today);
-            await _supabase
-                .from('daily_logs')
-                .update({ 
-                    is_stress_test: true,
-                    stress_target: stressTarget.target
-                })
-                .eq('worker_id', workerId)
-                .eq('log_date', today)
-                .eq('is_closed', false);
-            console.log(`   🧪 ${workerId} - Target: ${stressTarget.targetDisplay} credits`);
-        }
-    } else {
-        console.log('   ❌ No workers selected for stress test today');
-    }
+    console.log(`🧪 Assigning stress test to ALL workers at ${branchName}...`);
+    const assignedCount = await assignStressTestToEveryone(branchId, today);
+    console.log(`   ✅ ${assignedCount} worker(s) assigned stress tests`);
 
     // ============================================================
     // STEP 7: CHECK IF MERCY SHOULD BE APPLIED
@@ -10446,7 +10427,7 @@ async function closeDay(branchId, branchName) {
         }));
 
         // ============================================================
-        // 🆕 BUILD DATA FOR UNIFIED BONUS
+        // BUILD DATA FOR UNIFIED BONUS
         // ============================================================
         
         // Build workers array
@@ -10472,12 +10453,11 @@ async function closeDay(branchId, branchName) {
         for (const w of workersForBonus) {
             const log = w.log;
             if (log.is_stress_test) {
-                const target = log.stress_target || 5000;
+                const target = log.stress_target || 1000;
                 const credits = w.credits || 0;
                 const passed = credits >= target;
                 const beatPercent = passed ? Math.min(((credits - target) / target) * 100, 100) : 0;
                 
-                // Get streak
                 let streak = 0;
                 const { data: history } = await _supabase
                     .from('daily_logs')
@@ -10489,7 +10469,7 @@ async function closeDay(branchId, branchName) {
                 
                 if (history) {
                     for (const h of history) {
-                        const hTarget = h.stress_target || 5000;
+                        const hTarget = h.stress_target || 1000;
                         if ((h.worker_credit || 0) >= hTarget) {
                             streak++;
                         } else {
@@ -10513,7 +10493,7 @@ async function closeDay(branchId, branchName) {
         }
 
         // ============================================================
-        // 🆕 CALCULATE UNIFIED BONUSES
+        // CALCULATE UNIFIED BONUSES
         // ============================================================
         
         const bonusResult = calculateUnifiedBonuses(
@@ -10537,10 +10517,12 @@ async function closeDay(branchId, branchName) {
             // Get bonus for this worker
             const workerBonus = bonusResult.results.find(r => r.worker.id === worker.id);
             
+            // ✅ FIX: Calculate total from tiers (NOT from workerBonus.total)
             const tier1Amount = workerBonus?.tier1 || 0;
             const tier2Amount = workerBonus?.tier2 || 0;
             const tier3Amount = workerBonus?.tier3 || 0;
-            const totalBonus = workerBonus?.total || 0;
+            const totalBonus = tier1Amount + tier2Amount + tier3Amount;  // ← RECALCULATE!
+            
             const isTier1Winner = workerBonus?.isTier1Winner || false;
             const isTier2Winner = workerBonus?.isTier2Winner || false;
             const tier3Score = workerBonus?.tier3Score || 0;
@@ -10563,7 +10545,7 @@ async function closeDay(branchId, branchName) {
             let stressTarget = null;
             
             if (log.is_stress_test) {
-                stressTarget = log.stress_target || 5000;
+                stressTarget = log.stress_target || 1000;
                 stressPassed = credits >= stressTarget;
                 
                 if (!stressPassed) {
@@ -10611,7 +10593,7 @@ async function closeDay(branchId, branchName) {
                     check_out_time: new Date().toISOString(),
                     closed_by: currentUser.id,
                     
-                    // 🆕 UNIFIED BONUS FIELDS
+                    // UNIFIED BONUS FIELDS
                     tier1_amount: tier1Amount,
                     tier2_amount: tier2Amount,
                     tier3_amount: tier3Amount,
@@ -10620,7 +10602,7 @@ async function closeDay(branchId, branchName) {
                     tier3_score: tier3Score,
                     tier3_beat_pct: tier3BeatPct,
                     tier3_streak: tier3Streak,
-                    total_bonus: totalBonus,
+                    total_bonus: totalBonus,  // ← NOW CORRECT!
                     bonus_accrued: false,
                     
                     // Backward compatibility
@@ -10689,12 +10671,12 @@ async function closeDay(branchId, branchName) {
                     }
                 }
                 
-                // Accrue bonus
+                // ✅ FIXED: Accrue bonus with CORRECT total (calculated from tiers)
                 try {
                     await accrueBonus(
                         log.worker_id,
                         'daily_bonus',
-                        totalBonus,
+                        totalBonus,  // ← NOW CORRECT!
                         today,
                         {
                             tier1: tier1Amount,
@@ -10705,7 +10687,8 @@ async function closeDay(branchId, branchName) {
                             tier2_winner: isTier2Winner,
                             tier3_score: tier3Score,
                             jackpot_bonus: jackpotShare,
-                            stress_penalty: stressPenalty
+                            stress_penalty: stressPenalty,
+                            mercy_applied: mercyActuallyApplied
                         }
                     );
                     
@@ -10733,7 +10716,7 @@ async function closeDay(branchId, branchName) {
                         jackpotShare: jackpotShare
                     });
                 } catch (accrualError) {
-                    console.error('Error accruing bonus:', accrualError);
+                    console.error(`Error accruing bonus for ${worker.name}:`, accrualError);
                 }
             }
         }
