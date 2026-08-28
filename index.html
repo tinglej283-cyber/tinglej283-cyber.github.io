@@ -1520,6 +1520,48 @@ table td strong { color: #f0ebe6; font-weight: 500; }
         display: none !important;
     }
 }
+/* Add this to your CSS - make manual controls scrollable on phones */
+
+@media (max-width: 768px) {
+    /* Make the manual controls container scrollable */
+    .what-if-simulator .manual-controls-container {
+        overflow-x: auto !important;
+        -webkit-overflow-scrolling: touch !important;
+        padding: 4px 0 !important;
+        display: block !important;
+        white-space: nowrap !important;
+    }
+    
+    .what-if-simulator .manual-controls-container > div {
+        display: flex !important;
+        flex-wrap: nowrap !important;
+        gap: 8px !important;
+        min-width: 500px !important;
+        padding: 4px 4px !important;
+    }
+    
+    .what-if-simulator .manual-controls-container > div > div {
+        min-width: 140px !important;
+        flex: 0 0 auto !important;
+    }
+    
+    /* Make the time, beat, streak controls scrollable */
+    .what-if-simulator .manual-controls-scroll {
+        overflow-x: auto !important;
+        -webkit-overflow-scrolling: touch !important;
+        display: flex !important;
+        flex-wrap: nowrap !important;
+        gap: 8px !important;
+        padding: 4px 0 !important;
+        scroll-snap-type: x mandatory !important;
+    }
+    
+    .what-if-simulator .manual-controls-scroll > div {
+        min-width: 140px !important;
+        flex: 0 0 auto !important;
+        scroll-snap-align: start !important;
+    }
+}
 </style>
 </head>
 <body>
@@ -1769,6 +1811,7 @@ table td strong { color: #f0ebe6; font-weight: 500; }
                             <summary style="cursor:pointer;">📊 How this target was calculated</summary>
                             <div style="margin-top:6px;padding:8px 12px;background:rgba(255,255,255,0.03);border-radius:6px;font-size:10px;line-height:1.6;">
                                 <div>📈 Your average: <span id="calcIndividual" style="color:#d4a574;">0 credits</span></div>
+                                <div>📈 Your latest credits: <span id="calcLatestCredits" style="color:#ffd700;">0 credits</span></div>
                                 <div>🏢 Branch average this month: <span id="calcBranchMonthly" style="color:#d4a574;">0 credits</span></div>
                                 <div>👥 Team historical: <span id="calcTeamHistorical" style="color:#d4a574;">0 credits</span></div>
                                 <div>📊 Minimum target: <span id="calcBranchGeneral" style="color:#d4a574;">1,000 credits</span></div>
@@ -1854,63 +1897,64 @@ table td strong { color: #f0ebe6; font-weight: 500; }
     </div>
     
     <!-- ============================================================
-         MANUAL CONTROLS - TIME, BEAT, STREAK
-         ============================================================ -->
-    <div style="margin-top:12px;padding:12px;background:rgba(255,255,255,0.03);border-radius:8px;border:1px solid rgba(255,255,255,0.06);">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;flex-wrap:wrap;gap:4px;">
-            <label style="font-size:10px;color:rgba(255,255,255,0.3);text-transform:uppercase;letter-spacing:1px;">🎛️ Manual Controls - Adjust Your Performance</label>
-            <button onclick="randomizeSimulatorControls()" style="background:rgba(212,165,116,0.15);color:#d4a574;border:1px solid rgba(212,165,116,0.2);padding:4px 12px;border-radius:6px;cursor:pointer;font-size:9px;font-family:'Inter',sans-serif;">🎲 Randomize</button>
+     MANUAL CONTROLS - SCROLLABLE ON PHONES
+     ============================================================ -->
+<div style="margin-top:12px;padding:12px;background:rgba(255,255,255,0.03);border-radius:8px;border:1px solid rgba(255,255,255,0.06);">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;flex-wrap:wrap;gap:4px;">
+        <label style="font-size:10px;color:rgba(255,255,255,0.3);text-transform:uppercase;letter-spacing:1px;">🎛️ Manual Controls - Adjust Your Performance</label>
+        <button onclick="randomizeSimulatorControls()" style="background:rgba(212,165,116,0.15);color:#d4a574;border:1px solid rgba(212,165,116,0.2);padding:4px 12px;border-radius:6px;cursor:pointer;font-size:9px;font-family:'Inter',sans-serif;white-space:nowrap;">🎲 Randomize</button>
+    </div>
+    
+    <!-- 🆕 SCROLLABLE CONTAINER FOR PHONES -->
+    <div class="manual-controls-scroll" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;overflow-x:auto;-webkit-overflow-scrolling:touch;padding:4px 0;">
+        <!-- TIME CONTROL -->
+        <div style="background:rgba(255,255,255,0.02);border-radius:6px;padding:8px 10px;border:1px solid rgba(255,255,255,0.04);min-width:140px;">
+            <div style="font-size:8px;color:rgba(255,255,255,0.3);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;">⏰ Check-In Time</div>
+            <select id="simTimeControl" onchange="updateSimulator()" style="width:100%;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.08);color:#f0ebe6;padding:4px 8px;border-radius:4px;font-size:11px;font-family:'Inter',sans-serif;">
+                <option value="6:00">6:00 AM</option>
+                <option value="6:15">6:15 AM</option>
+                <option value="6:30">6:30 AM</option>
+                <option value="6:45" selected>6:45 AM</option>
+                <option value="7:00">7:00 AM</option>
+                <option value="7:15">7:15 AM</option>
+                <option value="7:30">7:30 AM</option>
+                <option value="8:00">8:00 AM</option>
+                <option value="8:30">8:30 AM</option>
+                <option value="9:00">9:00 AM</option>
+                <option value="9:30">9:30 AM</option>
+                <option value="10:00">10:00 AM</option>
+            </select>
+            <div style="font-size:8px;color:#7bcfa6;margin-top:2px;" id="simTimeStatusControl">✅ Before 7AM = 10% Tier 2</div>
         </div>
         
-        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;">
-            <!-- TIME CONTROL -->
-            <div style="background:rgba(255,255,255,0.02);border-radius:6px;padding:8px 10px;border:1px solid rgba(255,255,255,0.04);">
-                <div style="font-size:8px;color:rgba(255,255,255,0.3);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;">⏰ Check-In Time</div>
-                <select id="simTimeControl" onchange="updateSimulator()" style="width:100%;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.08);color:#f0ebe6;padding:4px 8px;border-radius:4px;font-size:11px;font-family:'Inter',sans-serif;">
-                    <option value="6:00">6:00 AM</option>
-                    <option value="6:15">6:15 AM</option>
-                    <option value="6:30">6:30 AM</option>
-                    <option value="6:45" selected>6:45 AM</option>
-                    <option value="7:00">7:00 AM</option>
-                    <option value="7:15">7:15 AM</option>
-                    <option value="7:30">7:30 AM</option>
-                    <option value="8:00">8:00 AM</option>
-                    <option value="8:30">8:30 AM</option>
-                    <option value="9:00">9:00 AM</option>
-                    <option value="9:30">9:30 AM</option>
-                    <option value="10:00">10:00 AM</option>
-                </select>
-                <div style="font-size:8px;color:#7bcfa6;margin-top:2px;" id="simTimeStatusControl">✅ Before 7AM = 10% Tier 2</div>
+        <!-- BEAT CONTROL -->
+        <div style="background:rgba(255,255,255,0.02);border-radius:6px;padding:8px 10px;border:1px solid rgba(255,255,255,0.04);min-width:140px;">
+            <div style="font-size:8px;color:rgba(255,255,255,0.3);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;">📈 Beat %</div>
+            <div style="display:flex;align-items:center;gap:6px;">
+                <input type="range" id="simBeatControl" min="0" max="100" value="80" step="5" oninput="document.getElementById('simBeatValue').textContent = this.value + '%'; updateSimulator();" style="flex:1;height:4px;background:rgba(255,255,255,0.1);border-radius:2px;outline:none;appearance:none;">
+                <span id="simBeatValue" style="font-size:13px;font-weight:700;color:#ffd700;min-width:40px;text-align:right;">80%</span>
             </div>
-            
-            <!-- BEAT CONTROL -->
-            <div style="background:rgba(255,255,255,0.02);border-radius:6px;padding:8px 10px;border:1px solid rgba(255,255,255,0.04);">
-                <div style="font-size:8px;color:rgba(255,255,255,0.3);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;">📈 Beat %</div>
-                <div style="display:flex;align-items:center;gap:6px;">
-                    <input type="range" id="simBeatControl" min="0" max="100" value="80" step="5" oninput="document.getElementById('simBeatValue').textContent = this.value + '%'; updateSimulator();" style="flex:1;height:4px;background:rgba(255,255,255,0.1);border-radius:2px;outline:none;appearance:none;">
-                    <span id="simBeatValue" style="font-size:13px;font-weight:700;color:#ffd700;min-width:40px;text-align:right;">80%</span>
-                </div>
-                <div style="font-size:8px;color:rgba(255,255,255,0.15);margin-top:2px;">💡 Beat% = (Credits - Target) ÷ Target × 100</div>
-            </div>
-            
-            <!-- STREAK CONTROL -->
-            <div style="background:rgba(255,255,255,0.02);border-radius:6px;padding:8px 10px;border:1px solid rgba(255,255,255,0.04);">
-                <div style="font-size:8px;color:rgba(255,255,255,0.3);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;">🔥 Streak</div>
-                <div style="display:flex;align-items:center;gap:6px;">
-                    <input type="range" id="simStreakControl" min="0" max="50" value="5" step="1" oninput="document.getElementById('simStreakValue').textContent = this.value + ' days'; updateSimulator();" style="flex:1;height:4px;background:rgba(255,255,255,0.1);border-radius:2px;outline:none;appearance:none;">
-                    <span id="simStreakValue" style="font-size:13px;font-weight:700;color:#7bcfa6;min-width:50px;text-align:right;">5 days</span>
-                </div>
-                <div style="font-size:8px;color:rgba(255,255,255,0.15);margin-top:2px;">💡 Streak = Consecutive days passed (max 50)</div>
-            </div>
+            <div style="font-size:8px;color:rgba(255,255,255,0.15);margin-top:2px;">💡 Beat% = (Credits - Target) ÷ Target × 100</div>
         </div>
         
-        <!-- SCORE DISPLAY -->
-        <div style="margin-top:8px;padding:6px 12px;background:rgba(212,165,116,0.05);border-radius:4px;border:1px solid rgba(212,165,116,0.1);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:4px;">
-            <span style="font-size:9px;color:rgba(255,255,255,0.3);">🧪 Stress Score = Beat% + Streak</span>
-            <span style="font-size:14px;font-weight:700;color:#d4a574;" id="simManualScore">85</span>
-            <span style="font-size:8px;color:rgba(255,255,255,0.15);">Higher score = More Tier 3 bonus</span>
+        <!-- STREAK CONTROL -->
+        <div style="background:rgba(255,255,255,0.02);border-radius:6px;padding:8px 10px;border:1px solid rgba(255,255,255,0.04);min-width:140px;">
+            <div style="font-size:8px;color:rgba(255,255,255,0.3);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;">🔥 Streak</div>
+            <div style="display:flex;align-items:center;gap:6px;">
+                <input type="range" id="simStreakControl" min="0" max="50" value="5" step="1" oninput="document.getElementById('simStreakValue').textContent = this.value + ' days'; updateSimulator();" style="flex:1;height:4px;background:rgba(255,255,255,0.1);border-radius:2px;outline:none;appearance:none;">
+                <span id="simStreakValue" style="font-size:13px;font-weight:700;color:#7bcfa6;min-width:50px;text-align:right;">5 days</span>
+            </div>
+            <div style="font-size:8px;color:rgba(255,255,255,0.15);margin-top:2px;">💡 Streak = Consecutive days passed (max 50)</div>
         </div>
     </div>
+    
+    <!-- SCORE DISPLAY -->
+    <div style="margin-top:8px;padding:6px 12px;background:rgba(212,165,116,0.05);border-radius:4px;border:1px solid rgba(212,165,116,0.1);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:4px;">
+        <span style="font-size:9px;color:rgba(255,255,255,0.3);">🧪 Stress Score = Beat% + Streak</span>
+        <span style="font-size:14px;font-weight:700;color:#d4a574;" id="simManualScore">85</span>
+        <span style="font-size:8px;color:rgba(255,255,255,0.15);">Higher score = More Tier 3 bonus</span>
+    </div>
+</div>
     
     <!-- ============================================================
          YOUR DETAILS - TIME, BEAT, STREAK DISPLAY
@@ -5161,13 +5205,6 @@ async function fixWorkerAccrual(workerId) {
     }
 }
 // ============================================================
-// LOAD TODAY STRESS TARGET - UPDATED CREDIT BASED
-// ============================================================
-// ============================================================
-// ============================================================
-// ✅ FINAL: LOAD TODAY STRESS TARGET - MIN 1,000
-// ============================================================
-
 async function loadTodayStressTarget() {
     if (!currentUser || currentUser.role !== 'worker') return;
     
@@ -5186,11 +5223,13 @@ async function loadTodayStressTarget() {
             .eq('is_closed', false)
             .maybeSingle();
         
+        // ✅ EVERYONE gets a stress test now!
         if (!todayLog) {
             section.style.display = 'none';
             return;
         }
         
+        // If no stress target assigned (shouldn't happen), calculate it
         let stressTarget = todayLog.stress_target;
         let avgCredits = todayLog.stress_avg_credits || 0;
         let latestCredits = todayLog.stress_latest_credits || 0;
@@ -5200,10 +5239,10 @@ async function loadTodayStressTarget() {
         if (!stressTarget) {
             const calculated = await calculateStressTarget(workerId, todayLog.branch_id, today);
             stressTarget = calculated.target;
-            avgCredits = calculated.avgCredits;
-            latestCredits = calculated.latestCredits;
-            teamAvg = calculated.teamAvg;
-            branchAvg = calculated.branchAvg;
+            avgCredits = calculated.avgCredits || 0;
+            latestCredits = calculated.latestCredits || 0;
+            teamAvg = calculated.teamAvg || 0;
+            branchAvg = calculated.branchAvg || 0;
             
             await _supabase
                 .from('daily_logs')
@@ -5219,23 +5258,70 @@ async function loadTodayStressTarget() {
         }
         
         section.style.display = 'block';
+        
+        // Update main display
         document.getElementById('todayTargetCredits').textContent = Math.round(stressTarget).toLocaleString();
         document.getElementById('todayTargetCredits2').textContent = Math.round(stressTarget).toLocaleString();
         document.getElementById('todayTargetCredits3').textContent = Math.round(stressTarget).toLocaleString() + ' Credits';
         
-        // Show ALL 4 components
-        document.getElementById('calcIndividual').textContent = Math.round(avgCredits).toLocaleString() + ' credits (Your Average)';
-        document.getElementById('calcBranchMonthly').textContent = Math.round(branchAvg).toLocaleString() + ' credits (Branch Avg)';
-        document.getElementById('calcTeamHistorical').textContent = Math.round(teamAvg).toLocaleString() + ' credits (Team Avg)';
+        // 🆕 Show ALL 4 components
+        const avgEl = document.getElementById('calcIndividual');
+        if (avgEl) {
+            avgEl.textContent = Math.round(avgCredits).toLocaleString() + ' credits (Your Average)';
+        }
         
+        // 🆕 LATEST CREDITS - The missing 4th factor!
         const latestEl = document.getElementById('calcLatestCredits');
         if (latestEl) {
             latestEl.textContent = Math.round(latestCredits).toLocaleString() + ' credits (Your Latest)';
+        } else {
+            // If the element doesn't exist, create it
+            const parent = document.getElementById('calcIndividual')?.parentElement;
+            if (parent) {
+                const newEl = document.createElement('div');
+                newEl.id = 'calcLatestCredits';
+                newEl.innerHTML = `📈 Your latest credits: <span style="color:#ffd700;">${Math.round(latestCredits).toLocaleString()} credits</span>`;
+                parent.parentElement.insertBefore(newEl, parent.nextSibling);
+            }
         }
         
-        // 🆕 Updated minimum display
-        document.getElementById('calcBranchGeneral').textContent = '1,000 credits (minimum)';
-        document.getElementById('calcTargetFinal').textContent = Math.round(stressTarget).toLocaleString() + ' credits';
+        const branchEl = document.getElementById('calcBranchMonthly');
+        if (branchEl) {
+            branchEl.textContent = Math.round(branchAvg).toLocaleString() + ' credits (Branch Avg)';
+        }
+        
+        const teamEl = document.getElementById('calcTeamHistorical');
+        if (teamEl) {
+            teamEl.textContent = Math.round(teamAvg).toLocaleString() + ' credits (Team Avg)';
+        }
+        
+        const minEl = document.getElementById('calcBranchGeneral');
+        if (minEl) {
+            minEl.textContent = '1,000 credits (minimum)';
+        }
+        
+        // 🆕 Update the target formula display with ALL 4 factors
+        const targetFinalEl = document.getElementById('calcTargetFinal');
+        if (targetFinalEl) {
+            targetFinalEl.textContent = Math.round(stressTarget).toLocaleString() + ' credits';
+        }
+        
+        // 🆕 Add or update the formula display
+        let formulaEl = document.getElementById('calcTargetFormula');
+        if (!formulaEl) {
+            const parent = document.getElementById('calcTargetFinal')?.parentElement;
+            if (parent) {
+                formulaEl = document.createElement('div');
+                formulaEl.id = 'calcTargetFormula';
+                formulaEl.style.marginTop = '4px';
+                formulaEl.style.fontSize = '10px';
+                formulaEl.style.color = 'rgba(255,255,255,0.3)';
+                parent.appendChild(formulaEl);
+            }
+        }
+        if (formulaEl) {
+            formulaEl.textContent = `📊 Formula: (${Math.round(avgCredits)} + ${Math.round(latestCredits)} + ${Math.round(teamAvg)} + ${Math.round(branchAvg)}) ÷ 4 = ${Math.round(stressTarget)} credits`;
+        }
         
         document.getElementById('todayGoalStatus').textContent = '🎯 Daily Stress Test';
         document.getElementById('todayGoalStatus').style.color = '#ffd700';
@@ -5248,7 +5334,6 @@ async function loadTodayStressTarget() {
         console.log(`   📈 Latest: ${Math.round(latestCredits).toLocaleString()}`);
         console.log(`   👥 Team Avg: ${Math.round(teamAvg).toLocaleString()}`);
         console.log(`   🏢 Branch Avg: ${Math.round(branchAvg).toLocaleString()}`);
-        console.log(`   📉 Minimum: 1,000 credits`);
         
     } catch (error) {
         console.error('Error loading today stress target:', error);
