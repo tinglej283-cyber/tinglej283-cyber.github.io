@@ -7364,7 +7364,7 @@ function generateWorkerSliders() {
     }
     
     let html = `
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:8px;">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:8px;">
     `;
     
     const colors = ['#ffd700', '#7bcfa6', '#4BC0C0', '#d4a574', '#e94560', '#9966FF', '#FF6384', '#FF9F40', '#36A2EB', '#FFCE56'];
@@ -7393,21 +7393,21 @@ function generateWorkerSliders() {
         const wData = workerData[i];
         
         html += `
-            <div style="padding:14px 16px;background:${isYou ? 'rgba(255,215,0,0.08)' : 'rgba(255,255,255,0.03)'};border-radius:10px;border:2px solid ${isYou ? 'rgba(255,215,0,0.25)' : 'rgba(255,255,255,0.06)'};">
+            <div style="padding:16px 18px;background:${isYou ? 'rgba(255,215,0,0.08)' : 'rgba(255,255,255,0.03)'};border-radius:12px;border:2px solid ${isYou ? 'rgba(255,215,0,0.25)' : 'rgba(255,255,255,0.06)'};">
                 <!-- HEADER -->
-                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
-                    <span style="font-size:14px;font-weight:600;color:${isYou ? '#ffd700' : 'rgba(255,255,255,0.7)'};">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+                    <span style="font-size:15px;font-weight:600;color:${isYou ? '#ffd700' : 'rgba(255,255,255,0.7)'};">
                         ${isYou ? '⭐ You' : '👤 Worker ' + i}
                     </span>
-                    <span style="font-size:11px;color:rgba(255,255,255,0.3);">
-                        Daily: <span id="${displayId}" style="font-weight:700;color:${payColor};font-size:14px;">${workerDailyCredits.toLocaleString()}</span>
+                    <span style="font-size:12px;color:rgba(255,255,255,0.3);">
+                        Daily: <span id="${displayId}" style="font-weight:700;color:${payColor};font-size:16px;">${workerDailyCredits.toLocaleString()}</span>
                     </span>
                 </div>
                 
                 <!-- CREDITS CONTROLS -->
-                <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px;">
+                <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
                     <button onclick="adjustWorkerCredits('${dailyInputId}', -1000)" 
-                            style="background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.1);color:#f0ebe6;padding:3px 12px;border-radius:6px;cursor:pointer;font-size:16px;font-weight:700;transition:all 0.2s ease;"
+                            style="background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.1);color:#f0ebe6;padding:4px 14px;border-radius:6px;cursor:pointer;font-size:18px;font-weight:700;transition:all 0.2s ease;"
                             onmouseover="this.style.background='rgba(255,255,255,0.15)'" 
                             onmouseout="this.style.background='rgba(255,255,255,0.08)'">
                         −
@@ -7420,10 +7420,10 @@ function generateWorkerSliders() {
                            value="${workerDailyCredits}"
                            oninput="updateSimulator()"
                            onchange="updateSimulator()"
-                           style="flex:1;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.08);border-radius:6px;color:#f0ebe6;padding:6px 8px;font-size:14px;text-align:center;font-family:'Inter',sans-serif;font-weight:600;width:70px;"
+                           style="flex:1;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.08);border-radius:6px;color:#f0ebe6;padding:8px 10px;font-size:16px;text-align:center;font-family:'Inter',sans-serif;font-weight:600;width:80px;"
                            onfocus="this.select()">
                     <button onclick="adjustWorkerCredits('${dailyInputId}', 1000)" 
-                            style="background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.1);color:#f0ebe6;padding:3px 12px;border-radius:6px;cursor:pointer;font-size:16px;font-weight:700;transition:all 0.2s ease;"
+                            style="background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.1);color:#f0ebe6;padding:4px 14px;border-radius:6px;cursor:pointer;font-size:18px;font-weight:700;transition:all 0.2s ease;"
                             onmouseover="this.style.background='rgba(255,255,255,0.15)'" 
                             onmouseout="this.style.background='rgba(255,255,255,0.08)'">
                         +
@@ -7431,8 +7431,8 @@ function generateWorkerSliders() {
                 </div>
                 
                 <!-- LIFETIME -->
-                <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px;">
-                    <span style="font-size:9px;color:rgba(255,255,255,0.25);min-width:55px;">Lifetime:</span>
+                <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
+                    <span style="font-size:10px;color:rgba(255,255,255,0.25);min-width:60px;">Lifetime:</span>
                     <input type="number" 
                            id="${lifetimeInputId}" 
                            min="0" 
@@ -7441,80 +7441,84 @@ function generateWorkerSliders() {
                            value="${workerLifetimeCredits}"
                            oninput="updateSimulator()"
                            onchange="updateSimulator()"
-                           style="flex:1;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.06);border-radius:4px;color:#f0ebe6;padding:3px 6px;font-size:10px;text-align:center;font-family:'Inter',sans-serif;width:60px;">
-                    <span id="${lifetimeDisplayId}" style="font-size:10px;color:rgba(255,255,255,0.3);min-width:50px;font-weight:500;">${workerLifetimeCredits.toLocaleString()}</span>
+                           style="flex:1;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.06);border-radius:4px;color:#f0ebe6;padding:4px 8px;font-size:12px;text-align:center;font-family:'Inter',sans-serif;width:70px;">
+                    <span id="${lifetimeDisplayId}" style="font-size:11px;color:rgba(255,255,255,0.3);min-width:55px;font-weight:500;">${workerLifetimeCredits.toLocaleString()}</span>
                 </div>
                 
                 <!-- 🆕 MANUAL CONTROLS - ONLY FOR NON-YOU WORKERS -->
                 ${!isYou ? `
-                <div style="margin-top:8px;padding:10px 12px;background:rgba(255,255,255,0.04);border-radius:8px;border:1px solid rgba(255,255,255,0.06);">
-                    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;">
-                        <!-- Check-In Time -->
-                        <div>
-                            <div style="color:rgba(255,255,255,0.25);font-size:8px;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:2px;">⏰ Check-In</div>
-                            <select id="simTimeControl_${i}" onchange="updateSimulator()" 
-                                    style="width:100%;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.08);border-radius:4px;color:#f0ebe6;padding:4px 4px;font-size:10px;font-family:'Inter',sans-serif;">
-                                <option value="6:00" ${wData.time === '6:00' ? 'selected' : ''}>6:00</option>
-                                <option value="6:15" ${wData.time === '6:15' ? 'selected' : ''}>6:15</option>
-                                <option value="6:30" ${wData.time === '6:30' ? 'selected' : ''}>6:30</option>
-                                <option value="6:45" ${wData.time === '6:45' ? 'selected' : ''}>6:45</option>
-                                <option value="7:00" ${wData.time === '7:00' ? 'selected' : ''}>7:00</option>
-                                <option value="7:15" ${wData.time === '7:15' ? 'selected' : ''}>7:15</option>
-                                <option value="7:30" ${wData.time === '7:30' ? 'selected' : ''}>7:30</option>
-                                <option value="8:00" ${wData.time === '8:00' ? 'selected' : ''}>8:00</option>
-                                <option value="8:30" ${wData.time === '8:30' ? 'selected' : ''}>8:30</option>
-                                <option value="9:00" ${wData.time === '9:00' ? 'selected' : ''}>9:00</option>
-                            </select>
-                            <div style="font-size:7px;color:${wData.time <= '7:00' ? '#7bcfa6' : '#d4a574'};margin-top:1px;">
-                                ${wData.time <= '7:00' ? '✅ Before 7AM' : '⚠️ After 7AM'}
-                            </div>
+                <div style="margin-top:10px;padding:12px 14px;background:rgba(255,255,255,0.04);border-radius:8px;border:1px solid rgba(255,255,255,0.06);">
+                    <!-- Row 1: Time - Full width -->
+                    <div style="margin-bottom:10px;">
+                        <div style="color:rgba(255,255,255,0.25);font-size:9px;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;">⏰ Check-In Time</div>
+                        <select id="simTimeControl_${i}" onchange="updateSimulator()" 
+                                style="width:100%;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.08);border-radius:6px;color:#f0ebe6;padding:8px 10px;font-size:14px;font-family:'Inter',sans-serif;cursor:pointer;">
+                            <option value="6:00" ${wData.time === '6:00' ? 'selected' : ''}>6:00 AM</option>
+                            <option value="6:15" ${wData.time === '6:15' ? 'selected' : ''}>6:15 AM</option>
+                            <option value="6:30" ${wData.time === '6:30' ? 'selected' : ''}>6:30 AM</option>
+                            <option value="6:45" ${wData.time === '6:45' ? 'selected' : ''}>6:45 AM</option>
+                            <option value="7:00" ${wData.time === '7:00' ? 'selected' : ''}>7:00 AM</option>
+                            <option value="7:15" ${wData.time === '7:15' ? 'selected' : ''}>7:15 AM</option>
+                            <option value="7:30" ${wData.time === '7:30' ? 'selected' : ''}>7:30 AM</option>
+                            <option value="8:00" ${wData.time === '8:00' ? 'selected' : ''}>8:00 AM</option>
+                            <option value="8:30" ${wData.time === '8:30' ? 'selected' : ''}>8:30 AM</option>
+                            <option value="9:00" ${wData.time === '9:00' ? 'selected' : ''}>9:00 AM</option>
+                        </select>
+                        <div style="font-size:10px;color:${wData.time <= '7:00' ? '#7bcfa6' : '#d4a574'};margin-top:3px;font-weight:500;">
+                            ${wData.time <= '7:00' ? '✅ Before 7AM = 10% Tier 2' : '⚠️ After 7AM = 5% Tier 2'}
                         </div>
-                        
+                    </div>
+                    
+                    <!-- Row 2: Beat & Streak side by side -->
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
                         <!-- Beat % -->
                         <div>
-                            <div style="color:rgba(255,255,255,0.25);font-size:8px;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:2px;">📈 Beat%</div>
+                            <div style="color:rgba(255,255,255,0.25);font-size:9px;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;">📈 Beat%</div>
                             <input type="range" id="simBeatControl_${i}" min="0" max="100" value="${wData.beat}" step="5" 
                                    oninput="document.getElementById('simBeatDisplay_${i}').textContent = this.value + '%'; updateSimulator();" 
-                                   style="width:100%;height:5px;background:rgba(255,255,255,0.1);border-radius:3px;outline:none;appearance:none;cursor:pointer;">
-                            <div style="display:flex;justify-content:space-between;font-size:8px;color:rgba(255,255,255,0.15);margin-top:1px;">
+                                   style="width:100%;height:6px;background:rgba(255,255,255,0.1);border-radius:3px;outline:none;appearance:none;cursor:pointer;">
+                            <div style="display:flex;justify-content:space-between;font-size:9px;color:rgba(255,255,255,0.15);margin-top:2px;">
                                 <span>0</span>
-                                <span id="simBeatDisplay_${i}" style="color:#ffd700;font-weight:600;font-size:10px;">${wData.beat}%</span>
+                                <span id="simBeatDisplay_${i}" style="color:#ffd700;font-weight:700;font-size:13px;">${wData.beat}%</span>
                                 <span>100</span>
                             </div>
+                            <div style="font-size:8px;color:rgba(255,255,255,0.12);margin-top:1px;">💡 Beat% = (Credits - Target) ÷ Target × 100</div>
                         </div>
                         
                         <!-- Streak -->
                         <div>
-                            <div style="color:rgba(255,255,255,0.25);font-size:8px;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:2px;">🔥 Streak</div>
+                            <div style="color:rgba(255,255,255,0.25);font-size:9px;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;">🔥 Streak</div>
                             <input type="range" id="simStreakControl_${i}" min="0" max="50" value="${wData.streak}" step="1" 
                                    oninput="document.getElementById('simStreakDisplay_${i}').textContent = this.value + 'd'; updateSimulator();" 
-                                   style="width:100%;height:5px;background:rgba(255,255,255,0.1);border-radius:3px;outline:none;appearance:none;cursor:pointer;">
-                            <div style="display:flex;justify-content:space-between;font-size:8px;color:rgba(255,255,255,0.15);margin-top:1px;">
+                                   style="width:100%;height:6px;background:rgba(255,255,255,0.1);border-radius:3px;outline:none;appearance:none;cursor:pointer;">
+                            <div style="display:flex;justify-content:space-between;font-size:9px;color:rgba(255,255,255,0.15);margin-top:2px;">
                                 <span>0</span>
-                                <span id="simStreakDisplay_${i}" style="color:#7bcfa6;font-weight:600;font-size:10px;">${wData.streak}d</span>
+                                <span id="simStreakDisplay_${i}" style="color:#7bcfa6;font-weight:700;font-size:13px;">${wData.streak}d</span>
                                 <span>50</span>
                             </div>
+                            <div style="font-size:8px;color:rgba(255,255,255,0.12);margin-top:1px;">💡 Streak = Consecutive days passed</div>
                         </div>
                     </div>
                     
-                    <!-- Score Display -->
-                    <div style="margin-top:6px;padding:4px 8px;background:rgba(212,165,116,0.08);border-radius:4px;border:1px solid rgba(212,165,116,0.1);display:flex;justify-content:space-between;align-items:center;">
-                        <span style="font-size:8px;color:rgba(255,255,255,0.3);">🧪 Stress Score = Beat% + Streak</span>
-                        <span id="simScoreDisplay_${i}" style="font-size:13px;font-weight:700;color:#d4a574;">${wData.beat + wData.streak}</span>
+                    <!-- Score Display - Full width -->
+                    <div style="margin-top:10px;padding:8px 12px;background:rgba(212,165,116,0.08);border-radius:6px;border:1px solid rgba(212,165,116,0.12);display:flex;justify-content:space-between;align-items:center;">
+                        <span style="font-size:10px;color:rgba(255,255,255,0.3);">🧪 Stress Score = Beat% + Streak</span>
+                        <span id="simScoreDisplay_${i}" style="font-size:18px;font-weight:700;color:#d4a574;">${wData.beat + wData.streak}</span>
                     </div>
+                    <div style="font-size:8px;color:rgba(255,255,255,0.1);text-align:center;margin-top:3px;">Higher score = More Tier 3 bonus</div>
                 </div>
                 ` : `
                 <!-- For YOU - show a note that you control it below -->
-                <div style="margin-top:8px;padding:6px 10px;background:rgba(255,215,0,0.05);border-radius:6px;border:1px dashed rgba(255,215,0,0.15);text-align:center;">
-                    <span style="font-size:9px;color:rgba(255,215,0,0.3);">🎮 Use the Manual Controls below to adjust your Beat%, Streak & Check-In time</span>
+                <div style="margin-top:10px;padding:10px 14px;background:rgba(255,215,0,0.05);border-radius:8px;border:1px dashed rgba(255,215,0,0.15);text-align:center;">
+                    <span style="font-size:11px;color:rgba(255,215,0,0.4);">🎮 Use the Manual Controls below to adjust your Beat%, Streak & Check-In time</span>
                 </div>
                 `}
                 
                 <!-- Progress Bar -->
-                <div style="height:4px;background:rgba(255,255,255,0.06);border-radius:3px;margin-top:8px;overflow:hidden;">
+                <div style="height:5px;background:rgba(255,255,255,0.06);border-radius:3px;margin-top:10px;overflow:hidden;">
                     <div id="${barId}" style="height:100%;background:${color};border-radius:3px;width:0%;transition:width 0.4s ease;"></div>
                 </div>
-                <div style="display:flex;justify-content:space-between;font-size:7px;color:rgba(255,255,255,0.12);margin-top:2px;">
+                <div style="display:flex;justify-content:space-between;font-size:8px;color:rgba(255,255,255,0.12);margin-top:3px;">
                     <span>0</span>
                     <span style="color:rgba(255,255,255,0.2);">📊 Based on Sales & Items</span>
                 </div>
