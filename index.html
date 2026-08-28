@@ -7449,7 +7449,7 @@ function generateWorkerSliders() {
                 ${!isYou ? `
                 <div style="margin-top:10px;padding:12px 14px;background:rgba(255,255,255,0.04);border-radius:8px;border:1px solid rgba(255,255,255,0.06);">
                     <!-- Row 1: Time - Full width -->
-                    <div style="margin-bottom:10px;">
+                    <div style="margin-bottom:12px;">
                         <div style="color:rgba(255,255,255,0.25);font-size:9px;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;">⏰ Check-In Time</div>
                         <select id="simTimeControl_${i}" onchange="updateSimulator()" 
                                 style="width:100%;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.08);border-radius:6px;color:#f0ebe6;padding:8px 10px;font-size:14px;font-family:'Inter',sans-serif;cursor:pointer;">
@@ -7469,43 +7469,40 @@ function generateWorkerSliders() {
                         </div>
                     </div>
                     
-                    <!-- Row 2: Beat & Streak side by side -->
-                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
-                        <!-- Beat % -->
-                        <div>
-                            <div style="color:rgba(255,255,255,0.25);font-size:9px;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;">📈 Beat%</div>
-                            <input type="range" id="simBeatControl_${i}" min="0" max="100" value="${wData.beat}" step="5" 
-                                   oninput="document.getElementById('simBeatDisplay_${i}').textContent = this.value + '%'; updateSimulator();" 
-                                   style="width:100%;height:6px;background:rgba(255,255,255,0.1);border-radius:3px;outline:none;appearance:none;cursor:pointer;">
-                            <div style="display:flex;justify-content:space-between;font-size:9px;color:rgba(255,255,255,0.15);margin-top:2px;">
-                                <span>0</span>
-                                <span id="simBeatDisplay_${i}" style="color:#ffd700;font-weight:700;font-size:13px;">${wData.beat}%</span>
-                                <span>100</span>
-                            </div>
-                            <div style="font-size:8px;color:rgba(255,255,255,0.12);margin-top:1px;">💡 Beat% = (Credits - Target) ÷ Target × 100</div>
+                    <!-- Row 2: Beat - Full Width -->
+                    <div style="margin-bottom:12px;">
+                        <div style="color:rgba(255,255,255,0.25);font-size:9px;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;">📈 Beat%</div>
+                        <input type="range" id="simBeatControl_${i}" min="0" max="100" value="${wData.beat}" step="5" 
+                               oninput="document.getElementById('simBeatDisplay_${i}').textContent = this.value + '%'; updateSimulator();" 
+                               style="width:100%;height:8px;background:rgba(255,255,255,0.1);border-radius:4px;outline:none;appearance:none;cursor:pointer;">
+                        <div style="display:flex;justify-content:space-between;font-size:9px;color:rgba(255,255,255,0.15);margin-top:2px;">
+                            <span>0</span>
+                            <span id="simBeatDisplay_${i}" style="color:#ffd700;font-weight:700;font-size:14px;">${wData.beat}%</span>
+                            <span>100</span>
                         </div>
-                        
-                        <!-- Streak -->
-                        <div>
-                            <div style="color:rgba(255,255,255,0.25);font-size:9px;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;">🔥 Streak</div>
-                            <input type="range" id="simStreakControl_${i}" min="0" max="50" value="${wData.streak}" step="1" 
-                                   oninput="document.getElementById('simStreakDisplay_${i}').textContent = this.value + 'd'; updateSimulator();" 
-                                   style="width:100%;height:6px;background:rgba(255,255,255,0.1);border-radius:3px;outline:none;appearance:none;cursor:pointer;">
-                            <div style="display:flex;justify-content:space-between;font-size:9px;color:rgba(255,255,255,0.15);margin-top:2px;">
-                                <span>0</span>
-                                <span id="simStreakDisplay_${i}" style="color:#7bcfa6;font-weight:700;font-size:13px;">${wData.streak}d</span>
-                                <span>50</span>
-                            </div>
-                            <div style="font-size:8px;color:rgba(255,255,255,0.12);margin-top:1px;">💡 Streak = Consecutive days passed</div>
+                        <div style="font-size:8px;color:rgba(255,255,255,0.12);margin-top:2px;">💡 Beat% = (Credits - Target) ÷ Target × 100</div>
+                    </div>
+                    
+                    <!-- Row 3: Streak - Full Width -->
+                    <div style="margin-bottom:10px;">
+                        <div style="color:rgba(255,255,255,0.25);font-size:9px;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;">🔥 Streak</div>
+                        <input type="range" id="simStreakControl_${i}" min="0" max="50" value="${wData.streak}" step="1" 
+                               oninput="document.getElementById('simStreakDisplay_${i}').textContent = this.value + 'd'; updateSimulator();" 
+                               style="width:100%;height:8px;background:rgba(255,255,255,0.1);border-radius:4px;outline:none;appearance:none;cursor:pointer;">
+                        <div style="display:flex;justify-content:space-between;font-size:9px;color:rgba(255,255,255,0.15);margin-top:2px;">
+                            <span>0</span>
+                            <span id="simStreakDisplay_${i}" style="color:#7bcfa6;font-weight:700;font-size:14px;">${wData.streak}d</span>
+                            <span>50</span>
                         </div>
+                        <div style="font-size:8px;color:rgba(255,255,255,0.12);margin-top:2px;">💡 Streak = Consecutive days passed (max 50)</div>
                     </div>
                     
                     <!-- Score Display - Full width -->
-                    <div style="margin-top:10px;padding:8px 12px;background:rgba(212,165,116,0.08);border-radius:6px;border:1px solid rgba(212,165,116,0.12);display:flex;justify-content:space-between;align-items:center;">
-                        <span style="font-size:10px;color:rgba(255,255,255,0.3);">🧪 Stress Score = Beat% + Streak</span>
-                        <span id="simScoreDisplay_${i}" style="font-size:18px;font-weight:700;color:#d4a574;">${wData.beat + wData.streak}</span>
+                    <div style="margin-top:8px;padding:10px 14px;background:rgba(212,165,116,0.08);border-radius:8px;border:1px solid rgba(212,165,116,0.12);display:flex;justify-content:space-between;align-items:center;">
+                        <span style="font-size:11px;color:rgba(255,255,255,0.3);">🧪 Stress Score = Beat% + Streak</span>
+                        <span id="simScoreDisplay_${i}" style="font-size:20px;font-weight:700;color:#d4a574;">${wData.beat + wData.streak}</span>
                     </div>
-                    <div style="font-size:8px;color:rgba(255,255,255,0.1);text-align:center;margin-top:3px;">Higher score = More Tier 3 bonus</div>
+                    <div style="font-size:8px;color:rgba(255,255,255,0.1);text-align:center;margin-top:4px;">Higher score = More Tier 3 bonus</div>
                 </div>
                 ` : `
                 <!-- For YOU - show a note that you control it below -->
