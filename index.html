@@ -6856,13 +6856,35 @@ function updateSimulator() {
     }
     
     // ============================================================
-    // STEP 2: GENERATE WORKER DATA
+    // STEP 2: GENERATE WORKER DATA WITH CONTROLS FOR ALL
     // ============================================================
     const simulatedWorkers = [];
     let maxDailyCredits = 0;
     const checkInTimes = {};
     const now = new Date();
-    const target = 1000; // 🆕 Changed to 1,000
+    const target = 1000;
+    
+    // 🆕 Get check-in times for ALL workers
+    const workerTimes = [];
+    for (let i = 0; i < workerCount; i++) {
+        // For "You" (i=0), use the manual control
+        // For others, use the same manual time but with slight variation (or same)
+        let workerHour = hour;
+        let workerMinute = minute;
+        
+        if (i !== 0) {
+            // 🆕 OTHER WORKERS ALSO USE MANUAL TIME (with slight random offset)
+            const offset = Math.floor(Math.random() * 30) - 15; // -15 to +15 minutes
+            const totalMinutes = (hour * 60) + minute + offset;
+            workerHour = Math.floor(totalMinutes / 60);
+            workerMinute = totalMinutes % 60;
+            // Clamp to valid hours (6-10 AM)
+            if (workerHour < 6) { workerHour = 6; workerMinute = 0; }
+            if (workerHour > 10) { workerHour = 10; workerMinute = 0; }
+        }
+        
+        workerTimes.push({ hour: workerHour, minute: workerMinute });
+    }
     
     for (let i = 0; i < workerCount; i++) {
         const inputId = `simWorkerCredits_${i}`;
@@ -6885,38 +6907,34 @@ function updateSimulator() {
             lifetimeCredits = dailyCredits * 30;
         }
         
-        // APPLY MANUAL CONTROLS - Only for "You" (i === 0)
+        // 🆕 APPLY MANUAL CONTROLS TO ALL WORKERS
+        const isYou = (i === 0);
         let beatPercent = 0;
         let streak = 0;
         let isBefore7AM_worker = false;
         let checkInTimeStr = '6:45 AM';
         let checkInDate = new Date(now);
         
-        if (i === 0) {
-            // YOU - use manual controls
+        const wHour = workerTimes[i].hour;
+        const wMinute = workerTimes[i].minute;
+        
+        // All workers use the manual beat and streak values
+        // 🆕 BUT with slight variation for realism (only for non-you)
+        if (isYou) {
             beatPercent = manualBeat;
             streak = manualStreak;
-            isBefore7AM_worker = isBefore7AM;
-            checkInDate.setHours(hour, minute, 0, 0);
-            checkInTimeStr = manualTime + (hour >= 12 ? ' PM' : ' AM');
         } else {
-            // Other workers - random
-            const checkInOptions = [
-                { hour: 6, minute: 15 }, { hour: 6, minute: 45 },
-                { hour: 7, minute: 5 }, { hour: 7, minute: 30 },
-                { hour: 8, minute: 0 }, { hour: 8, minute: 30 },
-                { hour: 9, minute: 0 }, { hour: 9, minute: 30 }
-            ];
-            const option = checkInOptions[i % checkInOptions.length];
-            checkInDate.setHours(option.hour, option.minute, 0, 0);
-            checkInTimeStr = `${option.hour}:${String(option.minute).padStart(2, '0')}${option.hour >= 12 ? ' PM' : ' AM'}`;
-            isBefore7AM_worker = option.hour < 7 || (option.hour === 7 && option.minute === 0);
-            
-            // Random beat and streak for others
-            const passed = dailyCredits >= target;
-            beatPercent = passed ? Math.min(((dailyCredits - target) / target) * 100, 100) : 0;
-            streak = passed ? Math.min(Math.floor(Math.random() * 10) + 1, 50) : 0;
+            // Other workers get the manual values with some randomness
+            // This keeps the spirit of the manual control while adding variety
+            const beatVariation = Math.floor(Math.random() * 30) - 15; // -15 to +15
+            const streakVariation = Math.floor(Math.random() * 6) - 3; // -3 to +3
+            beatPercent = Math.max(0, Math.min(100, manualBeat + beatVariation));
+            streak = Math.max(0, Math.min(50, manualStreak + streakVariation));
         }
+        
+        isBefore7AM_worker = wHour < 7 || (wHour === 7 && wMinute === 0);
+        checkInDate.setHours(wHour, wMinute, 0, 0);
+        checkInTimeStr = `${wHour}:${String(wMinute).padStart(2, '0')}${wHour >= 12 ? ' PM' : ' AM'}`;
         
         checkInTimes[i] = checkInDate.toISOString();
         
@@ -7089,7 +7107,7 @@ function updateSimulator() {
     document.getElementById('simSnatchLevel').textContent = tierStatus || '🎯 30% + 10% + 60% = 100%';
     
     // ============================================================
-    // STEP 9: DISTRIBUTION BREAKDOWN
+    // STEP 9: DISTRIBUTION BREAKDOWN (with ALL workers showing B and S)
     // ============================================================
     const rankEmojis = ['🥇', '🥈', '🥉'];
     let breakdownHTML = '';
@@ -7105,13 +7123,18 @@ function updateSimulator() {
         const maxBonus = sortedByTotal[0]?.total || 1;
         const barWidth = (r.total / maxBonus) * 100;
         
+        // 🆕 Show B% and S for ALL workers
+        const stressDisplay = r.passed ? 
+            `✅ B${r.beatPercent}% S${r.streak}` : 
+            `❌ B${r.beatPercent}% S${r.streak}`;
+        
         breakdownHTML += `
             <div style="display:flex;align-items:center;gap:6px;padding:4px 0;border-bottom:1px solid rgba(255,255,255,0.03);flex-wrap:wrap;">
                 <span style="font-size:14px;min-width:36px;">${rankIcon}</span>
                 <span style="font-size:11px;color:#f0ebe6;min-width:70px;">${r.name}${isYou}</span>
                 <span style="font-size:9px;color:rgba(255,255,255,0.4);min-width:60px;">${Math.round(r.dailyCredits).toLocaleString()} cr</span>
                 <span style="font-size:8px;color:${r.isBefore7AM ? '#7bcfa6' : '#d4a574'};min-width:70px;">⏰ ${r.checkInTimeStr}</span>
-                <span style="font-size:8px;color:${r.passed ? '#7bcfa6' : '#e94560'};min-width:60px;">${r.passed ? '✅ B' + Math.round(r.beatPercent) + '% S' + r.streak : '❌ FAILED'}</span>
+                <span style="font-size:8px;color:${r.passed ? '#7bcfa6' : '#e94560'};min-width:70px;">${stressDisplay}</span>
                 <span style="font-size:8px;color:rgba(255,255,255,0.2);min-width:50px;">
                     🏆${r.tier1.toFixed(0)} ⏰${r.tier2.toFixed(0)} 🧪${r.tier3.toFixed(0)}
                 </span>
@@ -7160,10 +7183,9 @@ function updateSimulator() {
     document.getElementById('simTotalBreakdown').innerHTML = poolBreakdownHTML;
     
     // ============================================================
-    // 🆕 STEP 11: UPDATE YOUR DETAILS WITH MANUAL VALUES (FIXED!)
+    // 🆕 STEP 11: UPDATE YOUR DETAILS
     // ============================================================
     if (yourResult) {
-        // Update Time Display
         document.getElementById('simCheckInTime').textContent = yourResult.checkInTimeStr;
         const timeStatusDisplay = document.getElementById('simTimeStatus');
         if (yourResult.isBefore7AM) {
@@ -7174,23 +7196,14 @@ function updateSimulator() {
             timeStatusDisplay.style.color = '#d4a574';
         }
         
-        // 🆕 FIX: ALWAYS show manual values for Beat%, Streak, and Score
-        // Never show "❌ FAILED" - always show the numbers!
         const isPassing = yourResult.passed;
-        
-        // Beat% - show manual value
         document.getElementById('simBeatPercent').textContent = manualBeat + '%';
         document.getElementById('simBeatPercent').style.color = isPassing ? '#ffd700' : '#d4a574';
-        
-        // Streak - show manual value
         document.getElementById('simStreak').textContent = manualStreak + ' days';
         document.getElementById('simStreak').style.color = isPassing ? '#7bcfa6' : '#d4a574';
-        
-        // Score - show manual value (Beat + Streak)
         document.getElementById('simStressScore').textContent = manualScore;
         document.getElementById('simStressScore').style.color = isPassing ? '#d4a574' : '#d4a574';
         
-        // Show PASS/FAIL status separately
         let statusEl = document.getElementById('simStressStatus');
         if (!statusEl) {
             statusEl = document.createElement('div');
@@ -7247,7 +7260,6 @@ function updateSimulator() {
             advice = '📈 Bottom tier. ' + advice;
         }
         
-        // 🆕 Updated stress info - shows manual values
         const stressInfo = yourResult.passed ? 
             `🧪 PASSED! Beat ${manualBeat}% • Streak ${manualStreak} • Score ${manualScore}` :
             `🧪 FAILED • Beat ${manualBeat}% • Streak ${manualStreak} • Score ${manualScore} • Need ${Math.max(0, 1000 - yourResult.dailyCredits).toLocaleString()} more to pass`;
@@ -7309,10 +7321,6 @@ function randomizeSimulatorControls() {
     // Update simulator
     updateSimulator();
 }
-// ============================================================
-// ✅ FIXED: GENERATE WORKER SLIDERS - AUTO-UPDATE
-// ============================================================
-
 function generateWorkerSliders() {
     const container = document.getElementById('workerBonusSliders');
     if (!container) return;
@@ -7372,6 +7380,15 @@ function generateWorkerSliders() {
         const isFullPay = workerDailyCredits >= 5000;
         const payColor = isFullPay ? '#7bcfa6' : '#e94560';
         
+        // 🆕 Generate random manual values for each worker (but keep them consistent)
+        // Use a seed based on i so they don't change on every render
+        const seed = i * 7 + 13;
+        const randomBeat = Math.min(100, Math.floor((80 + (seed % 30) - 15) / 5) * 5);
+        const randomStreak = Math.max(0, Math.min(50, 5 + (seed % 10) - 3));
+        const randomTimeHour = 6 + Math.floor((seed % 60) / 15);
+        const randomTimeMinute = (seed % 60) % 60;
+        const timeStr = `${String(randomTimeHour).padStart(2, '0')}:${String(randomTimeMinute).padStart(2, '0')}`;
+        
         html += `
             <div style="padding:10px 12px;background:${isYou ? 'rgba(255,215,0,0.08)' : 'rgba(255,255,255,0.02)'};border-radius:8px;border:1px solid ${isYou ? 'rgba(255,215,0,0.2)' : 'rgba(255,255,255,0.06)'};">
                 <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
@@ -7409,7 +7426,7 @@ function generateWorkerSliders() {
                     </button>
                 </div>
                 
-                <!-- Lifetime Credits Input -->
+                <!-- 🆕 LIFETIME CREDITS -->
                 <div style="display:flex;align-items:center;gap:4px;margin-bottom:2px;">
                     <span style="font-size:8px;color:rgba(255,255,255,0.2);min-width:50px;">Lifetime:</span>
                     <input type="number" 
@@ -7423,6 +7440,52 @@ function generateWorkerSliders() {
                            style="flex:1;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.06);border-radius:4px;color:#f0ebe6;padding:2px 6px;font-size:10px;text-align:center;font-family:'Inter',sans-serif;width:60px;"
                            onfocus="this.select()">
                     <span id="${lifetimeDisplayId}" style="font-size:9px;color:rgba(255,255,255,0.3);min-width:40px;">${workerLifetimeCredits.toLocaleString()}</span>
+                </div>
+                
+                <!-- 🆕 MANUAL CONTROLS FOR EVERY WORKER -->
+                <div style="margin-top:6px;padding:6px 8px;background:rgba(255,255,255,0.03);border-radius:6px;border:1px solid rgba(255,255,255,0.04);">
+                    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:4px;font-size:9px;">
+                        <div>
+                            <div style="color:rgba(255,255,255,0.2);font-size:7px;">⏰ Check-In</div>
+                            <select id="simTimeControl_${i}" onchange="updateSimulator()" style="width:100%;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.08);color:#f0ebe6;padding:2px 4px;border-radius:4px;font-size:8px;font-family:'Inter',sans-serif;">
+                                <option value="6:00" ${timeStr === '6:00' ? 'selected' : ''}>6:00</option>
+                                <option value="6:15" ${timeStr === '6:15' ? 'selected' : ''}>6:15</option>
+                                <option value="6:30" ${timeStr === '6:30' ? 'selected' : ''}>6:30</option>
+                                <option value="6:45" ${timeStr === '6:45' ? 'selected' : ''}>6:45</option>
+                                <option value="7:00" ${timeStr === '7:00' ? 'selected' : ''}>7:00</option>
+                                <option value="7:15" ${timeStr === '7:15' ? 'selected' : ''}>7:15</option>
+                                <option value="7:30" ${timeStr === '7:30' ? 'selected' : ''}>7:30</option>
+                                <option value="8:00" ${timeStr === '8:00' ? 'selected' : ''}>8:00</option>
+                                <option value="8:30" ${timeStr === '8:30' ? 'selected' : ''}>8:30</option>
+                                <option value="9:00" ${timeStr === '9:00' ? 'selected' : ''}>9:00</option>
+                            </select>
+                        </div>
+                        <div>
+                            <div style="color:rgba(255,255,255,0.2);font-size:7px;">📈 Beat%</div>
+                            <input type="range" id="simBeatControl_${i}" min="0" max="100" value="${randomBeat}" step="5" 
+                                   oninput="document.getElementById('simBeatDisplay_${i}').textContent = this.value + '%'; updateSimulator();" 
+                                   style="width:100%;height:4px;background:rgba(255,255,255,0.1);border-radius:2px;outline:none;appearance:none;">
+                            <div style="display:flex;justify-content:space-between;font-size:7px;color:rgba(255,255,255,0.15);">
+                                <span>0</span>
+                                <span id="simBeatDisplay_${i}" style="color:#ffd700;font-weight:600;">${randomBeat}%</span>
+                                <span>100</span>
+                            </div>
+                        </div>
+                        <div>
+                            <div style="color:rgba(255,255,255,0.2);font-size:7px;">🔥 Streak</div>
+                            <input type="range" id="simStreakControl_${i}" min="0" max="50" value="${randomStreak}" step="1" 
+                                   oninput="document.getElementById('simStreakDisplay_${i}').textContent = this.value + 'd'; updateSimulator();" 
+                                   style="width:100%;height:4px;background:rgba(255,255,255,0.1);border-radius:2px;outline:none;appearance:none;">
+                            <div style="display:flex;justify-content:space-between;font-size:7px;color:rgba(255,255,255,0.15);">
+                                <span>0</span>
+                                <span id="simStreakDisplay_${i}" style="color:#7bcfa6;font-weight:600;">${randomStreak}d</span>
+                                <span>50</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div style="font-size:7px;color:rgba(255,255,255,0.1);text-align:center;margin-top:2px;">
+                        💡 Score = Beat% + Streak: <span id="simScoreDisplay_${i}" style="color:#d4a574;font-weight:600;">${randomBeat + randomStreak}</span>
+                    </div>
                 </div>
                 
                 <!-- Progress Bar -->
@@ -7440,7 +7503,6 @@ function generateWorkerSliders() {
     
     html += `
         </div>
-        
     `;
     
     container.innerHTML = html;
