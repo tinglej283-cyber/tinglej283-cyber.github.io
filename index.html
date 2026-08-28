@@ -3795,9 +3795,7 @@ async function assignStressTestToEveryone(branchId, date) {
     }
 }
 // ============================================================
-// 🆕 CALCULATE STRESS PENALTY - PROGRESSIVE SYSTEM
-// ============================================================
-// ✅ UPDATED: CALCULATE STRESS PENALTY - USES 1,000 TARGET
+// 🚨 STRESS PENALTY - FULL SHORTFALL, FLOOR AT ZERO
 // ============================================================
 
 function calculateStressPenalty(actualCredits, targetCredits) {
@@ -3816,44 +3814,57 @@ function calculateStressPenalty(actualCredits, targetCredits) {
     const shortfall = targetCredits - actualCredits;
     const shortfallPercent = (shortfall / targetCredits) * 100;
     
-    let penaltyMultiplier = 0;
+    // ============================================================
+    // ✅ FULL SHORTFALL (100%) - FLOOR AT ZERO
+    // ============================================================
+    
+    // Penalty = full shortfall
+    let penalty = shortfall;
+    penalty = Math.round(penalty);
+    
+    // Floor at zero - can't lose more than you have
+    const maxPenalty = Math.max(0, actualCredits);
+    const finalPenalty = Math.min(penalty, maxPenalty);
+    
     let levelName = '';
     let level = 0;
 
-    // Determine penalty level based on how far you missed
+    // Still track levels for reporting
     if (shortfallPercent < 20) {
-        penaltyMultiplier = 0.02;
         level = 1;
-        levelName = '⚠️ NEAR MISS (80-99%)';
+        levelName = `⚠️ NEAR MISS (${(finalPenalty/shortfall*100).toFixed(0)}% of shortfall)`;
     } else if (shortfallPercent < 50) {
-        penaltyMultiplier = 0.05;
         level = 2;
-        levelName = '⚠️ MODERATE MISS (50-79%)';
+        levelName = `⚠️ MODERATE MISS (${(finalPenalty/shortfall*100).toFixed(0)}% of shortfall)`;
     } else if (shortfallPercent < 80) {
-        penaltyMultiplier = 0.10;
         level = 3;
-        levelName = '❌ SIGNIFICANT MISS (20-49%)';
+        levelName = `❌ SIGNIFICANT MISS (${(finalPenalty/shortfall*100).toFixed(0)}% of shortfall)`;
     } else {
-        penaltyMultiplier = 0.20;
         level = 4;
-        levelName = '🚨 COMPLETE MISS (0-19%)';
+        levelName = `🚨 COMPLETE MISS (${(finalPenalty/shortfall*100).toFixed(0)}% of shortfall)`;
     }
 
-    // Calculate penalty: shortfall × multiplier
-    const penalty = shortfall * penaltyMultiplier;
-    
-    // Minimum penalty of 10 credits
-    const finalPenalty = Math.max(penalty, 10);
+    // Message explaining what happened
+    let message = '';
+    if (penalty > actualCredits) {
+        message = `❌ You would have lost ${penalty} credits (full shortfall), but you only had ${actualCredits} credits. Your credits are now ZERO.`;
+    } else if (finalPenalty === 0) {
+        message = '✅ No penalty applied!';
+    } else {
+        message = `❌ You lost ${finalPenalty} credits (full shortfall of ${Math.round(shortfall)})`;
+    }
 
     return {
-        penalty: Math.round(finalPenalty),
+        penalty: finalPenalty,
         level: level,
         levelName: levelName,
         shortfall: Math.round(shortfall),
         shortfallPercent: shortfallPercent.toFixed(1),
         actualCredits: Math.round(actualCredits),
         targetCredits: Math.round(targetCredits),
-        message: generatePenaltyMessage(level, finalPenalty, shortfall)
+        originalPenalty: Math.round(penalty),
+        wasCapped: penalty > actualCredits,
+        message: message
     };
 }
 
@@ -5041,6 +5052,11 @@ async function loadWorkerPayDashboard() {
         container.innerHTML = `<p style="color:#e94560;">Error: ${err.message}</p>`;
     }
 }
+// ============================================================
+// ============================================================
+// LOAD WORKER PERFORMANCE TAB - FULL VERSION WITH PAYMENT HISTORY
+// ============================================================
+
 async function loadWorkerPerformanceTab() {
     if (!currentUser || currentUser.role !== 'worker') return;
     
@@ -5085,9 +5101,7 @@ async function loadWorkerPerformanceTab() {
         const closedLogs = logs?.filter(l => l.is_closed === true) || [];
         const daysWorked = closedLogs.length;
         
-        // ============================================================
-        // 🆕 CALCULATE TOTAL & AVERAGE CREDITS
-        // ============================================================
+        // Calculate total & average credits
         let totalCredits = 0;
         let totalTier1 = 0;
         let totalTier2 = 0;
@@ -5124,16 +5138,68 @@ async function loadWorkerPerformanceTab() {
         const averageCredits = daysWorked > 0 ? totalCredits / daysWorked : 0;
 
         // Get accrual
-        const { data: accrual } = await _supabase
+        const { data: accrual, error: accrualError } = await _supabase
             .from('worker_bonus_accrual')
             .select('*')
             .eq('worker_id', currentUser.id)
             .maybeSingle();
         
-        const accruedTotal = accrual?.total_bonus || 0;
+        // Calculate accrued total from tier columns
+        const accruedTier1 = accrual?.total_tier1 || 0;
+        const accruedTier2 = accrual?.total_tier2 || 0;
+        const accruedTier3 = accrual?.total_tier3 || 0;
+        const accruedTotal = accruedTier1 + accruedTier2 + accruedTier3;
+        const isPaid = accrual?.is_paid || false;
+        
+        // ============================================================
+        // 🆕 GET PAYMENT HISTORY - HANDLES BOTH COLUMN NAMES
+        // ============================================================
+        let paymentHistory = [];
+        
+        // Try 1: Try with paid_at
+        const { data: historyData1, error: historyError1 } = await _supabase
+            .from('bonus_payment_history')
+            .select('*')
+            .eq('worker_id', currentUser.id)
+            .order('paid_at', { ascending: false })
+            .limit(10);
+        
+        if (historyError1) {
+            // Try 2: Try with paid_date
+            const { data: historyData2, error: historyError2 } = await _supabase
+                .from('bonus_payment_history')
+                .select('*')
+                .eq('worker_id', currentUser.id)
+                .order('paid_date', { ascending: false })
+                .limit(10);
+            
+            if (historyError2) {
+                // Try 3: Try with created_at as fallback
+                const { data: historyData3, error: historyError3 } = await _supabase
+                    .from('bonus_payment_history')
+                    .select('*')
+                    .eq('worker_id', currentUser.id)
+                    .order('created_at', { ascending: false })
+                    .limit(10);
+                
+                if (!historyError3) {
+                    paymentHistory = historyData3 || [];
+                    console.log('✅ Payment history found using created_at');
+                } else {
+                    console.error('❌ Error fetching payment history:', historyError3);
+                    paymentHistory = [];
+                }
+            } else {
+                paymentHistory = historyData2 || [];
+                console.log('✅ Payment history found using paid_date');
+            }
+        } else {
+            paymentHistory = historyData1 || [];
+            console.log('✅ Payment history found using paid_at');
+        }
 
         // ============================================================
-        // BUILD PROFILE SECTION WITH CREDITS SUMMARY
+        // BUILD PROFILE SECTION
         // ============================================================
         const profileHtml = `
             <div class="worker-profile-section" id="workerProfileSection">
@@ -5150,7 +5216,7 @@ async function loadWorkerPerformanceTab() {
                         <div class="pay-item">📅 Daily Rate: <strong id="workerDailyDisplay">UGX ${Number(worker.daily_rate).toLocaleString()}</strong></div>
                     </div>
                     
-                    <!-- 🆕 CREDITS SUMMARY - Total & Average -->
+                    <!-- Credits Summary -->
                     <div style="margin-top:12px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;width:100%;max-width:420px;margin-left:auto;margin-right:auto;">
                         <div style="background:rgba(255,255,255,0.03);border-radius:8px;padding:10px 4px;border:1px solid rgba(255,255,255,0.06);text-align:center;">
                             <div style="font-size:8px;color:rgba(255,255,255,0.3);text-transform:uppercase;letter-spacing:0.5px;">Total Credits</div>
@@ -5168,7 +5234,7 @@ async function loadWorkerPerformanceTab() {
                         </div>
                     </div>
                     
-                    <!-- 🆕 STRESS TEST SUMMARY -->
+                    <!-- Stress Test Summary -->
                     ${(stressPassCount > 0 || stressFailCount > 0) ? `
                     <div style="margin-top:8px;display:flex;gap:16px;justify-content:center;font-size:11px;">
                         <span style="color:#7bcfa6;">✅ Passed: ${stressPassCount}</span>
@@ -5252,28 +5318,101 @@ async function loadWorkerPerformanceTab() {
                 <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;">
                     <div style="background:rgba(255,215,0,0.05);border-radius:8px;padding:14px;text-align:center;border:1px solid rgba(255,215,0,0.1);">
                         <div style="font-size:9px;color:rgba(255,255,255,0.3);text-transform:uppercase;letter-spacing:0.5px;">🏆 Tier 1</div>
-                        <div style="font-size:20px;font-weight:700;color:#ffd700;">UGX ${totalTier1.toFixed(2)}</div>
+                        <div style="font-size:20px;font-weight:700;color:#ffd700;">UGX ${accruedTier1.toFixed(2)}</div>
                     </div>
                     <div style="background:rgba(123,207,166,0.05);border-radius:8px;padding:14px;text-align:center;border:1px solid rgba(123,207,166,0.1);">
                         <div style="font-size:9px;color:rgba(255,255,255,0.3);text-transform:uppercase;letter-spacing:0.5px;">⏰ Tier 2</div>
-                        <div style="font-size:20px;font-weight:700;color:#7bcfa6;">UGX ${totalTier2.toFixed(2)}</div>
+                        <div style="font-size:20px;font-weight:700;color:#7bcfa6;">UGX ${accruedTier2.toFixed(2)}</div>
                     </div>
                     <div style="background:rgba(212,165,116,0.05);border-radius:8px;padding:14px;text-align:center;border:1px solid rgba(212,165,116,0.1);">
                         <div style="font-size:9px;color:rgba(255,255,255,0.3);text-transform:uppercase;letter-spacing:0.5px;">🧪 Tier 3</div>
-                        <div style="font-size:20px;font-weight:700;color:#d4a574;">UGX ${totalTier3.toFixed(2)}</div>
+                        <div style="font-size:20px;font-weight:700;color:#d4a574;">UGX ${accruedTier3.toFixed(2)}</div>
                     </div>
                 </div>
                 
                 <div style="margin-top:12px;padding:14px;background:rgba(255,215,0,0.08);border-radius:8px;border:1px solid rgba(255,215,0,0.15);text-align:center;">
-                    <div style="font-size:10px;color:rgba(255,255,255,0.3);">💰 TOTAL YEAR-END BONUS</div>
-                    <div style="font-size:28px;font-weight:700;color:#ffd700;">UGX ${totalAllBonuses.toFixed(2)}</div>
+                    <div style="font-size:10px;color:rgba(255,255,255,0.3);">💰 TOTAL YEAR-END BALANCE</div>
+                    <div style="font-size:28px;font-weight:700;color:#ffd700;">UGX ${accruedTotal.toFixed(2)}</div>
                     <div style="font-size:9px;color:rgba(255,255,255,0.2);">
-                        Accrued: UGX ${accruedTotal.toFixed(2)} across all tiers
+                        ${isPaid ? '✅ This bonus has been paid' : '💰 Due - Will be paid on Dec 31, 2026'}
                     </div>
                 </div>
-            </div>
+            </div>`;
 
-            <!-- Daily Breakdown -->
+        // ============================================================
+        // 🆕 PAYMENT HISTORY SECTION - HANDLES BOTH COLUMN NAMES
+        // ============================================================
+        if (paymentHistory && paymentHistory.length > 0) {
+            summaryHtml += `
+                <div style="background:rgba(255,255,255,0.03);border-radius:12px;padding:20px;border:1px solid rgba(255,255,255,0.06);margin-top:16px;">
+                    <h4 style="color:#f0ebe6;font-weight:400;font-family:'Playfair Display',serif;font-size:16px;letter-spacing:0.5px;margin-bottom:12px;">
+                        📝 Payment History
+                        <span style="font-size:11px;font-weight:300;color:rgba(255,255,255,0.3);font-family:'Inter',sans-serif;margin-left:8px;">
+                            (Your bonus payments)
+                        </span>
+                    </h4>
+                    <div style="overflow-x:auto;">
+                        <table style="width:100%;font-size:11px;">
+                            <thead>
+                                <tr style="background:rgba(255,255,255,0.03);">
+                                    <th style="padding:6px 10px;text-align:left;color:rgba(255,255,255,0.3);">Date</th>
+                                    <th style="padding:6px 10px;text-align:right;color:rgba(255,255,255,0.3);">Amount</th>
+                                    <th style="padding:6px 10px;text-align:right;color:rgba(255,255,255,0.3);">Remaining</th>
+                                    <th style="padding:6px 10px;text-align:center;color:rgba(255,255,255,0.3);">Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${paymentHistory.map(p => {
+                                    // ✅ HANDLES BOTH COLUMN NAMES
+                                    const dateField = p.paid_at || p.paid_date || p.created_at || p.paid_on || p.payment_date;
+                                    const dateDisplay = dateField ? new Date(dateField).toLocaleDateString() : 'Unknown Date';
+                                    return `
+                                        <tr style="border-bottom:1px solid rgba(255,255,255,0.02);">
+                                            <td style="padding:4px 10px;color:rgba(255,255,255,0.4);font-size:10px;">
+                                                ${dateDisplay}
+                                            </td>
+                                            <td style="padding:4px 10px;text-align:right;color:#7bcfa6;font-weight:600;font-size:11px;">
+                                                UGX ${(p.amount || 0).toFixed(2)}
+                                            </td>
+                                            <td style="padding:4px 10px;text-align:right;color:#ffd700;font-size:11px;">
+                                                UGX ${(p.remaining_balance || 0).toFixed(2)}
+                                            </td>
+                                            <td style="padding:4px 10px;text-align:center;color:#7bcfa6;font-size:10px;">
+                                                ✅ Paid
+                                            </td>
+                                        </tr>
+                                    `;
+                                }).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+                    <div style="margin-top:6px;font-size:9px;color:rgba(255,255,255,0.15);">
+                        💡 Showing last ${paymentHistory.length} payment(s)
+                    </div>
+                </div>
+            `;
+        } else {
+            summaryHtml += `
+                <div style="background:rgba(255,255,255,0.03);border-radius:12px;padding:20px;border:1px solid rgba(255,255,255,0.06);margin-top:16px;">
+                    <h4 style="color:#f0ebe6;font-weight:400;font-family:'Playfair Display',serif;font-size:16px;letter-spacing:0.5px;margin-bottom:12px;">
+                        📝 Payment History
+                        <span style="font-size:11px;font-weight:300;color:rgba(255,255,255,0.3);font-family:'Inter',sans-serif;margin-left:8px;">
+                            (Your bonus payments)
+                        </span>
+                    </h4>
+                    <div style="padding:20px;text-align:center;color:rgba(255,255,255,0.3);">
+                        <div style="font-size:24px;margin-bottom:8px;">📭</div>
+                        <div style="font-size:13px;">No payment history yet</div>
+                        <div style="font-size:10px;margin-top:4px;color:rgba(255,255,255,0.15);">Your bonus payments will appear here</div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // ============================================================
+        // DAILY BREAKDOWN
+        // ============================================================
+        summaryHtml += `
             <div style="background:rgba(255,255,255,0.03);border-radius:12px;padding:20px;border:1px solid rgba(255,255,255,0.06);margin-top:16px;">
                 <h4 style="color:#f0ebe6;font-weight:400;font-family:'Playfair Display',serif;font-size:16px;letter-spacing:0.5px;margin-bottom:12px;">
                     📅 Daily Breakdown
@@ -5293,8 +5432,7 @@ async function loadWorkerPerformanceTab() {
                                 <th style="padding:6px 8px;text-align:left;color:#ffd700;">💰 Total</th>
                             </tr>
                         </thead>
-                        <tbody>
-        `;
+                        <tbody>`;
 
         for (const log of closedLogs) {
             const date = log.log_date;
@@ -5305,7 +5443,6 @@ async function loadWorkerPerformanceTab() {
             const total = t1 + t2 + t3;
             const isToday = date === today;
             
-            // Show tier win indicators
             const t1Badge = log.tier1_winner ? '🥇' : '—';
             const t2Badge = log.tier2_winner ? '⏰' : '—';
             
@@ -5386,9 +5523,19 @@ async function loadWorkerPerformanceTab() {
             }
         }, 100);
 
+        console.log('✅ Worker Performance Tab loaded successfully!');
+        console.log(`   📝 Payment History: ${paymentHistory.length} records found`);
+
     } catch (error) {
         console.error('Error loading worker performance tab:', error);
         console.error('Error details:', error.stack);
+        container.innerHTML = `
+            <div style="padding:20px;text-align:center;color:#e94560;">
+                <div style="font-size:24px;margin-bottom:8px;">❌</div>
+                <div style="font-size:14px;">Error loading performance data</div>
+                <div style="font-size:11px;margin-top:4px;color:rgba(255,255,255,0.3);">${error.message}</div>
+            </div>
+        `;
     }
 }
 // ============================================================
@@ -9094,6 +9241,14 @@ async function saveWorkerPay() {
         loadWorkerProfile();
     }
 }
+// ============================================================
+// CLOSE DAY BY WORKER - COMPLETE FIXED VERSION
+// ============================================================
+
+// ============================================================
+// CLOSE DAY BY WORKER - FULL UPDATED VERSION
+// ============================================================
+
 async function closeDayByWorker(branchId, branchName) {
     if (!currentUser || currentUser.role !== 'worker') {
         alert('Only workers can close their own day.');
@@ -9407,7 +9562,7 @@ async function closeDayByWorker(branchId, branchName) {
         }
 
         // ============================================================
-        // CALCULATE UNIFIED BONUSES (NO GRACE, NO MERCY)
+        // CALCULATE UNIFIED BONUSES
         // ============================================================
         
         const bonusResult = calculateUnifiedBonuses(
@@ -9421,7 +9576,7 @@ async function closeDayByWorker(branchId, branchName) {
         await updateJackpotJar(totalBranchSales);
 
         // ============================================================
-        // STEP 9: UPDATE EACH WORKER'S LOG
+        // STEP 9: UPDATE EACH WORKER'S LOG - WITH NEW PENALTY SYSTEM
         // ============================================================
         
         let closedCount = 0;
@@ -9451,7 +9606,9 @@ async function closeDayByWorker(branchId, branchName) {
             const dailyCost = dailyRate + (worker.worker?.monthly_base_salary || 250000) / daysInMonth;
             const dailyBPI = dailyCost > 0 ? credits / dailyCost : 0;
             
-            // Stress penalty (if failed) - NO MERCY
+            // ============================================================
+            // 🚨 STRESS PENALTY - FULL SHORTFALL, FLOOR AT ZERO
+            // ============================================================
             let stressPenalty = 0;
             let stressPenaltyLevelName = 'No penalty';
             let stressShortfall = 0;
@@ -9470,8 +9627,15 @@ async function closeDayByWorker(branchId, branchName) {
                     stressShortfall = penaltyResult.shortfall;
                     stressShortfallPercent = penaltyResult.shortfallPercent;
                     
-                    // ❌ NO MERCY - Full penalty applied
-                    credits = credits - stressPenalty;
+                    // ✅ NEW: Apply penalty with floor at zero
+                    credits = Math.max(0, credits - stressPenalty);
+                    
+                    console.log(`📊 Stress Penalty for ${worker.name}:`);
+                    console.log(`   Target: ${stressTarget}`);
+                    console.log(`   Earned: ${credits + stressPenalty} (before penalty)`);
+                    console.log(`   Penalty: -${stressPenalty}`);
+                    console.log(`   Final: ${credits}`);
+                    console.log(`   ${penaltyResult.message}`);
                 }
             }
             
@@ -9487,7 +9651,7 @@ async function closeDayByWorker(branchId, branchName) {
                 }
             }
             
-            // ✅ Update log - NO GRACE, NO MERCY
+            // ✅ Update log - with new penalty system
             const { error: updateError } = await _supabase
                 .from('daily_logs')
                 .update({
@@ -9522,9 +9686,7 @@ async function closeDayByWorker(branchId, branchName) {
                     snatch_share: tier1Amount + tier2Amount,
                     performance_bonus: tier3Amount,
                     
-                    // ❌ NO GRACE - Set to null/0
-                    grace_used: 0,
-                    grace_protection: 0,
+                    // Pay level
                     pay_level: 1,
                     pay_status: '✅ FULL PAY',
                     
@@ -9532,14 +9694,11 @@ async function closeDayByWorker(branchId, branchName) {
                     jackpot_share: jackpotShare,
                     jackpot_won: jackpotWon,
                     
-                    // Stress test - NO MERCY
+                    // 🚨 STRESS - NEW PENALTY SYSTEM
                     stress_penalty: stressPenalty,
                     stress_penalty_level_name: stressPenaltyLevelName,
                     stress_shortfall: stressShortfall,
-                    stress_shortfall_percent: stressShortfallPercent,
-                    mercy_applied: false,
-                    mercy_reduction_percent: 0,
-                    mercy_reason: ''
+                    stress_shortfall_percent: stressShortfallPercent
                 })
                 .eq('id', log.id)
                 .eq('is_closed', false);
@@ -9608,8 +9767,7 @@ async function closeDayByWorker(branchId, branchName) {
                             tier2_winner: isTier2Winner,
                             tier3_score: tier3Score,
                             jackpot_bonus: jackpotShare,
-                            stress_penalty: stressPenalty,
-                            mercy_applied: false
+                            stress_penalty: stressPenalty
                         }
                     );
 
@@ -9640,7 +9798,6 @@ async function closeDayByWorker(branchId, branchName) {
                         stressPenaltyLevelName: stressPenaltyLevelName,
                         stressShortfall: stressShortfall,
                         stressShortfallPercent: stressShortfallPercent,
-                        mercyApplied: false,
                         jackpotWon: jackpotWon,
                         jackpotShare: jackpotShare,
                         isMe: log.worker_id === currentUser.id,
@@ -9750,8 +9907,6 @@ async function closeDayByWorker(branchId, branchName) {
                     total_workers: results.length,
                     total_credits: results.reduce((sum, r) => sum + r.credits, 0),
                     total_bonuses: results.reduce((sum, r) => sum + r.totalBonus, 0),
-                    mercy_applied: false,
-                    mercy_reason: '',
                     is_read: false
                 };
                 
@@ -9811,6 +9966,10 @@ async function closeDayByWorker(branchId, branchName) {
         alert('Error closing day: ' + error.message);
     }
 }
+// ============================================================
+// CLOSE DAY - MANAGER VERSION (FULL UPDATED)
+// ============================================================
+
 async function closeDay(branchId, branchName) {
     if (!currentUser || currentUser.role !== 'manager') {
         alert('Only managers can close workers\' days.');
@@ -10069,7 +10228,7 @@ async function closeDay(branchId, branchName) {
         }
 
         // ============================================================
-        // CALCULATE UNIFIED BONUSES (NO GRACE, NO MERCY)
+        // CALCULATE UNIFIED BONUSES
         // ============================================================
         
         const bonusResult = calculateUnifiedBonuses(
@@ -10080,14 +10239,14 @@ async function closeDay(branchId, branchName) {
         );
 
         // ============================================================
-        // STEP 9: UPDATE EACH WORKER'S LOG
+        // STEP 9: UPDATE EACH WORKER'S LOG - WITH NEW PENALTY SYSTEM
         // ============================================================
         
         let closedCount = 0;
 
         for (const worker of workersForBonus) {
             const log = worker.log;
-            const credits = worker.credits;
+            let credits = worker.credits;
             const workerEffort = workerEfforts.find(w => w.log.worker_id === worker.id);
             
             const workerBonus = bonusResult.results.find(r => r.worker.id === worker.id);
@@ -10109,7 +10268,9 @@ async function closeDay(branchId, branchName) {
             const dailyCost = dailyRate + (worker.worker?.monthly_base_salary || 250000) / daysInMonth;
             const dailyBPI = dailyCost > 0 ? credits / dailyCost : 0;
             
-            // Stress penalty (if failed) - NO MERCY
+            // ============================================================
+            // 🚨 STRESS PENALTY - FULL SHORTFALL, FLOOR AT ZERO
+            // ============================================================
             let stressPenalty = 0;
             let stressPenaltyLevelName = 'No penalty';
             let stressShortfall = 0;
@@ -10127,7 +10288,9 @@ async function closeDay(branchId, branchName) {
                     stressPenaltyLevelName = penaltyResult.levelName;
                     stressShortfall = penaltyResult.shortfall;
                     stressShortfallPercent = penaltyResult.shortfallPercent;
-                    // ❌ NO MERCY - Full penalty applied
+                    
+                    // ✅ NEW: Apply penalty with floor at zero
+                    credits = Math.max(0, credits - stressPenalty);
                 }
             }
             
@@ -10143,7 +10306,7 @@ async function closeDay(branchId, branchName) {
                 }
             }
             
-            // ✅ Update log - NO GRACE, NO MERCY
+            // ✅ Update log - with new penalty system
             const { error: updateError } = await _supabase
                 .from('daily_logs')
                 .update({
@@ -10174,9 +10337,6 @@ async function closeDay(branchId, branchName) {
                     snatch_share: tier1Amount + tier2Amount,
                     performance_bonus: tier3Amount,
                     
-                    // ❌ NO GRACE
-                    grace_used: 0,
-                    grace_protection: 0,
                     pay_level: 1,
                     pay_status: '✅ FULL PAY',
                     
@@ -10184,9 +10344,6 @@ async function closeDay(branchId, branchName) {
                     stress_penalty_level_name: stressPenaltyLevelName,
                     stress_shortfall: stressShortfall,
                     stress_shortfall_percent: stressShortfallPercent,
-                    mercy_applied: false,
-                    mercy_reduction_percent: 0,
-                    mercy_reason: '',
                     
                     jackpot_share: jackpotShare,
                     jackpot_won: jackpotWon
@@ -10248,8 +10405,7 @@ async function closeDay(branchId, branchName) {
                             tier2_winner: isTier2Winner,
                             tier3_score: tier3Score,
                             jackpot_bonus: jackpotShare,
-                            stress_penalty: stressPenalty,
-                            mercy_applied: false
+                            stress_penalty: stressPenalty
                         }
                     );
                     
@@ -10273,6 +10429,10 @@ async function closeDay(branchId, branchName) {
                         isTier2Winner: isTier2Winner,
                         tier3Score: tier3Score,
                         stressPassed: stressPassed,
+                        stressPenalty: stressPenalty,
+                        stressPenaltyLevelName: stressPenaltyLevelName,
+                        stressShortfall: stressShortfall,
+                        stressShortfallPercent: stressShortfallPercent,
                         jackpotWon: jackpotWon,
                         jackpotShare: jackpotShare
                     });
@@ -10313,6 +10473,9 @@ async function closeDay(branchId, branchName) {
             resultMsg += `   ⏰ Tier 2: UGX ${r.tier2Amount.toFixed(2)}\n`;
             resultMsg += `   🧪 Tier 3: UGX ${r.tier3Amount.toFixed(2)}\n`;
             resultMsg += `   💰 Total Bonus: UGX ${r.totalBonus.toFixed(2)}\n`;
+            if (r.stressPenalty > 0) {
+                resultMsg += `   📉 Penalty: -${r.stressPenalty} credits (${r.stressPenaltyLevelName})\n`;
+            }
             if (r.jackpotWon) resultMsg += `   🎉 JACKPOT: UGX ${r.jackpotShare.toFixed(2)}\n`;
             resultMsg += `\n`;
         }
@@ -10333,6 +10496,7 @@ async function closeDay(branchId, branchName) {
         alert('Error closing day: ' + error.message);
     }
 }
+
 // ============================================================
 // EDIT PAY MODAL
 // ============================================================
@@ -12581,7 +12745,7 @@ async function reopenAllBranches() {
 }
 
 // ============================================================
-// CLOSE ALL BRANCHES - NO GRACE, NO MERCY
+// CLOSE ALL BRANCHES - FULL UPDATED VERSION
 // ============================================================
 
 async function closeAllBranches() {
@@ -12822,7 +12986,7 @@ async function closeAllBranches() {
             }
 
             // ============================================================
-            // CALCULATE UNIFIED BONUSES (NO GRACE, NO MERCY)
+            // CALCULATE UNIFIED BONUSES
             // ============================================================
             
             const bonusResult = calculateUnifiedBonuses(
@@ -12836,12 +13000,12 @@ async function closeAllBranches() {
             await updateJackpotJar(totalBranchSales);
 
             // ============================================================
-            // UPDATE EACH WORKER'S LOG
+            // UPDATE EACH WORKER'S LOG - WITH NEW PENALTY SYSTEM
             // ============================================================
             
             for (const worker of workersForBonus) {
                 const log = worker.log;
-                const credits = worker.credits;
+                let credits = worker.credits;
                 const workerEffort = workerEfforts.find(w => w.log.worker_id === worker.id);
                 
                 const workerBonus = bonusResult.results.find(r => r.worker.id === worker.id);
@@ -12863,7 +13027,9 @@ async function closeAllBranches() {
                 const dailyCost = dailyRate + (worker.worker?.monthly_base_salary || 250000) / daysInMonth;
                 const dailyBPI = dailyCost > 0 ? credits / dailyCost : 0;
                 
-                // Stress penalty (if failed) - NO MERCY
+                // ============================================================
+                // 🚨 STRESS PENALTY - FULL SHORTFALL, FLOOR AT ZERO
+                // ============================================================
                 let stressPenalty = 0;
                 let stressPenaltyLevelName = 'No penalty';
                 let stressShortfall = 0;
@@ -12881,7 +13047,9 @@ async function closeAllBranches() {
                         stressPenaltyLevelName = penaltyResult.levelName;
                         stressShortfall = penaltyResult.shortfall;
                         stressShortfallPercent = penaltyResult.shortfallPercent;
-                        // ❌ NO MERCY - Full penalty applied
+                        
+                        // ✅ NEW: Apply penalty with floor at zero
+                        credits = Math.max(0, credits - stressPenalty);
                     }
                 }
                 
@@ -12897,7 +13065,7 @@ async function closeAllBranches() {
                     }
                 }
                 
-                // ✅ Update log - NO GRACE, NO MERCY
+                // ✅ Update log - with new penalty system
                 const { error: updateError } = await _supabase
                     .from('daily_logs')
                     .update({
@@ -12914,7 +13082,6 @@ async function closeAllBranches() {
                         check_out_time: new Date().toISOString(),
                         closed_by: currentUser.id,
                         
-                        // UNIFIED BONUS
                         tier1_amount: tier1Amount,
                         tier2_amount: tier2Amount,
                         tier3_amount: tier3Amount,
@@ -12926,26 +13093,17 @@ async function closeAllBranches() {
                         total_bonus: totalBonus,
                         bonus_accrued: false,
                         
-                        // Backward compatibility
                         snatch_share: tier1Amount + tier2Amount,
                         performance_bonus: tier3Amount,
                         
-                        // ❌ NO GRACE - Set to 0
-                        grace_used: 0,
-                        grace_protection: 0,
                         pay_level: 1,
                         pay_status: '✅ FULL PAY',
                         
-                        // Stress - NO MERCY
                         stress_penalty: stressPenalty,
                         stress_penalty_level_name: stressPenaltyLevelName,
                         stress_shortfall: stressShortfall,
                         stress_shortfall_percent: stressShortfallPercent,
-                        mercy_applied: false,
-                        mercy_reduction_percent: 0,
-                        mercy_reason: '',
                         
-                        // Jackpot
                         jackpot_share: jackpotShare,
                         jackpot_won: jackpotWon
                     })
@@ -12955,7 +13113,6 @@ async function closeAllBranches() {
                 if (updateError) {
                     console.error(`Error closing ${worker.name}:`, updateError);
                 } else {
-                    // Update worker's stress test history
                     if (log.is_stress_test) {
                         try {
                             const { data: workerData } = await _supabase
@@ -12994,7 +13151,6 @@ async function closeAllBranches() {
                         }
                     }
 
-                    // Accrue bonus
                     try {
                         await accrueBonus(
                             log.worker_id,
@@ -13010,8 +13166,7 @@ async function closeAllBranches() {
                                 tier2_winner: isTier2Winner,
                                 tier3_score: tier3Score,
                                 jackpot_bonus: jackpotShare,
-                                stress_penalty: stressPenalty,
-                                mercy_applied: false
+                                stress_penalty: stressPenalty
                             }
                         );
 
@@ -13082,6 +13237,9 @@ async function closeAllBranches() {
                 const tier1Badge = r.isTier1Winner ? '🥇 ' : '';
                 const tier2Badge = r.isTier2Winner ? '⏰ ' : '';
                 resultMsg += `   ${r.jackpotWon ? '🎉' : ''} ${tier1Badge}${tier2Badge}${r.name} (${r.jc_id}) (Rank #${r.rank}): UGX ${r.totalBonus.toFixed(2)} (${r.payStatus})\n`;
+                if (r.stressPenalty > 0) {
+                    resultMsg += `      📉 Penalty: -${r.stressPenalty} credits (${r.stressPenaltyLevelName})\n`;
+                }
             }
             resultMsg += `\n`;
         }
@@ -14158,7 +14316,7 @@ function scheduleAutoClose() {
 }
 
 // ============================================================
-// DOM READY
+// DOM READY - COMPLETE UPDATED VERSION
 // ============================================================
 document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('loginBtn').addEventListener('click', handleLogin);
@@ -14170,14 +14328,22 @@ document.addEventListener('DOMContentLoaded', function() {
         if (e.key === 'Enter') handleLogin();
     });
 
+    // ============================================================
+    // 📋 TAB CLICK HANDLER - WITH AUTO-LOAD
+    // ============================================================
     document.querySelectorAll('[data-tab]').forEach(btn => {
         btn.addEventListener('click', function() {
+            // Switch tabs
             document.querySelectorAll('[data-tab]').forEach(b => b.classList.remove('active'));
             this.classList.add('active');
             const target = this.dataset.tab;
             document.querySelectorAll('.tab-content').forEach(tc => tc.classList.remove('active'));
             document.getElementById(target).classList.add('active');
 
+            // ============================================================
+            // 🆕 AUTO-LOAD CONTENT FOR EACH TAB
+            // ============================================================
+            
             if (target === 'tabCheckin') {
                 loadCheckinBranches();
                 loadTodayActivity();
@@ -14201,7 +14367,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 loadDailyCreditsDisplay();   
                 loadStressTestDashboard(); 
                 loadWorkerPerformanceTab();   
-                 loadPerformanceFactorBreakdown();  // <-- ADD THIS! 
+                loadPerformanceFactorBreakdown();
             }
             
             if (target === 'tabLeaderboard') {
@@ -14232,9 +14398,39 @@ document.addEventListener('DOMContentLoaded', function() {
                 loadLocationMonitoring();
                 loadLocationAnomalies();
             }
+            
+            // ============================================================
+            // 🆕 AUTO-LOAD BONUS BALANCES
+            // ============================================================
+            if (target === 'tabClearBonuses') {
+                console.log('💰 Loading bonus balances...');
+                setTimeout(() => {
+                    if (typeof loadBonusBalances === 'function') {
+                        loadBonusBalances();
+                    } else {
+                        console.warn('⚠️ loadBonusBalances() not found');
+                        const content = document.getElementById('bonusBalancesContent');
+                        if (content) {
+                            content.innerHTML = '<p style="color:#e94560;">Error: Bonus balance function not found. Please refresh the page.</p>';
+                        }
+                    }
+                }, 100);
+            }
+            
+            // ============================================================
+            // 🆕 AUTO-LOAD TIME PERFORMANCE
+            // ============================================================
+            if (target === 'tabTimePerformance' && currentUser?.role === 'manager') {
+                setTimeout(() => {
+                    if (typeof loadTimePerformanceTab === 'function') {
+                        loadTimePerformanceTab();
+                    }
+                }, 100);
+            }
         });
     });
 
+    // Modal close handlers
     document.getElementById('editPayModal').addEventListener('click', function(e) {
         if (e.target === this) closeEditPayModal();
     });
@@ -14257,11 +14453,14 @@ document.addEventListener('DOMContentLoaded', function() {
     console.log('   ✅ Team Dynamics (Best/Worst Worker Pairs)');
     console.log('   ✅ Real-time Location Tracking');
     console.log('   ✅ Stress Test System (Credit Based)');
+    console.log('   ✅ Bonus Balances (Auto-Load)');
+    console.log('   ✅ Time & Performance (Auto-Load)');
     console.log('   🔧 FIXED: Performance Summary loads correctly');
     console.log('   🔧 FIXED: Stress Test Dashboard loads correctly');
     console.log('   🔧 FIXED: Stress Target loads correctly');
     console.log('   🔧 FIXED: Stats reload on Dashboard');
     console.log('   🔧 FIXED: Location Anomalies load');
+    console.log('   🔧 FIXED: Bonus Balances auto-load on tab click');
 });
 // ============================================================
 // ✨ BRANCH CLOSING NOTIFICATION SYSTEM
@@ -15965,19 +16164,27 @@ window.addEventListener('load', function() {
     setTimeout(generateQRCode, 300);
 });
 // ============================================================
-// 💰 BONUS BALANCES - VIEW AND CLEAR
+// 💰 BONUS BALANCES - WITH PAYMENT OPTIONS
+// ============================================================
+
+// ============================================================
+// 💰 BONUS BALANCES - MANAGER ONLY (NO MESSAGES)
 // ============================================================
 
 async function loadBonusBalances() {
+    const container = document.getElementById('bonusBalancesContent');
+    if (!container) return;
+    
+    // ✅ If not manager, just show empty/loading state (no popup, no message)
     if (!currentUser || currentUser.role !== 'manager') {
-        alert('Only managers can view bonus balances.');
+        container.innerHTML = '';
         return;
     }
     
-    const container = document.getElementById('bonusBalancesContent');
     container.innerHTML = '<div class="loading">Loading balances...</div>';
     
     try {
+        // Get all workers
         const { data: workers, error: workersError } = await _supabase
             .from('workers')
             .select('id, full_name, jc_id, is_active')
@@ -15986,121 +16193,636 @@ async function loadBonusBalances() {
         
         if (workersError) throw workersError;
         
+        if (!workers || workers.length === 0) {
+            container.innerHTML = '<p style="color:rgba(255,255,255,0.4);font-size:13px;">No workers found.</p>';
+            return;
+        }
+
+        // Get all accruals
+        const workerIds = workers.map(w => w.id);
+        const { data: accruals, error: accrualError } = await _supabase
+            .from('worker_bonus_accrual')
+            .select('*')
+            .in('worker_id', workerIds);
+
+        if (accrualError) {
+            console.error('Error fetching accruals:', accrualError);
+        }
+
+        // Build table
+        let grandTotal = 0;
+        let hasUnpaid = false;
         let html = `
-            <div style="overflow-x:auto;">
-                <table style="width:100%;font-size:12px;">
+            <div style="overflow-x:auto;margin-top:12px;">
+                <table style="width:100%;font-size:12px;border-collapse:collapse;">
                     <thead>
-                        <tr style="background:rgba(255,255,255,0.03);">
-                            <th style="padding:8px 12px;text-align:left;color:rgba(255,255,255,0.4);">Worker</th>
-                            <th style="padding:8px 12px;text-align:left;color:rgba(255,255,255,0.4);">JC ID</th>
-                            <th style="padding:8px 12px;text-align:right;color:#ffd700;">🏆 Tier 1</th>
-                            <th style="padding:8px 12px;text-align:right;color:#7bcfa6;">⏰ Tier 2</th>
-                            <th style="padding:8px 12px;text-align:right;color:#d4a574;">🧪 Tier 3</th>
-                            <th style="padding:8px 12px;text-align:right;color:#ffd700;">💰 Total</th>
-                            <th style="padding:8px 12px;text-align:center;color:rgba(255,255,255,0.4);">Status</th>
-                            <th style="padding:8px 12px;text-align:center;color:rgba(255,255,255,0.4);">Action</th>
+                        <tr style="background:rgba(255,255,255,0.03);border-bottom:2px solid rgba(255,255,255,0.06);">
+                            <th style="padding:10px 12px;text-align:left;color:rgba(255,255,255,0.4);font-weight:500;">Worker</th>
+                            <th style="padding:10px 12px;text-align:left;color:rgba(255,255,255,0.4);font-weight:500;">JC ID</th>
+                            <th style="padding:10px 12px;text-align:right;color:#ffd700;font-weight:500;">🏆 Tier 1</th>
+                            <th style="padding:10px 12px;text-align:right;color:#7bcfa6;font-weight:500;">⏰ Tier 2</th>
+                            <th style="padding:10px 12px;text-align:right;color:#d4a574;font-weight:500;">🧪 Tier 3</th>
+                            <th style="padding:10px 12px;text-align:right;color:#ffd700;font-weight:500;">💰 Total</th>
+                            <th style="padding:10px 12px;text-align:center;color:rgba(255,255,255,0.4);font-weight:500;">Status</th>
+                            <th style="padding:10px 12px;text-align:center;color:rgba(255,255,255,0.4);font-weight:500;">Action</th>
                         </tr>
                     </thead>
                     <tbody>
         `;
-        
-        let grandTotal = 0;
-        
+
         for (const worker of workers) {
-            const { data: accrual } = await _supabase
-                .from('worker_bonus_accrual')
-                .select('*')
-                .eq('worker_id', worker.id)
-                .maybeSingle();
+            const accrual = accruals?.find(a => a.worker_id === worker.id);
             
+            // Calculate total from tier columns
             const tier1 = accrual?.total_tier1 || 0;
             const tier2 = accrual?.total_tier2 || 0;
             const tier3 = accrual?.total_tier3 || 0;
-            const total = accrual?.total_bonus || 0;
+            const total = tier1 + tier2 + tier3;
             const isPaid = accrual?.is_paid || false;
             
             grandTotal += total;
+            if (!isPaid && total > 0) hasUnpaid = true;
             
-            const statusColor = isPaid ? '#7bcfa6' : '#ffd700';
-            const statusText = isPaid ? '✅ Paid' : '💰 Due';
-            
+            let statusColor, statusText;
+            if (isPaid) {
+                statusColor = '#7bcfa6';
+                statusText = '✅ Paid';
+            } else if (total > 0) {
+                statusColor = '#ffd700';
+                statusText = '💰 Due';
+            } else {
+                statusColor = 'rgba(255,255,255,0.2)';
+                statusText = '—';
+            }
+
+            // Action buttons
+            let actionHtml = '';
+            if (!isPaid && total > 0) {
+                actionHtml = `
+                    <div style="display:flex;gap:4px;justify-content:center;flex-wrap:wrap;">
+                        <button onclick="payWorkerBonus('${worker.id}', 'full')" 
+                                style="padding:4px 10px;font-size:9px;border-radius:4px;cursor:pointer;background:rgba(123,207,166,0.15);color:#7bcfa6;border:1px solid rgba(123,207,166,0.2);transition:all 0.2s ease;"
+                                onmouseover="this.style.background='rgba(123,207,166,0.25)'" 
+                                onmouseout="this.style.background='rgba(123,207,166,0.15)'">
+                            💰 Full
+                        </button>
+                        <button onclick="payWorkerBonus('${worker.id}', 'partial')" 
+                                style="padding:4px 10px;font-size:9px;border-radius:4px;cursor:pointer;background:rgba(212,165,116,0.15);color:#d4a574;border:1px solid rgba(212,165,116,0.2);transition:all 0.2s ease;"
+                                onmouseover="this.style.background='rgba(212,165,116,0.25)'" 
+                                onmouseout="this.style.background='rgba(212,165,116,0.15)'">
+                            ✏️ Custom
+                        </button>
+                    </div>
+                `;
+            } else if (isPaid) {
+                actionHtml = `<span style="color:rgba(255,255,255,0.2);font-size:10px;">✅ Cleared</span>`;
+            } else {
+                actionHtml = `<span style="color:rgba(255,255,255,0.15);font-size:10px;">—</span>`;
+            }
+
             html += `
-                <tr style="border-bottom:1px solid rgba(255,255,255,0.03);${!isPaid && total > 0 ? 'background:rgba(255,215,0,0.03);' : ''}">
-                    <td style="padding:6px 12px;color:#f0ebe6;font-weight:500;">${worker.full_name}</td>
-                    <td style="padding:6px 12px;color:rgba(255,255,255,0.4);">${worker.jc_id}</td>
-                    <td style="padding:6px 12px;text-align:right;color:#ffd700;">UGX ${tier1.toFixed(2)}</td>
-                    <td style="padding:6px 12px;text-align:right;color:#7bcfa6;">UGX ${tier2.toFixed(2)}</td>
-                    <td style="padding:6px 12px;text-align:right;color:#d4a574;">UGX ${tier3.toFixed(2)}</td>
-                    <td style="padding:6px 12px;text-align:right;color:#ffd700;font-weight:700;">UGX ${total.toFixed(2)}</td>
-                    <td style="padding:6px 12px;text-align:center;color:${statusColor};font-weight:600;">${statusText}</td>
-                    <td style="padding:6px 12px;text-align:center;">
-                        ${!isPaid && total > 0 ? 
-                            `<button class="btn-success btn-sm" onclick="clearWorkerBonus('${worker.id}')" style="padding:3px 10px;font-size:9px;">
-                                ✅ Clear
-                            </button>` : 
-                            `<span style="color:rgba(255,255,255,0.2);font-size:9px;">${isPaid ? 'Cleared' : 'No balance'}</span>`
-                        }
-                    </td>
+                <tr style="border-bottom:1px solid rgba(255,255,255,0.03);background:${!isPaid && total > 0 ? 'rgba(255,215,0,0.04)' : 'transparent'};">
+                    <td style="padding:8px 12px;color:#f0ebe6;font-weight:500;">${worker.full_name}</td>
+                    <td style="padding:8px 12px;color:rgba(255,255,255,0.4);">${worker.jc_id}</td>
+                    <td style="padding:8px 12px;text-align:right;color:#ffd700;">UGX ${tier1.toFixed(2)}</td>
+                    <td style="padding:8px 12px;text-align:right;color:#7bcfa6;">UGX ${tier2.toFixed(2)}</td>
+                    <td style="padding:8px 12px;text-align:right;color:#d4a574;">UGX ${tier3.toFixed(2)}</td>
+                    <td style="padding:8px 12px;text-align:right;color:#ffd700;font-weight:700;">UGX ${total.toFixed(2)}</td>
+                    <td style="padding:8px 12px;text-align:center;color:${statusColor};">${statusText}</td>
+                    <td style="padding:8px 12px;text-align:center;">${actionHtml}</td>
                 </tr>
             `;
         }
-        
+
         html += `
                     </tbody>
                 </table>
             </div>
-            <div style="margin-top:12px;padding:12px 16px;background:rgba(255,215,0,0.05);border-radius:8px;border:1px solid rgba(255,215,0,0.1);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
-                <span style="color:rgba(255,255,255,0.3);font-size:12px;">👥 Total Workers: ${workers.length}</span>
-                <span style="color:#ffd700;font-size:14px;font-weight:700;">💰 Grand Total Due: UGX ${grandTotal.toFixed(2)}</span>
-                ${grandTotal > 0 ? `<button class="btn-success" onclick="clearAllBonuses()" style="padding:6px 16px;">✅ Clear All</button>` : ''}
+            
+            <div style="margin-top:14px;padding:14px 18px;background:rgba(255,215,0,0.05);border-radius:10px;border:1px solid rgba(255,215,0,0.12);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;">
+                <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;">
+                    <span style="color:rgba(255,255,255,0.3);font-size:12px;">👥 Total Workers: <span style="color:#f0ebe6;font-weight:600;">${workers.length}</span></span>
+                    <span style="color:rgba(255,255,255,0.3);font-size:12px;">💰 Grand Total: <span style="color:#ffd700;font-weight:700;font-size:16px;">UGX ${grandTotal.toFixed(2)}</span></span>
+                </div>
+                ${hasUnpaid ? `
+                    <button onclick="payAllWorkers()" 
+                            style="padding:8px 20px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;background:rgba(123,207,166,0.15);color:#7bcfa6;border:1px solid rgba(123,207,166,0.2);transition:all 0.3s ease;"
+                            onmouseover="this.style.background='rgba(123,207,166,0.25)'" 
+                            onmouseout="this.style.background='rgba(123,207,166,0.15)'">
+                        💰 Pay All
+                    </button>
+                ` : `
+                    <span style="color:rgba(255,255,255,0.2);font-size:12px;">✅ All balances cleared</span>
+                `}
+            </div>
+            
+            <div style="margin-top:8px;padding:6px 12px;background:rgba(255,255,255,0.02);border-radius:6px;font-size:10px;color:rgba(255,255,255,0.15);text-align:center;">
+                💡 Click "Full" to pay the entire balance, or "Custom" to pay a specific amount
             </div>
         `;
-        
+
         container.innerHTML = html;
         
+        console.log(`✅ Bonus balances loaded! Grand Total: UGX ${grandTotal.toFixed(2)}`);
+
     } catch (error) {
         console.error('Error loading bonus balances:', error);
         container.innerHTML = `<p style="color:#e94560;">Error: ${error.message}</p>`;
     }
 }
-
 // ============================================================
-// 💰 CLEAR A SINGLE WORKER'S BONUS
+// 💰 PAY WORKER BONUS - FULL OR CUSTOM (WITH PAYMENT HISTORY)
 // ============================================================
 
-async function clearWorkerBonus(workerId) {
+async function payWorkerBonus(workerId, type) {
     if (!currentUser || currentUser.role !== 'manager') {
-        alert('Only managers can clear bonuses.');
+        alert('Only managers can pay bonuses.');
         return;
     }
     
-    const { data: worker } = await _supabase
+    // Get worker info
+    const { data: worker, error: workerError } = await _supabase
         .from('workers')
         .select('full_name, jc_id')
         .eq('id', workerId)
         .single();
     
-    if (!worker) {
+    if (workerError || !worker) {
         alert('Worker not found.');
         return;
     }
     
-    const { data: accrual } = await _supabase
+    // Get accrual
+    const { data: accrual, error: accrualError } = await _supabase
         .from('worker_bonus_accrual')
         .select('*')
         .eq('worker_id', workerId)
         .maybeSingle();
     
-    if (!accrual || accrual.total_bonus === 0) {
-        alert(`${worker.full_name} has no balance to clear.`);
+    if (accrualError) {
+        console.error('Error fetching accrual:', accrualError);
+        alert('Error fetching bonus data.');
         return;
     }
     
+    // Calculate total from tier columns
+    const tier1 = accrual?.total_tier1 || 0;
+    const tier2 = accrual?.total_tier2 || 0;
+    const tier3 = accrual?.total_tier3 || 0;
+    const total = tier1 + tier2 + tier3;
+    
+    if (!accrual || total === 0) {
+        alert(`✅ ${worker.full_name} has no balance to pay.`);
+        return;
+    }
+    
+    let amountToPay = total;
+    let paymentType = 'Full';
+    
+    // If custom payment, ask for amount
+    if (type === 'partial') {
+        const input = prompt(
+            `💰 Enter amount to pay ${worker.full_name} (${worker.jc_id})\n\n` +
+            `Available balance: UGX ${total.toFixed(2)}\n\n` +
+            `Enter amount in UGX (numbers only):`,
+            total.toFixed(0)
+        );
+        
+        if (input === null) {
+            return;
+        }
+        
+        const customAmount = parseFloat(input.replace(/,/g, ''));
+        if (isNaN(customAmount) || customAmount <= 0) {
+            alert('❌ Invalid amount. Please enter a valid number.');
+            return;
+        }
+        
+        if (customAmount > total) {
+            alert(`❌ Amount cannot exceed the balance of UGX ${total.toFixed(2)}`);
+            return;
+        }
+        
+        amountToPay = customAmount;
+        paymentType = `Custom (UGX ${amountToPay.toFixed(2)})`;
+    }
+    
+    // Confirm payment
+    const confirmMsg = `💰 PAY BONUS\n\n` +
+        `👤 Worker: ${worker.full_name} (${worker.jc_id})\n` +
+        `📊 Total Balance: UGX ${total.toFixed(2)}\n` +
+        `💳 Amount to Pay: UGX ${amountToPay.toFixed(2)}\n` +
+        `📝 Type: ${paymentType}\n\n` +
+        `⚠️ This will deduct the amount from their balance.\n` +
+        `⚠️ Remaining balance will be: UGX ${(total - amountToPay).toFixed(2)}`;
+    
+    if (!confirm(confirmMsg)) {
+        return;
+    }
+    
+    try {
+        // Calculate remaining balance
+        const remainingTotal = total - amountToPay;
+        
+        // Calculate how much of each tier to deduct (proportional)
+        const tier1Deduct = (tier1 / total) * amountToPay;
+        const tier2Deduct = (tier2 / total) * amountToPay;
+        const tier3Deduct = (tier3 / total) * amountToPay;
+        
+        // Update the accrual
+        const { error: updateError } = await _supabase
+            .from('worker_bonus_accrual')
+            .update({
+                total_bonus: remainingTotal,
+                total_tier1: Math.max(0, tier1 - tier1Deduct),
+                total_tier2: Math.max(0, tier2 - tier2Deduct),
+                total_tier3: Math.max(0, tier3 - tier3Deduct),
+                is_paid: remainingTotal === 0,
+                last_paid_date: new Date().toISOString(),
+                last_paid_by: currentUser.id,
+                last_paid_amount: amountToPay,
+                last_updated: new Date().toISOString()
+            })
+            .eq('worker_id', workerId);
+        
+        if (updateError) {
+            console.error('Error paying bonus:', updateError);
+            alert('Error: ' + updateError.message);
+            return;
+        }
+        
+        // ============================================================
+        // ✅ ADD THIS: RECORD PAYMENT HISTORY
+        // ============================================================
+        console.log('📝 Recording payment history for:', worker.full_name);
+        console.log('   Amount:', amountToPay);
+        console.log('   Remaining:', remainingTotal);
+        console.log('   Type:', paymentType);
+        
+        try {
+            // Try with paid_at first
+            const { data: historyData, error: historyError } = await _supabase
+                .from('bonus_payment_history')
+                .insert({
+                    worker_id: workerId,
+                    worker_name: worker.full_name,
+                    jc_id: worker.jc_id,
+                    amount: amountToPay,
+                    payment_type: paymentType,
+                    remaining_balance: remainingTotal,
+                    paid_by: currentUser.id,
+                    paid_by_name: currentUser.name || 'Manager',
+                    paid_at: new Date().toISOString(),
+                    notes: `${paymentType} payment of UGX ${amountToPay.toFixed(2)}`
+                })
+                .select();
+            
+            if (historyError) {
+                console.error('❌ Error with paid_at:', historyError.message);
+                
+                // Try with paid_date instead
+                const { data: historyData2, error: historyError2 } = await _supabase
+                    .from('bonus_payment_history')
+                    .insert({
+                        worker_id: workerId,
+                        worker_name: worker.full_name,
+                        jc_id: worker.jc_id,
+                        amount: amountToPay,
+                        payment_type: paymentType,
+                        remaining_balance: remainingTotal,
+                        paid_by: currentUser.id,
+                        paid_by_name: currentUser.name || 'Manager',
+                        paid_date: new Date().toISOString(),
+                        notes: `${paymentType} payment of UGX ${amountToPay.toFixed(2)}`
+                    })
+                    .select();
+                
+                if (historyError2) {
+                    console.error('❌ Error with paid_date too:', historyError2.message);
+                    console.log('💡 Payment was made but history not recorded');
+                } else {
+                    console.log('✅ Payment history recorded with paid_date!');
+                }
+            } else {
+                console.log('✅ Payment history recorded with paid_at!');
+            }
+        } catch (historyError) {
+            console.error('❌ Exception in payment history:', historyError);
+        }
+        // ============================================================
+        // ✅ END OF PAYMENT HISTORY
+        // ============================================================
+        
+        // ✅ Success!
+        const message = `✅ ${paymentType} payment of UGX ${amountToPay.toFixed(2)} made to ${worker.full_name}!\n\n` +
+            `💰 Remaining balance: UGX ${remainingTotal.toFixed(2)}`;
+        
+        alert(message);
+        
+        // Reload the table
+        loadBonusBalances();
+        
+        // If the worker is the current user, reload their dashboard
+        if (currentUser && currentUser.id === workerId) {
+            loadWorkerPayDashboard();
+            loadDailyCreditsDisplay();
+            loadWorkerPerformanceTab();
+            console.log('🔄 Worker dashboard refreshed!');
+        }
+        
+    } catch (error) {
+        console.error('Error:', error);
+        alert('Error: ' + error.message);
+    }
+}
+
+// ============================================================
+// 💰 PAY ALL WORKERS - FIXED WITH PAYMENT HISTORY
+// ============================================================
+
+async function payAllWorkers() {
+    if (!currentUser || currentUser.role !== 'manager') {
+        alert('Only managers can pay bonuses.');
+        return;
+    }
+    
+    // Get all workers with balances
+    const { data: workers, error: workersError } = await _supabase
+        .from('workers')
+        .select('id, full_name, jc_id')
+        .eq('is_active', true);
+    
+    if (workersError || !workers || workers.length === 0) {
+        alert('No workers found.');
+        return;
+    }
+    
+    // Get all accruals
+    const workerIds = workers.map(w => w.id);
+    const { data: accruals, error: accrualError } = await _supabase
+        .from('worker_bonus_accrual')
+        .select('*')
+        .in('worker_id', workerIds);
+    
+    if (accrualError) {
+        console.error('Error fetching accruals:', accrualError);
+        alert('Error fetching bonus data.');
+        return;
+    }
+    
+    // Filter workers with balances
+    const workersWithBalance = [];
+    let totalToPay = 0;
+    
+    for (const worker of workers) {
+        const accrual = accruals?.find(a => a.worker_id === worker.id);
+        if (accrual) {
+            const tier1 = accrual.total_tier1 || 0;
+            const tier2 = accrual.total_tier2 || 0;
+            const tier3 = accrual.total_tier3 || 0;
+            const total = tier1 + tier2 + tier3;
+            
+            if (total > 0 && !accrual.is_paid) {
+                workersWithBalance.push({
+                    ...worker,
+                    ...accrual,
+                    recalculatedTotal: total
+                });
+                totalToPay += total;
+            }
+        }
+    }
+    
+    if (workersWithBalance.length === 0) {
+        alert('✅ No balances to pay. All workers are up to date!');
+        return;
+    }
+    
+    // Build confirmation message
+    let confirmMsg = `💰 PAY ALL BONUSES?\n\n`;
+    confirmMsg += `📊 ${workersWithBalance.length} worker(s) have balances:\n\n`;
+    
+    for (const w of workersWithBalance) {
+        confirmMsg += `   👤 ${w.full_name} (${w.jc_id}): UGX ${(w.recalculatedTotal || 0).toFixed(2)}\n`;
+    }
+    
+    confirmMsg += `\n💳 TOTAL: UGX ${totalToPay.toFixed(2)}\n\n`;
+    confirmMsg += `⚠️ This will pay ALL bonuses and reset ALL balances to ZERO.\n`;
+    confirmMsg += `⚠️ This action cannot be undone!`;
+    
+    if (!confirm(confirmMsg)) {
+        return;
+    }
+    
+    if (!confirm(`🔴 FINAL CONFIRMATION: Pay UGX ${totalToPay.toFixed(2)} to ${workersWithBalance.length} worker(s)?`)) {
+        return;
+    }
+    
+    try {
+        let paid = 0;
+        let errors = 0;
+        
+        for (const w of workersWithBalance) {
+            // Update the accrual
+            const { error } = await _supabase
+                .from('worker_bonus_accrual')
+                .update({
+                    is_paid: true,
+                    last_paid_date: new Date().toISOString(),
+                    last_paid_by: currentUser.id,
+                    last_paid_amount: w.recalculatedTotal || 0,
+                    total_bonus: 0,
+                    total_tier1: 0,
+                    total_tier2: 0,
+                    total_tier3: 0,
+                    last_updated: new Date().toISOString()
+                })
+                .eq('worker_id', w.id);
+            
+            if (error) {
+                console.error(`Error paying ${w.full_name}:`, error);
+                errors++;
+            } else {
+                // ============================================================
+                // ✅ ADD THIS - RECORD PAYMENT HISTORY FOR EACH WORKER
+                // ============================================================
+                try {
+                    await _supabase
+                        .from('bonus_payment_history')
+                        .insert({
+                            worker_id: w.id,
+                            worker_name: w.full_name,
+                            jc_id: w.jc_id,
+                            amount: w.recalculatedTotal || 0,
+                            payment_type: 'Full (Bulk)',
+                            remaining_balance: 0,
+                            paid_by: currentUser.id,
+                            paid_by_name: currentUser.name || 'Manager',
+                            paid_at: new Date().toISOString(),
+                            notes: `Bulk payment of UGX ${(w.recalculatedTotal || 0).toFixed(2)}`
+                        });
+                    console.log(`✅ Payment history recorded for ${w.full_name}`);
+                } catch (historyError) {
+                    console.error(`❌ Error recording history for ${w.full_name}:`, historyError);
+                }
+                // ============================================================
+                // ✅ END OF ADDED CODE
+                // ============================================================
+                
+                paid++;
+            }
+        }
+        
+        alert(`✅ ${paid} worker(s) paid!\n💰 Total paid: UGX ${totalToPay.toFixed(2)}\n❌ Errors: ${errors}`);
+        
+        loadBonusBalances();
+        
+    } catch (error) {
+        console.error('Error paying all workers:', error);
+        alert('Error: ' + error.message);
+    }
+}
+// ============================================================
+// 📝 ADD PAYMENT HISTORY - FIXED VERSION
+// ============================================================
+
+async function addPaymentHistory(workerId, amount, type, remaining) {
+    try {
+        // Get worker info
+        const { data: worker, error: workerError } = await _supabase
+            .from('workers')
+            .select('full_name, jc_id')
+            .eq('id', workerId)
+            .single();
+        
+        if (workerError) {
+            console.error('Error getting worker:', workerError);
+            return null;
+        }
+        
+        // Get manager info
+        const managerName = currentUser?.name || 'Manager';
+        
+        console.log('📝 Recording payment:', {
+            workerId,
+            workerName: worker?.full_name,
+            amount: amount,
+            type: type,
+            remaining: remaining
+        });
+        
+        // Try to insert with paid_at
+        const { data, error } = await _supabase
+            .from('bonus_payment_history')
+            .insert({
+                worker_id: workerId,
+                worker_name: worker?.full_name || 'Unknown',
+                jc_id: worker?.jc_id || 'N/A',
+                amount: amount,
+                payment_type: type,
+                remaining_balance: remaining || 0,
+                paid_by: currentUser?.id || null,
+                paid_by_name: managerName,
+                paid_at: new Date().toISOString(),
+                notes: `${type} payment of UGX ${amount.toFixed(2)}`
+            })
+            .select()
+            .single();
+        
+        if (error) {
+            console.error('❌ Error inserting payment history:', error);
+            console.error('Error details:', error.message);
+            
+            // Try with paid_date instead (alternative column name)
+            console.log('🔄 Trying with paid_date instead...');
+            
+            const { data: data2, error: error2 } = await _supabase
+                .from('bonus_payment_history')
+                .insert({
+                    worker_id: workerId,
+                    worker_name: worker?.full_name || 'Unknown',
+                    jc_id: worker?.jc_id || 'N/A',
+                    amount: amount,
+                    payment_type: type,
+                    remaining_balance: remaining || 0,
+                    paid_by: currentUser?.id || null,
+                    paid_by_name: managerName,
+                    paid_date: new Date().toISOString(),
+                    notes: `${type} payment of UGX ${amount.toFixed(2)}`
+                })
+                .select()
+                .single();
+            
+            if (error2) {
+                console.error('❌ Error with paid_date too:', error2);
+                return null;
+            }
+            
+            console.log('✅ Payment history recorded with paid_date!');
+            return data2;
+        }
+        
+        console.log(`✅ Payment history recorded: UGX ${amount.toFixed(2)} paid to ${worker?.full_name}`);
+        return data;
+        
+    } catch (error) {
+        console.error('❌ Error in addPaymentHistory:', error);
+        return null;
+    }
+}
+// ============================================================
+// 💰 CLEAR SINGLE WORKER'S BONUS
+// ============================================================
+
+async function clearSingleBonus(workerId) {
+    if (!currentUser || currentUser.role !== 'manager') {
+        alert('Only managers can clear bonuses.');
+        return;
+    }
+    
+    // Get worker info
+    const { data: worker, error: workerError } = await _supabase
+        .from('workers')
+        .select('full_name, jc_id')
+        .eq('id', workerId)
+        .single();
+    
+    if (workerError || !worker) {
+        alert('Worker not found.');
+        return;
+    }
+    
+    // Get accrual
+    const { data: accrual, error: accrualError } = await _supabase
+        .from('worker_bonus_accrual')
+        .select('*')
+        .eq('worker_id', workerId)
+        .maybeSingle();
+    
+    if (accrualError) {
+        console.error('Error fetching accrual:', accrualError);
+        alert('Error fetching bonus data.');
+        return;
+    }
+    
+    // ✅ FIX: Calculate total from tier columns
+    const tier1 = accrual?.total_tier1 || 0;
+    const tier2 = accrual?.total_tier2 || 0;
+    const tier3 = accrual?.total_tier3 || 0;
+    const total = tier1 + tier2 + tier3;
+    
+    if (!accrual || total === 0) {
+        alert(`✅ ${worker.full_name} has no balance to clear.`);
+        return;
+    }
+    
+    // Show confirmation
     const confirmMsg = `💰 Clear Bonus for ${worker.full_name} (${worker.jc_id})?\n\n` +
-        `🏆 Tier 1: UGX ${(accrual.total_tier1 || 0).toFixed(2)}\n` +
-        `⏰ Tier 2: UGX ${(accrual.total_tier2 || 0).toFixed(2)}\n` +
-        `🧪 Tier 3: UGX ${(accrual.total_tier3 || 0).toFixed(2)}\n` +
-        `💰 Total: UGX ${(accrual.total_bonus || 0).toFixed(2)}\n\n` +
+        `🏆 Tier 1: UGX ${tier1.toFixed(2)}\n` +
+        `⏰ Tier 2: UGX ${tier2.toFixed(2)}\n` +
+        `🧪 Tier 3: UGX ${tier3.toFixed(2)}\n` +
+        `─────────────────────────\n` +
+        `💰 Total: UGX ${total.toFixed(2)}\n\n` +
         `⚠️ This will mark the bonus as PAID and reset the balance to ZERO.`;
     
     if (!confirm(confirmMsg)) {
@@ -16108,13 +16830,14 @@ async function clearWorkerBonus(workerId) {
     }
     
     try {
-        const { error } = await _supabase
+        // Update the accrual
+        const { error: updateError } = await _supabase
             .from('worker_bonus_accrual')
             .update({
                 is_paid: true,
                 last_paid_date: new Date().toISOString(),
                 last_paid_by: currentUser.id,
-                last_paid_amount: accrual.total_bonus,
+                last_paid_amount: total,
                 total_bonus: 0,
                 total_tier1: 0,
                 total_tier2: 0,
@@ -16123,14 +16846,15 @@ async function clearWorkerBonus(workerId) {
             })
             .eq('worker_id', workerId);
         
-        if (error) {
-            console.error('Error clearing bonus:', error);
-            alert('Error: ' + error.message);
+        if (updateError) {
+            console.error('Error clearing bonus:', updateError);
+            alert('Error: ' + updateError.message);
             return;
         }
         
-        alert(`✅ ${worker.full_name}'s bonus of UGX ${(accrual.total_bonus || 0).toFixed(2)} has been cleared!\n\n📅 Paid on: ${new Date().toLocaleString()}`);
+        alert(`✅ ${worker.full_name}'s bonus of UGX ${total.toFixed(2)} has been cleared!\n\n📅 Paid on: ${new Date().toLocaleString()}`);
         
+        // Reload the table
         loadBonusBalances();
         
     } catch (error) {
@@ -16149,32 +16873,51 @@ async function clearAllBonuses() {
         return;
     }
     
-    const { data: workers } = await _supabase
+    // Get all workers with balances
+    const { data: workers, error: workersError } = await _supabase
         .from('workers')
         .select('id, full_name, jc_id')
         .eq('is_active', true);
     
-    if (!workers || workers.length === 0) {
+    if (workersError || !workers || workers.length === 0) {
         alert('No workers found.');
         return;
     }
     
-    let totalCleared = 0;
-    let workersWithBalance = [];
+    // Get all accruals
+    const workerIds = workers.map(w => w.id);
+    const { data: accruals, error: accrualError } = await _supabase
+        .from('worker_bonus_accrual')
+        .select('*')
+        .in('worker_id', workerIds);
+    
+    if (accrualError) {
+        console.error('Error fetching accruals:', accrualError);
+        alert('Error fetching bonus data.');
+        return;
+    }
+    
+    // Filter workers with balances
+    const workersWithBalance = [];
+    let totalToClear = 0;
     
     for (const worker of workers) {
-        const { data: accrual } = await _supabase
-            .from('worker_bonus_accrual')
-            .select('total_bonus, total_tier1, total_tier2, total_tier3')
-            .eq('worker_id', worker.id)
-            .maybeSingle();
-        
-        if (accrual && (accrual.total_bonus || 0) > 0) {
-            workersWithBalance.push({
-                ...worker,
-                ...accrual
-            });
-            totalCleared += accrual.total_bonus || 0;
+        const accrual = accruals?.find(a => a.worker_id === worker.id);
+        if (accrual) {
+            // ✅ FIX: Calculate total from tier columns
+            const tier1 = accrual.total_tier1 || 0;
+            const tier2 = accrual.total_tier2 || 0;
+            const tier3 = accrual.total_tier3 || 0;
+            const total = tier1 + tier2 + tier3;
+            
+            if (total > 0 && !accrual.is_paid) {
+                workersWithBalance.push({
+                    ...worker,
+                    ...accrual,
+                    recalculatedTotal: total
+                });
+                totalToClear += total;
+            }
         }
     }
     
@@ -16183,14 +16926,15 @@ async function clearAllBonuses() {
         return;
     }
     
+    // Build confirmation message
     let confirmMsg = `💰 CLEAR ALL BONUSES?\n\n`;
     confirmMsg += `📊 ${workersWithBalance.length} worker(s) have balances:\n\n`;
     
     for (const w of workersWithBalance) {
-        confirmMsg += `   👤 ${w.full_name} (${w.jc_id}): UGX ${(w.total_bonus || 0).toFixed(2)}\n`;
+        confirmMsg += `   👤 ${w.full_name} (${w.jc_id}): UGX ${(w.recalculatedTotal || 0).toFixed(2)}\n`;
     }
     
-    confirmMsg += `\n💳 TOTAL: UGX ${totalCleared.toFixed(2)}\n\n`;
+    confirmMsg += `\n💳 TOTAL: UGX ${totalToClear.toFixed(2)}\n\n`;
     confirmMsg += `⚠️ This will mark ALL bonuses as PAID and reset ALL balances to ZERO.\n`;
     confirmMsg += `⚠️ This action cannot be undone!`;
     
@@ -16198,7 +16942,7 @@ async function clearAllBonuses() {
         return;
     }
     
-    if (!confirm(`🔴 FINAL CONFIRMATION: Are you ABSOLUTELY sure you want to clear UGX ${totalCleared.toFixed(2)} in bonuses?`)) {
+    if (!confirm(`🔴 FINAL CONFIRMATION: Are you ABSOLUTELY sure you want to clear UGX ${totalToClear.toFixed(2)} in bonuses?`)) {
         return;
     }
     
@@ -16213,7 +16957,7 @@ async function clearAllBonuses() {
                     is_paid: true,
                     last_paid_date: new Date().toISOString(),
                     last_paid_by: currentUser.id,
-                    last_paid_amount: w.total_bonus || 0,
+                    last_paid_amount: w.recalculatedTotal || 0,
                     total_bonus: 0,
                     total_tier1: 0,
                     total_tier2: 0,
@@ -16230,7 +16974,7 @@ async function clearAllBonuses() {
             }
         }
         
-        alert(`✅ ${cleared} worker(s) cleared!\n💰 Total cleared: UGX ${totalCleared.toFixed(2)}\n❌ Errors: ${errors}`);
+        alert(`✅ ${cleared} worker(s) cleared!\n💰 Total cleared: UGX ${totalToClear.toFixed(2)}\n❌ Errors: ${errors}`);
         
         loadBonusBalances();
         
@@ -16241,24 +16985,105 @@ async function clearAllBonuses() {
 }
 
 // ============================================================
-// 💰 ADD PAYMENT HISTORY (Optional)
+// 🚀 FIX ALL ACCRUALS - Run this once to fix existing data
 // ============================================================
 
-async function getPaymentHistory(workerId) {
-    try {
-        const { data: history } = await _supabase
-            .from('bonus_payment_history')
-            .select('*')
-            .eq('worker_id', workerId)
-            .order('paid_date', { ascending: false })
-            .limit(10);
-        
-        return history || [];
-    } catch (error) {
-        console.error('Error getting payment history:', error);
-        return [];
+async function fixAllAccruals() {
+    console.log('🔄 FIXING ALL ACCRUALS...');
+    
+    const { data: accruals, error } = await _supabase
+        .from('worker_bonus_accrual')
+        .select('*');
+    
+    if (error) {
+        console.error('Error:', error);
+        return;
     }
+    
+    let fixed = 0;
+    for (const accrual of accruals || []) {
+        const tier1 = accrual.total_tier1 || 0;
+        const tier2 = accrual.total_tier2 || 0;
+        const tier3 = accrual.total_tier3 || 0;
+        const recalculated = tier1 + tier2 + tier3;
+        
+        if (Math.abs((accrual.total_bonus || 0) - recalculated) > 0.01) {
+            console.log(`   Fixing ${accrual.worker_id}: ${accrual.total_bonus} → ${recalculated}`);
+            const { error: updateError } = await _supabase
+                .from('worker_bonus_accrual')
+                .update({ 
+                    total_bonus: recalculated,
+                    last_updated: new Date().toISOString()
+                })
+                .eq('id', accrual.id);
+            
+            if (!updateError) fixed++;
+        }
+    }
+    
+    console.log(`✅ Fixed ${fixed} accrual(s)`);
+    return fixed;
 }
+
+// ============================================================
+// 🚀 RUN THE FIX
+// ============================================================
+
+// First, fix all existing accruals
+fixAllAccruals().then(() => {
+    // Then reload the balances
+    loadBonusBalances();
+});
+
+// ============================================================
+// 📋 QUICK CHECK
+// ============================================================
+
+async function checkBonusBalances() {
+    console.log('\n📊 CHECKING BONUS BALANCES');
+    console.log('───────────────────────────────────────────────────────────');
+
+    const { data: workers } = await _supabase
+        .from('workers')
+        .select('id, full_name, jc_id')
+        .eq('is_active', true);
+
+    if (!workers || workers.length === 0) {
+        console.log('📭 No workers found.');
+        return;
+    }
+
+    const workerIds = workers.map(w => w.id);
+    const { data: accruals } = await _supabase
+        .from('worker_bonus_accrual')
+        .select('*')
+        .in('worker_id', workerIds);
+
+    let grandTotal = 0;
+
+    for (const worker of workers) {
+        const accrual = accruals?.find(a => a.worker_id === worker.id);
+        if (accrual) {
+            const tier1 = accrual.total_tier1 || 0;
+            const tier2 = accrual.total_tier2 || 0;
+            const tier3 = accrual.total_tier3 || 0;
+            const total = tier1 + tier2 + tier3;
+            grandTotal += total;
+            
+            const status = accrual.is_paid ? '✅ PAID' : '💰 DUE';
+            console.log(`   ${status} ${worker.full_name} (${worker.jc_id}): UGX ${total.toFixed(2)} (T1:${tier1.toFixed(2)} T2:${tier2.toFixed(2)} T3:${tier3.toFixed(2)})`);
+        } else {
+            console.log(`   — ${worker.full_name} (${worker.jc_id}): No accrual`);
+        }
+    }
+
+    console.log('───────────────────────────────────────────────────────────');
+    console.log(`   💰 Grand Total: UGX ${grandTotal.toFixed(2)}`);
+    console.log('───────────────────────────────────────────────────────────\n');
+}
+
+// Run check
+checkBonusBalances();
 </script>
 </body>
 </html>
