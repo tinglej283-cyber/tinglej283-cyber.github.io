@@ -2997,389 +2997,8 @@ class SessionManager {
     }
 }
 
-// ============================================================
-// 🆕 GRACE DAYS SYSTEM - Add after getDaysInMonth()
-// ============================================================
 
-function calculateGraceBalance(credits, target = 5000) {
-    // Calculate fractional grace days earned or spent
-    // Returns: positive = earned, negative = spent
-    return credits / target;
-}
 
-async function getWorkerGraceBalance(workerId, days = 30) {
-    // Calculate worker's grace balance from last N days
-    // Returns: total grace days available
-    try {
-        const { data: logs } = await _supabase
-            .from('daily_logs')
-            .select('worker_credit, log_date')
-            .eq('worker_id', workerId)
-            .eq('is_closed', true)
-            .order('log_date', { ascending: false })
-            .limit(days);
-
-        if (!logs || logs.length === 0) return 0;
-
-        let balance = 0;
-        for (const log of logs) {
-            // Each day: credits / 5000 = grace days
-            balance += log.worker_credit / 5000;
-        }
-        return balance;
-    } catch (error) {
-        console.error('Error getting worker grace balance:', error);
-        return 0;
-    }
-}
-
-async function getBranchGraceBalance(branchId, days = 30) {
-    // Calculate branch's grace balance from last N days
-    // Returns: total grace days available for the branch
-    try {
-        const { data: logs } = await _supabase
-            .from('daily_logs')
-            .select('worker_credit, log_date, worker_id')
-            .eq('branch_id', branchId)
-            .eq('is_closed', true)
-            .order('log_date', { ascending: false })
-            .limit(days * 10); // Get enough logs to calculate daily average
-
-        if (!logs || logs.length === 0) return 0;
-
-        // Group by date and calculate daily average
-        const dailyAverages = {};
-        for (const log of logs) {
-            const date = log.log_date;
-            if (!dailyAverages[date]) {
-                dailyAverages[date] = { total: 0, count: 0 };
-            }
-            dailyAverages[date].total += log.worker_credit || 0;
-            dailyAverages[date].count++;
-        }
-
-        let balance = 0;
-        for (const date in dailyAverages) {
-            const avg = dailyAverages[date].total / dailyAverages[date].count;
-            balance += avg / 5000; // Each day's average credits / 5000
-        }
-        return balance;
-    } catch (error) {
-        console.error('Error getting branch grace balance:', error);
-        return 0;
-    }
-}
-// ============================================================
-// ============================================================
-// ✅ UPDATED: checkProtection - NO DEBT ALLOWED!
-// ============================================================
-
-function checkProtection(workerGrace, branchGrace, credits, target = 5000) {
-    // ✅ FIX: Handle null or undefined credits
-    const safeCredits = credits || 0;
-    const needed = safeCredits < target ? (target - safeCredits) / target : 0;
-    
-    if (needed <= 0) {
-        return {
-            protected: true,
-            source: 'Good Day',
-            used: 0,
-            remaining: workerGrace,
-            protectionPercentage: 100,
-            message: '✅ No protection needed - Good day!'
-        };
-    }
-    
-    // ✅ CRITICAL FIX: Only use POSITIVE grace balances
-    const availableWorkerGrace = Math.max(0, workerGrace);
-    const availableBranchGrace = Math.max(0, branchGrace);
-    
-    // Check worker grace (only if positive)
-    const workerUsed = Math.min(availableWorkerGrace, needed);
-    const workerRemaining = availableWorkerGrace - workerUsed;
-    const workerProtected = workerUsed >= needed;
-    
-    // Check branch grace (only if positive)
-    const branchUsed = Math.min(availableBranchGrace, needed);
-    const branchRemaining = availableBranchGrace - branchUsed;
-    const branchProtected = branchUsed >= needed;
-    
-    let protected = false;
-    let source = 'None';
-    let used = 0;
-    let remaining = 0;
-    let protectionPercentage = 0;
-    let message = '';
-    
-    if (workerProtected) {
-        protected = true;
-        source = 'Worker';
-        used = workerUsed;
-        remaining = workerRemaining;
-        protectionPercentage = 100;
-        message = `✅ Protected by worker's grace (${availableWorkerGrace.toFixed(2)} balance)`;
-    } else if (branchProtected) {
-        protected = true;
-        source = 'Branch';
-        used = branchUsed;
-        remaining = branchRemaining;
-        protectionPercentage = 100;
-        message = `✅ Protected by branch's grace (${availableBranchGrace.toFixed(2)} balance)`;
-    } else if (availableWorkerGrace > 0 || availableBranchGrace > 0) {
-        const totalUsed = workerUsed + branchUsed;
-        const totalNeeded = needed;
-        protectionPercentage = (totalUsed / totalNeeded) * 100;
-        
-        if (availableWorkerGrace > availableBranchGrace) {
-            source = 'Worker (Partial)';
-            used = workerUsed;
-            remaining = workerRemaining;
-            message = `⚠️ Partial protection (${protectionPercentage.toFixed(0)}%) from worker's grace`;
-        } else if (availableBranchGrace > 0) {
-            source = 'Branch (Partial)';
-            used = branchUsed;
-            remaining = branchRemaining;
-            message = `⚠️ Partial protection (${protectionPercentage.toFixed(0)}%) from branch's grace`;
-        } else {
-            source = 'Partial';
-            used = totalUsed;
-            remaining = 0;
-            message = `⚠️ Partial protection (${protectionPercentage.toFixed(0)}%) from combined grace`;
-        }
-        protected = true;
-    } else {
-        protected = false;
-        source = 'None';
-        used = 0;
-        remaining = 0;
-        protectionPercentage = 0;
-        message = '❌ No grace protection available (0 grace balance)';
-    }
-    
-    return {
-        protected,
-        source,
-        used,
-        remaining,
-        protectionPercentage,
-        needed,
-        workerGrace: availableWorkerGrace,
-        branchGrace: availableBranchGrace,
-        message
-    };
-}
-// ============================================================
-// ============================================================
-// ============================================================
-// ✅ FIXED: GRACE ONLY PROTECTS AGAINST DEDUCTIONS
-// ============================================================
-
-function calculateDailyPayWithGrace(credits, dailyRate, workerGrace, branchGrace, target = 5000) {
-    // ✅ FIX: Handle null or undefined credits
-    const safeCredits = credits || 0;
-    
-    // ============================================================
-    // STEP 1: Calculate base pay WITHOUT grace
-    // ============================================================
-    const baseLevel = getDailyPayLevel(safeCredits);
-    let basePay, baseDeduction, basePercentage;
-    
-    switch(baseLevel) {
-        case 1:
-            basePay = dailyRate;
-            baseDeduction = 0;
-            basePercentage = 100;
-            break;
-        case 2:
-            basePay = dailyRate * 0.90;
-            baseDeduction = dailyRate * 0.10;
-            basePercentage = 90;
-            break;
-        case 3:
-            basePay = dailyRate * 0.80;
-            baseDeduction = dailyRate * 0.20;
-            basePercentage = 80;
-            break;
-        case 4:
-            basePay = dailyRate * 0.70;
-            baseDeduction = dailyRate * 0.30;
-            basePercentage = 70;
-            break;
-        case 5:
-            basePay = dailyRate * 0.60;
-            baseDeduction = dailyRate * 0.40;
-            basePercentage = 60;
-            break;
-        case 6:
-            basePay = dailyRate * 0.50;
-            baseDeduction = dailyRate * 0.50;
-            basePercentage = 50;
-            break;
-        default:
-            basePay = dailyRate;
-            baseDeduction = 0;
-            basePercentage = 100;
-    }
-    
-    // ============================================================
-    // STEP 2: If NO deduction, keep grace SAVED!
-    // ============================================================
-    if (baseDeduction === 0) {
-        return {
-            pay: basePay,
-            deduction: 0,
-            level: baseLevel,
-            percentage: 100,
-            status: '✅ FULL PAY (No grace needed)',
-            graceUsed: 0,
-            graceProtection: 0,
-            message: '✅ Full pay earned - Grace saved for later!',
-            protectionPercentage: 0
-        };
-    }
-    
-    // ============================================================
-    // STEP 3: Deduction EXISTS - Use grace to protect
-    // ============================================================
-    
-    // Calculate how much grace is needed (as fraction of daily rate)
-    const neededGrace = baseDeduction / dailyRate;
-    
-    // Check worker grace (only positive balances)
-    const availableWorkerGrace = Math.max(0, workerGrace);
-    const availableBranchGrace = Math.max(0, branchGrace);
-    
-    // Use worker grace first
-    let graceUsed = 0;
-    let protectionPct = 0;
-    let message = '';
-    let status = '';
-    
-    if (availableWorkerGrace > 0) {
-        // Use worker grace
-        graceUsed = Math.min(availableWorkerGrace, neededGrace);
-        const graceAmount = graceUsed * dailyRate;
-        const finalDeduction = Math.max(0, baseDeduction - graceAmount);
-        const finalPay = dailyRate - finalDeduction;
-        
-        const isFullyProtected = finalDeduction === 0;
-        protectionPct = (graceUsed / neededGrace) * 100;
-        
-        if (isFullyProtected) {
-            status = '✅ FULL PAY (Grace protected)';
-            message = '🛡️ Grace fully protected your pay!';
-        } else {
-            status = `⚠️ Level ${baseLevel}: ${Math.round((finalPay / dailyRate) * 100)}% Pay (Partial grace)`;
-            message = `🛡️ Grace partially protected (${Math.round(protectionPct)}%)`;
-        }
-        
-        return {
-            pay: finalPay,
-            deduction: finalDeduction,
-            level: baseLevel,
-            percentage: (finalPay / dailyRate) * 100,
-            status: status,
-            graceUsed: graceUsed,
-            graceProtection: protectionPct,
-            message: message,
-            protectionPercentage: protectionPct
-        };
-    }
-    
-    // If no worker grace, check branch grace
-    if (availableBranchGrace > 0 && availableWorkerGrace === 0) {
-        graceUsed = Math.min(availableBranchGrace, neededGrace);
-        const graceAmount = graceUsed * dailyRate;
-        const finalDeduction = Math.max(0, baseDeduction - graceAmount);
-        const finalPay = dailyRate - finalDeduction;
-        
-        const isFullyProtected = finalDeduction === 0;
-        protectionPct = (graceUsed / neededGrace) * 100;
-        
-        if (isFullyProtected) {
-            status = '✅ FULL PAY (Branch grace protected)';
-            message = '🛡️ Branch grace fully protected your pay!';
-        } else {
-            status = `⚠️ Level ${baseLevel}: ${Math.round((finalPay / dailyRate) * 100)}% Pay (Branch grace)`;
-            message = `🛡️ Branch grace partially protected (${Math.round(protectionPct)}%)`;
-        }
-        
-        return {
-            pay: finalPay,
-            deduction: finalDeduction,
-            level: baseLevel,
-            percentage: (finalPay / dailyRate) * 100,
-            status: status,
-            graceUsed: graceUsed,
-            graceProtection: protectionPct,
-            message: message,
-            protectionPercentage: protectionPct
-        };
-    }
-    
-    // ============================================================
-    // STEP 4: NO GRACE AVAILABLE - Apply full deduction
-    // ============================================================
-    return {
-        pay: basePay,
-        deduction: baseDeduction,
-        level: baseLevel,
-        percentage: basePercentage,
-        status: `🚨 Level ${baseLevel}: ${basePercentage}% Pay (No grace)`,
-        graceUsed: 0,
-        graceProtection: 0,
-        message: '❌ No grace available - Full deduction applied',
-        protectionPercentage: 0
-    };
-}
-function calculateMonthlyPayWithGrace(monthlyAvgCredits, baseSalary) {
-    let level, percentage, pay, deduction;
-    
-    if (monthlyAvgCredits >= 5000) {
-        level = 1;
-        percentage = 100;
-        pay = baseSalary;
-        deduction = 0;
-    } else if (monthlyAvgCredits >= 4000) {
-        level = 2;
-        percentage = 92;
-        pay = baseSalary * 0.92;
-        deduction = baseSalary * 0.08;  // UGX 20,000
-    } else if (monthlyAvgCredits >= 3000) {
-        level = 3;
-        percentage = 84;
-        pay = baseSalary * 0.84;
-        deduction = baseSalary * 0.16;  // UGX 40,000
-    } else if (monthlyAvgCredits >= 2000) {
-        level = 4;
-        percentage = 76;
-        pay = baseSalary * 0.76;
-        deduction = baseSalary * 0.24;  // UGX 60,000
-    } else {
-        level = 5;
-        percentage = 68;
-        pay = baseSalary * 0.68;
-        deduction = baseSalary * 0.32;  // UGX 80,000
-    }
-    
-    const statuses = {
-        1: '✅ FULL PAY (100%)',
-        2: '⚠️ Level 2: 92% Pay (-UGX 20K)',
-        3: '⚠️ Level 3: 84% Pay (-UGX 40K)',
-        4: '❌ Level 4: 76% Pay (-UGX 60K)',
-        5: '❌ Level 5: 68% Pay (-UGX 80K)'
-    };
-    
-    return {
-        pay: pay,
-        deduction: deduction,
-        level: level,
-        percentage: percentage,
-        status: statuses[level] || 'Unknown',
-        avgCredits: monthlyAvgCredits,
-        target: 5000
-    };
-}
 // ============================================================
 // 🆕 JACKPOT JAR SYSTEM - Add after calculateMonthlyPayWithGrace()
 // ============================================================
@@ -4538,133 +4157,7 @@ async function calculateWhatIfAllTested(branchId, date) {
     return { results, passed, failed, totalShortfall };
 }
 // ============================================================
-// ============================================================
-// 🔧 FIXED: shouldApplyMercy() - CORRECT avgCredits calculation
-// ============================================================
 
-async function shouldApplyMercy(branchId, date) {
-    try {
-        // Get ALL logs for this branch on this date
-        const { data: allLogs, error: logsError } = await _supabase
-            .from('daily_logs')
-            .select(`
-                *,
-                workers:worker_id (id, full_name, is_active, grace_balance)
-            `)
-            .eq('branch_id', branchId)
-            .eq('log_date', date);
-
-        if (logsError || !allLogs || allLogs.length === 0) {
-            return { mercy: false, reason: 'No workers found', reduction: 0, avgCredits: 0, passRate: 0, totalWorkers: 0, totalStressTests: 0 };
-        }
-
-        // ONLY count ACTIVE workers
-        const activeLogs = allLogs.filter(log => log.workers && log.workers.is_active === true);
-        if (activeLogs.length === 0) {
-            return { mercy: false, reason: 'No active workers found', reduction: 0, avgCredits: 0, passRate: 0, totalWorkers: 0, totalStressTests: 0 };
-        }
-
-        // ============================================================
-        // ✅ FIX: Calculate avgCredits from ACTIVE workers
-        // ============================================================
-        let totalCredits = 0;
-        let passed = 0;
-        let failed = 0;
-        let totalStressTests = 0;
-        let totalWorkers = activeLogs.length;
-
-        for (const log of activeLogs) {
-            const credits = log.worker_credit || 0;
-            totalCredits += credits;
-            
-            // Only count stress tests for workers who WERE tested
-            if (log.is_stress_test === true) {
-                totalStressTests++;
-                const target = log.stress_target || 5000;
-                if (credits >= target) {
-                    passed++;
-                } else {
-                    failed++;
-                }
-            }
-        }
-
-        const avgCredits = totalWorkers > 0 ? totalCredits / totalWorkers : 0;
-        const passRate = totalStressTests > 0 ? (passed / totalStressTests) * 100 : 100;
-
-        console.log(`📊 MERCY CHECK for branch ${branchId} on ${date}:`);
-        console.log(`   👥 Active Workers: ${totalWorkers}`);
-        console.log(`   📈 Avg Credits: ${avgCredits.toFixed(0)}`);
-        console.log(`   🧪 Stress Tests: ${totalStressTests} (Passed: ${passed}, Failed: ${failed})`);
-        console.log(`   📊 Pass Rate: ${passRate.toFixed(1)}%`);
-
-        // ============================================================
-        // ✅ FIX: CONDITION ORDER - Check more specific first
-        // ============================================================
-        
-        let mercy = false;
-        let reason = 'Normal day - standard penalties apply';
-        let reduction = 0;
-
-        // Condition 1: EXTREME BAD DAY - Avg credits < 500 (Disaster day)
-        // BUT ONLY if we have actual data (not all zeros)
-        if (avgCredits < 500 && totalWorkers >= 1) {
-            mercy = true;
-            reason = `Extreme bad day - average credits ${avgCredits.toFixed(0)} below 500`;
-            reduction = 100;
-        }
-        // Condition 2: VERY LOW PASS RATE - Pass rate < 20% with at least 2 tests
-        else if (passRate < 20 && totalStressTests >= 2) {
-            mercy = true;
-            reason = `Very low stress test pass rate (${passRate.toFixed(0)}%) - majority failed`;
-            reduction = 50;
-        }
-        // Condition 3: ALL WORKERS FAILED - Pass rate = 0% with at least 2 tests
-        else if (passRate === 0 && totalStressTests >= 2) {
-            mercy = true;
-            reason = `All ${totalStressTests} workers failed their stress tests`;
-            reduction = 30;
-        }
-        // Condition 4: VERY BAD DAY - Avg credits < 1,000 AND pass rate < 30%
-        else if (avgCredits < 1000 && passRate < 30) {
-            mercy = true;
-            reason = `Very bad day - low credits (${avgCredits.toFixed(0)}) and low pass rate (${passRate.toFixed(0)}%)`;
-            reduction = 80;
-        }
-        // Condition 5: BAD DAY - Avg credits < 2,000 AND pass rate < 40%
-        else if (avgCredits < 2000 && passRate < 40) {
-            mercy = true;
-            reason = `Bad day - below average credits (${avgCredits.toFixed(0)}) with low pass rate (${passRate.toFixed(0)}%)`;
-            reduction = 50;
-        }
-        // Condition 6: MODERATE BAD DAY - Avg credits < 3,000 AND pass rate < 50%
-        else if (avgCredits < 3000 && passRate < 50 && totalStressTests >= 2) {
-            mercy = true;
-            reason = `Moderate bad day - below target credits (${avgCredits.toFixed(0)}) and pass rate (${passRate.toFixed(0)}%)`;
-            reduction = 20;
-        }
-
-        console.log(`   🛡️ Mercy: ${mercy ? '✅ APPLIED' : '❌ NOT APPLIED'}`);
-        console.log(`   📝 Reason: ${reason}`);
-        console.log(`   📊 Reduction: ${reduction}%`);
-
-        return {
-            mercy,
-            reason,
-            reduction,
-            avgCredits,
-            passRate,
-            totalWorkers,
-            totalStressTests,
-            passed,
-            failed
-        };
-
-    } catch (error) {
-        console.error('❌ Error in shouldApplyMercy:', error);
-        return { mercy: false, reason: 'Error calculating mercy', reduction: 0, avgCredits: 0, passRate: 0, totalWorkers: 0, totalStressTests: 0 };
-    }
-}
 // ============================================================
 // BONUS CALCULATION - ONLY WHEN TARGET IS MET
 // ============================================================
@@ -5461,30 +4954,7 @@ async function loadWorkerPayDashboard() {
         // BUILD UNIFIED BONUS DASHBOARD
         // ============================================================
         let html = `
-            <!-- Grace Balance Summary -->
-            <div style="background:rgba(255,255,255,0.03);border-radius:12px;padding:16px;border:1px solid rgba(255,255,255,0.06);margin-top:16px;">
-                <h4 style="color:#f0ebe6;font-weight:400;font-family:'Playfair Display',serif;font-size:16px;letter-spacing:0.5px;margin-bottom:8px;">
-                    🛡️ Grace Balance
-                    <span style="font-size:11px;font-weight:300;color:rgba(255,255,255,0.3);font-family:'Inter',sans-serif;margin-left:8px;">
-                        (Protects your daily pay)
-                    </span>
-                </h4>
-                <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
-                    <div style="background:rgba(255,255,255,0.03);border-radius:8px;padding:12px;text-align:center;border:1px solid rgba(212,165,116,0.2);">
-                        <div style="font-size:9px;color:rgba(255,255,255,0.3);text-transform:uppercase;letter-spacing:0.5px;">👤 Your Grace</div>
-                        <div style="font-size:24px;font-weight:700;color:#d4a574;">${workerGrace.toFixed(2)}</div>
-                        <div style="font-size:9px;color:rgba(255,255,255,0.2);">Days of protection</div>
-                    </div>
-                    <div style="background:rgba(255,255,255,0.03);border-radius:8px;padding:12px;text-align:center;border:1px solid rgba(123,207,166,0.2);">
-                        <div style="font-size:9px;color:rgba(255,255,255,0.3);text-transform:uppercase;letter-spacing:0.5px;">🏢 Branch Grace</div>
-                        <div style="font-size:24px;font-weight:700;color:#7bcfa6;">${branchGraceBalance.toFixed(2)}</div>
-                        <div style="font-size:9px;color:rgba(255,255,255,0.2);">Days of protection</div>
-                    </div>
-                </div>
-                <div style="margin-top:8px;padding:6px 12px;background:rgba(255,255,255,0.03);border-radius:6px;font-size:10px;color:rgba(255,255,255,0.3);text-align:center;">
-                    💡 Grace is earned when you get 5,000+ credits. Used when you get less.
-                </div>
-            </div>
+          
             
             <!-- Unified Bonus Summary -->
             <div style="background:rgba(255,255,255,0.03);border-radius:12px;padding:16px;border:1px solid rgba(255,255,255,0.06);margin-top:16px;">
@@ -9691,7 +9161,7 @@ async function closeDayByWorker(branchId, branchName) {
         .from('daily_logs')
         .select(`
             *,
-            workers:worker_id (id, full_name, daily_rate, monthly_base_salary, jc_id, grace_balance)
+            workers:worker_id (id, full_name, daily_rate, monthly_base_salary, jc_id)
         `)
         .eq('branch_id', branchId)
         .eq('log_date', today)
@@ -9708,7 +9178,6 @@ async function closeDayByWorker(branchId, branchName) {
         return;
     }
 
-    // Check if current worker is checked in
     const myLog = openLogs.find(log => log.worker_id === currentUser.id);
     if (!myLog) {
         alert('❌ You are not checked in at this branch.');
@@ -9716,7 +9185,7 @@ async function closeDayByWorker(branchId, branchName) {
     }
 
     // ============================================================
-    // STEP 3: ONE ENTRY FOR TOTAL BRANCH SALES & ITEMS
+    // STEP 3: GET TOTAL BRANCH SALES & ITEMS
     // ============================================================
     
     const workerCount = openLogs.length;
@@ -9800,22 +9269,14 @@ async function closeDayByWorker(branchId, branchName) {
     console.log(`   ✅ ${assignedCount} worker(s) assigned stress tests`);
 
     // ============================================================
-    // STEP 7: CHECK IF MERCY SHOULD BE APPLIED
-    // ============================================================
-    
-    const mercyResult = await shouldApplyMercy(branchId, today);
-    console.log(`🛡️ Mercy Result: ${mercyResult.mercy ? 'MERCY GRANTED' : 'NO MERCY'}`);
-    console.log(`   Reduction: ${mercyResult.reduction}%`);
-
-    // ============================================================
-    // STEP 8: REFRESH LOGS TO GET UPDATED STRESS TEST FLAGS
+    // STEP 7: REFRESH LOGS
     // ============================================================
     
     const { data: refreshedLogs, error: refreshError } = await _supabase
         .from('daily_logs')
         .select(`
             *,
-            workers:worker_id (id, full_name, daily_rate, monthly_base_salary, jc_id, grace_balance)
+            workers:worker_id (id, full_name, daily_rate, monthly_base_salary, jc_id)
         `)
         .eq('branch_id', branchId)
         .eq('log_date', today)
@@ -9828,7 +9289,7 @@ async function closeDayByWorker(branchId, branchName) {
     }
 
     // ============================================================
-    // STEP 9: CALCULATE CREDITS FOR EACH WORKER
+    // STEP 8: CALCULATE CREDITS FOR EACH WORKER
     // ============================================================
     
     try {
@@ -9883,7 +9344,6 @@ async function closeDayByWorker(branchId, branchName) {
         // BUILD DATA FOR UNIFIED BONUS
         // ============================================================
         
-        // Build workers array for bonus calculation
         const workersForBonus = workerCredits.map(w => ({
             id: w.log.worker_id,
             name: w.name,
@@ -9912,7 +9372,6 @@ async function closeDayByWorker(branchId, branchName) {
                 const passed = credits >= target;
                 const beatPercent = passed ? Math.min(((credits - target) / target) * 100, 100) : 0;
                 
-                // Get streak (consecutive days passed)
                 let streak = 0;
                 const { data: history } = await _supabase
                     .from('daily_logs')
@@ -9948,7 +9407,7 @@ async function closeDayByWorker(branchId, branchName) {
         }
 
         // ============================================================
-        // CALCULATE UNIFIED BONUSES
+        // CALCULATE UNIFIED BONUSES (NO GRACE, NO MERCY)
         // ============================================================
         
         const bonusResult = calculateUnifiedBonuses(
@@ -9962,7 +9421,7 @@ async function closeDayByWorker(branchId, branchName) {
         await updateJackpotJar(totalBranchSales);
 
         // ============================================================
-        // STEP 10: UPDATE EACH WORKER'S LOG
+        // STEP 9: UPDATE EACH WORKER'S LOG
         // ============================================================
         
         let closedCount = 0;
@@ -9975,11 +9434,10 @@ async function closeDayByWorker(branchId, branchName) {
             // Get bonus for this worker
             const workerBonus = bonusResult.results.find(r => r.worker.id === worker.id);
             
-            // ✅ FIX: Calculate total from tiers (NOT from workerBonus.total)
             const tier1Amount = workerBonus?.tier1 || 0;
             const tier2Amount = workerBonus?.tier2 || 0;
             const tier3Amount = workerBonus?.tier3 || 0;
-            const totalBonus = tier1Amount + tier2Amount + tier3Amount;  // ← RECALCULATE!
+            const totalBonus = tier1Amount + tier2Amount + tier3Amount;
             
             const isTier1Winner = workerBonus?.isTier1Winner || false;
             const isTier2Winner = workerBonus?.isTier2Winner || false;
@@ -9987,18 +9445,17 @@ async function closeDayByWorker(branchId, branchName) {
             const tier3BeatPct = workerBonus?.tier3BeatPct || 0;
             const tier3Streak = workerBonus?.tier3Streak || 0;
             
-            // Daily pay is ALWAYS FULL (no deductions)
+            // ✅ NO GRACE - Always FULL daily pay
             const dailyRate = 10000;
             const dailyPay = dailyRate;
             const dailyCost = dailyRate + (worker.worker?.monthly_base_salary || 250000) / daysInMonth;
             const dailyBPI = dailyCost > 0 ? credits / dailyCost : 0;
             
-            // Stress penalty (if failed)
+            // Stress penalty (if failed) - NO MERCY
             let stressPenalty = 0;
             let stressPenaltyLevelName = 'No penalty';
             let stressShortfall = 0;
             let stressShortfallPercent = 0;
-            let mercyActuallyApplied = false;
             let stressPassed = null;
             let stressTarget = null;
             
@@ -10007,26 +9464,13 @@ async function closeDayByWorker(branchId, branchName) {
                 stressPassed = credits >= stressTarget;
                 
                 if (!stressPassed) {
-                    // ❌ FAILED: Calculate penalty
                     const penaltyResult = calculateStressPenalty(credits, stressTarget);
                     stressPenalty = penaltyResult.penalty;
                     stressPenaltyLevelName = penaltyResult.levelName;
                     stressShortfall = penaltyResult.shortfall;
                     stressShortfallPercent = penaltyResult.shortfallPercent;
                     
-                    // ✅ ONLY APPLY MERCY IF THE WORKER FAILED!
-                    if (mercyResult.mercy && mercyResult.reduction > 0) {
-                        const reductionAmount = stressPenalty * (mercyResult.reduction / 100);
-                        stressPenalty = Math.round(stressPenalty - reductionAmount);
-                        mercyActuallyApplied = true;
-                        
-                        console.log(`🛡️ MERCY APPLIED to ${worker.name}:`);
-                        console.log(`   Original: -${penaltyResult.penalty} → Reduced: -${stressPenalty} (${mercyResult.reduction}% off)`);
-                    } else {
-                        console.log(`📉 Stress penalty applied to ${worker.name}: -${stressPenalty} credits (${stressPenaltyLevelName})`);
-                    }
-                    
-                    // Apply the final penalty
+                    // ❌ NO MERCY - Full penalty applied
                     credits = credits - stressPenalty;
                 }
             }
@@ -10043,17 +9487,16 @@ async function closeDayByWorker(branchId, branchName) {
                 }
             }
             
-            // Update log with Unified Bonus
+            // ✅ Update log - NO GRACE, NO MERCY
             const { error: updateError } = await _supabase
                 .from('daily_logs')
                 .update({
-                    // Basic fields
                     daily_sales: workerEffort?.sales || 0,
                     items_sold: workerEffort?.items || 0,
                     worker_credit: credits,
                     daily_cost: dailyCost,
                     daily_bpi: dailyBPI,
-                    daily_pay: dailyPay, // Always full pay!
+                    daily_pay: dailyPay,
                     price_factor: workerEffort?.effort || 0,
                     revenue_factor: revenueFactor,
                     volume_factor: volumeFactor,
@@ -10063,7 +9506,7 @@ async function closeDayByWorker(branchId, branchName) {
                     check_out_lng: location ? location.lng : null,
                     check_out_accuracy: location ? location.accuracy : null,
                     
-                    // UNIFIED BONUS SYSTEM - TIER 1, 2, 3
+                    // UNIFIED BONUS
                     tier1_amount: tier1Amount,
                     tier2_amount: tier2Amount,
                     tier3_amount: tier3Amount,
@@ -10072,31 +9515,31 @@ async function closeDayByWorker(branchId, branchName) {
                     tier3_score: tier3Score,
                     tier3_beat_pct: tier3BeatPct,
                     tier3_streak: tier3Streak,
-                    total_bonus: totalBonus,  // ← NOW CORRECT!
+                    total_bonus: totalBonus,
                     bonus_accrued: false,
                     
                     // Backward compatibility
                     snatch_share: tier1Amount + tier2Amount,
                     performance_bonus: tier3Amount,
                     
-                    // Grace (no deductions anymore)
+                    // ❌ NO GRACE - Set to null/0
                     grace_used: 0,
-                    grace_protection: 100,
+                    grace_protection: 0,
                     pay_level: 1,
-                    pay_status: '✅ FULL PAY (Always)',
+                    pay_status: '✅ FULL PAY',
                     
                     // Jackpot
                     jackpot_share: jackpotShare,
                     jackpot_won: jackpotWon,
                     
-                    // Stress test fields
+                    // Stress test - NO MERCY
                     stress_penalty: stressPenalty,
                     stress_penalty_level_name: stressPenaltyLevelName,
                     stress_shortfall: stressShortfall,
                     stress_shortfall_percent: stressShortfallPercent,
-                    mercy_applied: mercyActuallyApplied,
-                    mercy_reduction_percent: mercyActuallyApplied ? mercyResult.reduction : 0,
-                    mercy_reason: mercyActuallyApplied ? mercyResult.reason : ''
+                    mercy_applied: false,
+                    mercy_reduction_percent: 0,
+                    mercy_reason: ''
                 })
                 .eq('id', log.id)
                 .eq('is_closed', false);
@@ -10120,15 +9563,13 @@ async function closeDayByWorker(branchId, branchName) {
 
                         const passed = credits >= stressTarget;
                         
-                        // Update streak
                         let newStreak = 0;
                         if (passed) {
                             newStreak = currentStreak + 1;
                         } else {
-                            newStreak = 0; // Reset streak on fail
+                            newStreak = 0;
                         }
 
-                        // Update beat percent (running average)
                         const beatPercent = passed ? Math.min(((credits - stressTarget) / stressTarget) * 100, 100) : 0;
                         const currentBeatPct = workerData?.stress_beat_percent || 0;
                         const newBeatPct = currentBeatPct > 0 ? (currentBeatPct + beatPercent) / 2 : beatPercent;
@@ -10146,23 +9587,17 @@ async function closeDayByWorker(branchId, branchName) {
                             })
                             .eq('id', log.worker_id);
 
-                        console.log(`📊 Updated stress test history for ${worker.name}:`);
-                        console.log(`   Total Tests: ${currentCount + 1}`);
-                        console.log(`   Passed: ${passed ? currentPass + 1 : currentPass}`);
-                        console.log(`   Failed: ${!passed ? currentFail + 1 : currentFail}`);
-                        console.log(`   Streak: ${newStreak}`);
-                        console.log(`   Beat%: ${newBeatPct.toFixed(1)}%`);
                     } catch (historyError) {
                         console.error(`Error updating stress test history for ${worker.name}:`, historyError);
                     }
                 }
 
-                // ✅ FIXED: Accrue bonus with CORRECT total (calculated from tiers)
+                // Accrue bonus
                 try {
                     await accrueBonus(
                         log.worker_id,
                         'daily_bonus',
-                        totalBonus,  // ← NOW CORRECT!
+                        totalBonus,
                         today,
                         {
                             tier1: tier1Amount,
@@ -10174,7 +9609,7 @@ async function closeDayByWorker(branchId, branchName) {
                             tier3_score: tier3Score,
                             jackpot_bonus: jackpotShare,
                             stress_penalty: stressPenalty,
-                            mercy_applied: mercyActuallyApplied
+                            mercy_applied: false
                         }
                     );
 
@@ -10187,7 +9622,6 @@ async function closeDayByWorker(branchId, branchName) {
                         .eq('id', log.id);
 
                     closedCount++;
-                    const isMe = log.worker_id === currentUser.id;
                     results.push({
                         workerId: log.worker_id,
                         name: worker.name,
@@ -10206,11 +9640,11 @@ async function closeDayByWorker(branchId, branchName) {
                         stressPenaltyLevelName: stressPenaltyLevelName,
                         stressShortfall: stressShortfall,
                         stressShortfallPercent: stressShortfallPercent,
-                        mercyApplied: mercyActuallyApplied,
+                        mercyApplied: false,
                         jackpotWon: jackpotWon,
                         jackpotShare: jackpotShare,
-                        isMe: isMe,
-                        rank: results.length + 1 // Will be sorted later
+                        isMe: log.worker_id === currentUser.id,
+                        rank: results.length + 1
                     });
 
                 } catch (accrualError) {
@@ -10219,17 +9653,16 @@ async function closeDayByWorker(branchId, branchName) {
             }
         }
 
-        // Sort results by total bonus for ranking
+        // Sort results
         results.sort((a, b) => b.totalBonus - a.totalBonus);
         results.forEach((r, index) => r.rank = index + 1);
 
         // ============================================================
-        // STEP 11: SHOW RESULTS
+        // STEP 10: SHOW RESULTS
         // ============================================================
         
         let resultMsg = `✅ Branch ${branchName} CLOSED!\n\n`;
         
-        // Show Tier 1 Winner
         const t1Winner = results.find(r => r.isTier1Winner);
         if (t1Winner) {
             resultMsg += `🏆 TIER 1 WINNER (30%): ${t1Winner.name} - UGX ${t1Winner.tier1Amount.toFixed(2)}\n\n`;
@@ -10237,7 +9670,6 @@ async function closeDayByWorker(branchId, branchName) {
             resultMsg += `🏆 TIER 1: No winner (tie) - 30% rolled to Tier 3\n\n`;
         }
         
-        // Show Tier 2 Winner
         const t2Winner = results.find(r => r.isTier2Winner);
         if (t2Winner) {
             resultMsg += `⏰ TIER 2 WINNER (10%): ${t2Winner.name} - UGX ${t2Winner.tier2Amount.toFixed(2)}\n\n`;
@@ -10245,33 +9677,26 @@ async function closeDayByWorker(branchId, branchName) {
             resultMsg += `⏰ TIER 2: No winner (tie) - 10% vanished\n\n`;
         }
         
-        // Show all workers
         resultMsg += `📊 ${closedCount} worker(s) closed:\n\n`;
         
-        const sortedResults = [...results].sort((a, b) => (a.isMe ? -1 : 1));
-        
-        for (const r of sortedResults) {
+        for (const r of results) {
             const meTag = r.isMe ? ' ⭐ (YOU)' : '';
             const passedEmoji = r.stressPassed === true ? '✅' : r.stressPassed === false ? '❌' : '—';
-            const mercyTag = r.mercyApplied ? ' 🛡️MERCY' : '';
             const tier1Badge = r.isTier1Winner ? '🥇 ' : '';
             const tier2Badge = r.isTier2Winner ? '⏰ ' : '';
             
             resultMsg += `${r.jackpotWon ? '🎉' : ''} ${tier1Badge}${tier2Badge}${r.name}${meTag} (${r.jc_id}) (Rank #${r.rank}):\n`;
             resultMsg += `   💳 Credits: ${Math.round(r.credits).toLocaleString()}\n`;
-            resultMsg += `   💵 Daily Pay: UGX ${r.dailyPay.toFixed(2)} (Always Full)\n`;
+            resultMsg += `   💵 Daily Pay: UGX ${r.dailyPay.toFixed(2)} (Full Pay)\n`;
             resultMsg += `   🏆 Tier 1: UGX ${r.tier1Amount.toFixed(2)}\n`;
             resultMsg += `   ⏰ Tier 2: UGX ${r.tier2Amount.toFixed(2)}\n`;
             resultMsg += `   🧪 Tier 3: UGX ${r.tier3Amount.toFixed(2)}\n`;
             resultMsg += `   💰 Total Bonus: UGX ${r.totalBonus.toFixed(2)}\n`;
-            resultMsg += `   🧪 Stress Test: ${passedEmoji} ${r.stressPassed === true ? 'PASSED' : r.stressPassed === false ? 'FAILED' : 'No Test'}${mercyTag}\n`;
+            resultMsg += `   🧪 Stress Test: ${passedEmoji} ${r.stressPassed === true ? 'PASSED' : r.stressPassed === false ? 'FAILED' : 'No Test'}\n`;
             
             if (r.stressPenalty > 0) {
                 resultMsg += `   📉 Penalty: -${r.stressPenalty} credits (${r.stressPenaltyLevelName})\n`;
                 resultMsg += `      📊 Missed target by ${r.stressShortfall.toLocaleString()} credits (${r.stressShortfallPercent}% shortfall)\n`;
-                if (r.mercyApplied) {
-                    resultMsg += `      🛡️ MERCY: ${mercyResult.reduction}% reduction applied\n`;
-                }
             }
             if (r.jackpotWon) resultMsg += `   💰 JACKPOT BONUS: UGX ${r.jackpotShare.toFixed(2)} 🎉\n`;
             resultMsg += `\n`;
@@ -10280,44 +9705,36 @@ async function closeDayByWorker(branchId, branchName) {
         alert(resultMsg);
 
         // ============================================================
-        // STEP 12: CREATE BROADCAST NOTIFICATION WITH ALL TIERS
+        // STEP 11: CREATE BROADCAST
         // ============================================================
         
         if (results && results.length > 0) {
             try {
-                const t1Winner = results.find(r => r.isTier1Winner);
-                const t2Winner = results.find(r => r.isTier2Winner);
-                const tier3Winners = results.filter(r => r.tier3Amount > 0);
-                
                 const broadcastData = {
                     branch_id: branchId,
                     branch_name: branchName,
                     log_date: today,
                     closed_at: new Date().toISOString(),
                     
-                    // Tier 1
                     tier1_winner_id: t1Winner?.workerId || null,
                     tier1_winner_name: t1Winner?.name || null,
                     tier1_winner_jc_id: t1Winner?.jc_id || null,
                     tier1_amount: t1Winner?.tier1Amount || 0,
                     tier1_credits: t1Winner?.credits || 0,
                     
-                    // Tier 2
                     tier2_winner_id: t2Winner?.workerId || null,
                     tier2_winner_name: t2Winner?.name || null,
                     tier2_winner_jc_id: t2Winner?.jc_id || null,
                     tier2_amount: t2Winner?.tier2Amount || 0,
                     tier2_time: t2Winner?.checkInTime || 'N/A',
                     
-                    // Tier 3
-                    tier3_winners: tier3Winners.map(r => ({
+                    tier3_winners: results.filter(r => r.tier3Amount > 0).map(r => ({
                         name: r.name + ' (' + r.jc_id + ')',
                         bonus: r.tier3Amount,
                         score: r.tier3Score || 0
                     })),
                     tier3_total: results.reduce((sum, r) => sum + r.tier3Amount, 0),
                     
-                    // All results
                     results: results.map(r => ({
                         rank: r.rank,
                         name: r.name,
@@ -10333,12 +9750,10 @@ async function closeDayByWorker(branchId, branchName) {
                     total_workers: results.length,
                     total_credits: results.reduce((sum, r) => sum + r.credits, 0),
                     total_bonuses: results.reduce((sum, r) => sum + r.totalBonus, 0),
-                    mercy_applied: results.some(r => r.mercyApplied),
-                    mercy_reason: mercyResult.mercy ? mercyResult.reason : '',
+                    mercy_applied: false,
+                    mercy_reason: '',
                     is_read: false
                 };
-                
-                console.log('📢 Creating broadcast with Unified Bonus data:', broadcastData);
                 
                 const { data: broadcast, error: broadcastError } = await _supabase
                     .from('branch_broadcasts')
@@ -10376,7 +9791,7 @@ async function closeDayByWorker(branchId, branchName) {
         }
 
         // ============================================================
-        // STEP 13: REFRESH DATA
+        // STEP 12: REFRESH DATA
         // ============================================================
         
         loadTodayActivity();
@@ -10412,7 +9827,7 @@ async function closeDay(branchId, branchName) {
         .from('daily_logs')
         .select(`
             *,
-            workers:worker_id (id, full_name, daily_rate, monthly_base_salary, jc_id, grace_balance)
+            workers:worker_id (id, full_name, daily_rate, monthly_base_salary, jc_id)
         `)
         .eq('branch_id', branchId)
         .eq('log_date', today)
@@ -10517,21 +9932,14 @@ async function closeDay(branchId, branchName) {
     console.log(`   ✅ ${assignedCount} worker(s) assigned stress tests`);
 
     // ============================================================
-    // STEP 7: CHECK IF MERCY SHOULD BE APPLIED
-    // ============================================================
-    
-    const mercyResult = await shouldApplyMercy(branchId, today);
-    console.log(`🛡️ Mercy Result: ${mercyResult.mercy ? 'MERCY GRANTED' : 'NO MERCY'}`);
-
-    // ============================================================
-    // STEP 8: REFRESH LOGS
+    // STEP 7: REFRESH LOGS
     // ============================================================
     
     const { data: updatedLogs, error: refreshError } = await _supabase
         .from('daily_logs')
         .select(`
             *,
-            workers:worker_id (id, full_name, daily_rate, monthly_base_salary, jc_id, grace_balance)
+            workers:worker_id (id, full_name, daily_rate, monthly_base_salary, jc_id)
         `)
         .eq('branch_id', branchId)
         .eq('log_date', today)
@@ -10544,7 +9952,7 @@ async function closeDay(branchId, branchName) {
     }
 
     // ============================================================
-    // STEP 9: CALCULATE CREDITS FOR EACH WORKER
+    // STEP 8: CALCULATE CREDITS FOR EACH WORKER
     // ============================================================
     
     try {
@@ -10599,7 +10007,6 @@ async function closeDay(branchId, branchName) {
         // BUILD DATA FOR UNIFIED BONUS
         // ============================================================
         
-        // Build workers array
         const workersForBonus = workerCredits.map(w => ({
             id: w.log.worker_id,
             name: w.name,
@@ -10662,7 +10069,7 @@ async function closeDay(branchId, branchName) {
         }
 
         // ============================================================
-        // CALCULATE UNIFIED BONUSES
+        // CALCULATE UNIFIED BONUSES (NO GRACE, NO MERCY)
         // ============================================================
         
         const bonusResult = calculateUnifiedBonuses(
@@ -10673,7 +10080,7 @@ async function closeDay(branchId, branchName) {
         );
 
         // ============================================================
-        // STEP 10: UPDATE EACH WORKER'S LOG
+        // STEP 9: UPDATE EACH WORKER'S LOG
         // ============================================================
         
         let closedCount = 0;
@@ -10683,14 +10090,12 @@ async function closeDay(branchId, branchName) {
             const credits = worker.credits;
             const workerEffort = workerEfforts.find(w => w.log.worker_id === worker.id);
             
-            // Get bonus for this worker
             const workerBonus = bonusResult.results.find(r => r.worker.id === worker.id);
             
-            // ✅ FIX: Calculate total from tiers (NOT from workerBonus.total)
             const tier1Amount = workerBonus?.tier1 || 0;
             const tier2Amount = workerBonus?.tier2 || 0;
             const tier3Amount = workerBonus?.tier3 || 0;
-            const totalBonus = tier1Amount + tier2Amount + tier3Amount;  // ← RECALCULATE!
+            const totalBonus = tier1Amount + tier2Amount + tier3Amount;
             
             const isTier1Winner = workerBonus?.isTier1Winner || false;
             const isTier2Winner = workerBonus?.isTier2Winner || false;
@@ -10698,18 +10103,17 @@ async function closeDay(branchId, branchName) {
             const tier3BeatPct = workerBonus?.tier3BeatPct || 0;
             const tier3Streak = workerBonus?.tier3Streak || 0;
             
-            // Daily pay is ALWAYS FULL (no deductions)
+            // ✅ NO GRACE - Always FULL daily pay
             const dailyRate = 10000;
             const dailyPay = dailyRate;
             const dailyCost = dailyRate + (worker.worker?.monthly_base_salary || 250000) / daysInMonth;
             const dailyBPI = dailyCost > 0 ? credits / dailyCost : 0;
             
-            // Stress penalty (if failed)
+            // Stress penalty (if failed) - NO MERCY
             let stressPenalty = 0;
             let stressPenaltyLevelName = 'No penalty';
             let stressShortfall = 0;
             let stressShortfallPercent = 0;
-            let mercyActuallyApplied = false;
             let stressPassed = null;
             let stressTarget = null;
             
@@ -10723,13 +10127,7 @@ async function closeDay(branchId, branchName) {
                     stressPenaltyLevelName = penaltyResult.levelName;
                     stressShortfall = penaltyResult.shortfall;
                     stressShortfallPercent = penaltyResult.shortfallPercent;
-                    
-                    if (mercyResult.mercy && mercyResult.reduction > 0) {
-                        const reductionAmount = stressPenalty * (mercyResult.reduction / 100);
-                        stressPenalty = Math.round(stressPenalty - reductionAmount);
-                        mercyActuallyApplied = true;
-                    }
-                    credits = credits - stressPenalty;
+                    // ❌ NO MERCY - Full penalty applied
                 }
             }
             
@@ -10745,7 +10143,7 @@ async function closeDay(branchId, branchName) {
                 }
             }
             
-            // Update log with Unified Bonus
+            // ✅ Update log - NO GRACE, NO MERCY
             const { error: updateError } = await _supabase
                 .from('daily_logs')
                 .update({
@@ -10762,7 +10160,6 @@ async function closeDay(branchId, branchName) {
                     check_out_time: new Date().toISOString(),
                     closed_by: currentUser.id,
                     
-                    // UNIFIED BONUS FIELDS
                     tier1_amount: tier1Amount,
                     tier2_amount: tier2Amount,
                     tier3_amount: tier3Amount,
@@ -10771,29 +10168,26 @@ async function closeDay(branchId, branchName) {
                     tier3_score: tier3Score,
                     tier3_beat_pct: tier3BeatPct,
                     tier3_streak: tier3Streak,
-                    total_bonus: totalBonus,  // ← NOW CORRECT!
+                    total_bonus: totalBonus,
                     bonus_accrued: false,
                     
-                    // Backward compatibility
                     snatch_share: tier1Amount + tier2Amount,
                     performance_bonus: tier3Amount,
                     
-                    // Grace (no deductions anymore)
+                    // ❌ NO GRACE
                     grace_used: 0,
-                    grace_protection: 100,
+                    grace_protection: 0,
                     pay_level: 1,
-                    pay_status: '✅ FULL PAY (Always)',
+                    pay_status: '✅ FULL PAY',
                     
-                    // Stress
                     stress_penalty: stressPenalty,
                     stress_penalty_level_name: stressPenaltyLevelName,
                     stress_shortfall: stressShortfall,
                     stress_shortfall_percent: stressShortfallPercent,
-                    mercy_applied: mercyActuallyApplied,
-                    mercy_reduction_percent: mercyActuallyApplied ? mercyResult.reduction : 0,
-                    mercy_reason: mercyActuallyApplied ? mercyResult.reason : '',
+                    mercy_applied: false,
+                    mercy_reduction_percent: 0,
+                    mercy_reason: '',
                     
-                    // Jackpot
                     jackpot_share: jackpotShare,
                     jackpot_won: jackpotWon
                 })
@@ -10803,7 +10197,6 @@ async function closeDay(branchId, branchName) {
             if (updateError) {
                 console.error(`Error closing ${worker.name}:`, updateError);
             } else {
-                // Update worker's stress history
                 if (log.is_stress_test) {
                     try {
                         const { data: workerData } = await _supabase
@@ -10840,12 +10233,11 @@ async function closeDay(branchId, branchName) {
                     }
                 }
                 
-                // ✅ FIXED: Accrue bonus with CORRECT total (calculated from tiers)
                 try {
                     await accrueBonus(
                         log.worker_id,
                         'daily_bonus',
-                        totalBonus,  // ← NOW CORRECT!
+                        totalBonus,
                         today,
                         {
                             tier1: tier1Amount,
@@ -10857,7 +10249,7 @@ async function closeDay(branchId, branchName) {
                             tier3_score: tier3Score,
                             jackpot_bonus: jackpotShare,
                             stress_penalty: stressPenalty,
-                            mercy_applied: mercyActuallyApplied
+                            mercy_applied: false
                         }
                     );
                     
@@ -10891,12 +10283,11 @@ async function closeDay(branchId, branchName) {
         }
         
         // ============================================================
-        // STEP 11: SHOW RESULTS
+        // STEP 10: SHOW RESULTS
         // ============================================================
         
         let resultMsg = `✅ Branch ${branchName} CLOSED!\n\n`;
         
-        // Tier 1 Winner
         const t1Winner = results.find(r => r.isTier1Winner);
         if (t1Winner) {
             resultMsg += `🏆 TIER 1 (30%): ${t1Winner.name} - UGX ${t1Winner.tier1Amount.toFixed(2)}\n\n`;
@@ -10904,7 +10295,6 @@ async function closeDay(branchId, branchName) {
             resultMsg += `🏆 TIER 1: No winner (tie) - 30% rolled to Tier 3\n\n`;
         }
         
-        // Tier 2 Winner
         const t2Winner = results.find(r => r.isTier2Winner);
         if (t2Winner) {
             resultMsg += `⏰ TIER 2 (10%): ${t2Winner.name} - UGX ${t2Winner.tier2Amount.toFixed(2)}\n\n`;
@@ -10912,7 +10302,6 @@ async function closeDay(branchId, branchName) {
             resultMsg += `⏰ TIER 2: No winner (tie) - 10% vanished\n\n`;
         }
         
-        // All workers
         resultMsg += `📊 ${closedCount} worker(s) closed:\n\n`;
         for (const r of results) {
             const t1Badge = r.isTier1Winner ? '🥇 ' : '';
@@ -10930,7 +10319,7 @@ async function closeDay(branchId, branchName) {
         alert(resultMsg);
         
         // ============================================================
-        // STEP 12: REFRESH DATA
+        // STEP 11: REFRESH DATA
         // ============================================================
         
         loadTodayActivity();
@@ -13192,17 +12581,7 @@ async function reopenAllBranches() {
 }
 
 // ============================================================
-// CLOSE ALL BRANCHES - Manager can close all open branches (FIXED)
-// ============================================================
-// CLOSE ALL BRANCHES - Manager can close all open branches
-// ============================================================
-// ============================================================
-// ✅ UPDATED: CLOSE ALL BRANCHES - PROMPT FOR SALES & ITEMS
-// ============================================================
-
-// ============================================================
-// ============================================================
-// ✅ UPDATED: CLOSE ALL BRANCHES - WITH NEW PAY SYSTEM
+// CLOSE ALL BRANCHES - NO GRACE, NO MERCY
 // ============================================================
 
 async function closeAllBranches() {
@@ -13341,15 +12720,8 @@ async function closeAllBranches() {
             const rawScore = revenueFactor * volumeFactor * priceFactor;
             const totalCredits = totalBranchSales * rawScore * 5;
             const budget = totalBranchSales * 0.02;
-            const scalingFactor = budget / totalCredits;
+            const scalingFactor = totalCredits > 0 ? Math.min(budget / totalCredits, 1) : 0;
             const cappedCredits = totalCredits * scalingFactor;
-
-            // Get grace balances
-            const workerGraceBalances = {};
-            for (const log of branchWorkers) {
-                workerGraceBalances[log.worker_id] = await getWorkerGraceBalance(log.worker_id, 30);
-            }
-            const branchGraceBalance = await getBranchGraceBalance(branchId, 30);
 
             // Calculate worker efforts
             const workerEfforts = branchWorkers.map(log => {
@@ -13372,7 +12744,8 @@ async function closeAllBranches() {
                     items: workerItems,
                     avgPrice: avgPrice,
                     name: log.workers?.full_name || 'Unknown',
-                    jc_id: log.workers?.jc_id || 'N/A'
+                    jc_id: log.workers?.jc_id || 'N/A',
+                    worker: log.workers
                 };
             });
 
@@ -13383,63 +12756,135 @@ async function closeAllBranches() {
                 credits: totalEffort > 0 ? (w.effort / totalEffort) * cappedCredits : cappedCredits / workerEfforts.length
             }));
 
-            const sorted = [...workerCredits].sort((a, b) => b.credits - a.credits);
-            const totalWorkers = sorted.length;
-            const snatchPool = cappedCredits * 0.20;
+            // ============================================================
+            // BUILD DATA FOR UNIFIED BONUS
+            // ============================================================
+            
+            const workersForBonus = workerCredits.map(w => ({
+                id: w.log.worker_id,
+                name: w.name,
+                credits: w.credits,
+                jc_id: w.jc_id,
+                log: w.log,
+                worker: w.worker
+            }));
+
+            // Get check-in times for Tier 2
+            const checkInTimes = {};
+            for (const w of workersForBonus) {
+                if (w.log.check_in_time) {
+                    checkInTimes[w.id] = w.log.check_in_time;
+                }
+            }
+
+            // Get stress results for Tier 3
+            const stressResults = {};
+            for (const w of workersForBonus) {
+                const log = w.log;
+                if (log.is_stress_test) {
+                    const target = log.stress_target || 1000;
+                    const credits = w.credits || 0;
+                    const passed = credits >= target;
+                    const beatPercent = passed ? Math.min(((credits - target) / target) * 100, 100) : 0;
+                    
+                    let streak = 0;
+                    const { data: history } = await _supabase
+                        .from('daily_logs')
+                        .select('worker_credit, stress_target, log_date')
+                        .eq('worker_id', w.id)
+                        .eq('is_closed', true)
+                        .order('log_date', { ascending: false })
+                        .limit(30);
+                    
+                    if (history) {
+                        for (const h of history) {
+                            const hTarget = h.stress_target || 1000;
+                            if ((h.worker_credit || 0) >= hTarget) {
+                                streak++;
+                            } else {
+                                break;
+                            }
+                        }
+                    }
+                    
+                    stressResults[w.id] = {
+                        passed: passed,
+                        beatPercent: beatPercent,
+                        streak: streak
+                    };
+                } else {
+                    stressResults[w.id] = {
+                        passed: false,
+                        beatPercent: 0,
+                        streak: 0
+                    };
+                }
+            }
+
+            // ============================================================
+            // CALCULATE UNIFIED BONUSES (NO GRACE, NO MERCY)
+            // ============================================================
+            
+            const bonusResult = calculateUnifiedBonuses(
+                workersForBonus,
+                checkInTimes,
+                stressResults,
+                totalBranchSales
+            );
 
             // Update jackpot jar
             await updateJackpotJar(totalBranchSales);
 
-            for (let i = 0; i < sorted.length; i++) {
-                const item = sorted[i];
-                const log = item.log;
-                const worker = log.workers;
-                const credits = item.credits;
-                const workerSales = item.sales;
-                const workerItems = item.items;
-
-                const dailyRate = worker?.daily_rate || 10000;
+            // ============================================================
+            // UPDATE EACH WORKER'S LOG
+            // ============================================================
+            
+            for (const worker of workersForBonus) {
+                const log = worker.log;
+                const credits = worker.credits;
+                const workerEffort = workerEfforts.find(w => w.log.worker_id === worker.id);
                 
-                // New daily pay calculation with grace
-                const workerGrace = workerGraceBalances[log.worker_id] || 0;
-                const dailyPayResult = calculateDailyPayWithGrace(
-                    credits,
-                    dailyRate,
-                    workerGrace,
-                    branchGraceBalance,
-                    5000
-                );
+                const workerBonus = bonusResult.results.find(r => r.worker.id === worker.id);
                 
-                const dailyPay = dailyPayResult.pay;
-                const dailyCost = dailyRate + (worker?.monthly_base_salary || 250000) / daysInMonth;
+                const tier1Amount = workerBonus?.tier1 || 0;
+                const tier2Amount = workerBonus?.tier2 || 0;
+                const tier3Amount = workerBonus?.tier3 || 0;
+                const totalBonus = tier1Amount + tier2Amount + tier3Amount;
+                
+                const isTier1Winner = workerBonus?.isTier1Winner || false;
+                const isTier2Winner = workerBonus?.isTier2Winner || false;
+                const tier3Score = workerBonus?.tier3Score || 0;
+                const tier3BeatPct = workerBonus?.tier3BeatPct || 0;
+                const tier3Streak = workerBonus?.tier3Streak || 0;
+                
+                // ✅ NO GRACE - Always FULL daily pay
+                const dailyRate = 10000;
+                const dailyPay = dailyRate;
+                const dailyCost = dailyRate + (worker.worker?.monthly_base_salary || 250000) / daysInMonth;
                 const dailyBPI = dailyCost > 0 ? credits / dailyCost : 0;
-
-                let snatchShare = 0;
-                let rank = i + 1;
-
-                if (totalWorkers === 1) {
-                    snatchShare = snatchPool;
-                } else if (i === 0) {
-                    snatchShare = snatchPool * 0.80;
-                } else {
-                    const remainingPool = snatchPool * 0.20;
-                    const othersCount = totalWorkers - 1;
-                    snatchShare = remainingPool / othersCount;
-                }
-
-                const performanceBonus = credits * 0.20;
-                let stressBonus = 0;
-
+                
+                // Stress penalty (if failed) - NO MERCY
+                let stressPenalty = 0;
+                let stressPenaltyLevelName = 'No penalty';
+                let stressShortfall = 0;
+                let stressShortfallPercent = 0;
+                let stressPassed = null;
+                let stressTarget = null;
+                
                 if (log.is_stress_test) {
-                    const stressTarget = log.stress_target || 5000;
-                    if (credits >= stressTarget) {
-                        const lifetimeCredits = await getWorkerLifetimeCredits(log.worker_id);
-                        stressBonus = lifetimeCredits * 0.05;
+                    stressTarget = log.stress_target || 1000;
+                    stressPassed = credits >= stressTarget;
+                    
+                    if (!stressPassed) {
+                        const penaltyResult = calculateStressPenalty(credits, stressTarget);
+                        stressPenalty = penaltyResult.penalty;
+                        stressPenaltyLevelName = penaltyResult.levelName;
+                        stressShortfall = penaltyResult.shortfall;
+                        stressShortfallPercent = penaltyResult.shortfallPercent;
+                        // ❌ NO MERCY - Full penalty applied
                     }
                 }
-
-                const totalBonus = snatchShare + performanceBonus + stressBonus;
-
+                
                 // Check Jackpot
                 let jackpotShare = 0;
                 let jackpotWon = false;
@@ -13451,32 +12896,56 @@ async function closeAllBranches() {
                         totalJackpotWinners++;
                     }
                 }
-
+                
+                // ✅ Update log - NO GRACE, NO MERCY
                 const { error: updateError } = await _supabase
                     .from('daily_logs')
                     .update({
-                        daily_sales: workerSales,
-                        items_sold: workerItems,
+                        daily_sales: workerEffort?.sales || 0,
+                        items_sold: workerEffort?.items || 0,
                         worker_credit: credits,
                         daily_cost: dailyCost,
                         daily_bpi: dailyBPI,
                         daily_pay: dailyPay,
-                        price_factor: item.effort,
+                        price_factor: workerEffort?.effort || 0,
                         revenue_factor: revenueFactor,
                         volume_factor: volumeFactor,
                         is_closed: true,
                         check_out_time: new Date().toISOString(),
-                        snatch_share: snatchShare,
-                        snatch_rank: rank,
-                        snatch_pool: snatchPool,
-                        performance_bonus: performanceBonus,
-                        stress_bonus: stressBonus,
+                        closed_by: currentUser.id,
+                        
+                        // UNIFIED BONUS
+                        tier1_amount: tier1Amount,
+                        tier2_amount: tier2Amount,
+                        tier3_amount: tier3Amount,
+                        tier1_winner: isTier1Winner,
+                        tier2_winner: isTier2Winner,
+                        tier3_score: tier3Score,
+                        tier3_beat_pct: tier3BeatPct,
+                        tier3_streak: tier3Streak,
                         total_bonus: totalBonus,
                         bonus_accrued: false,
-                        grace_used: dailyPayResult.graceUsed || 0,
-                        grace_protection: dailyPayResult.protectionPercentage || 0,
-                        pay_level: dailyPayResult.level || 0,
-                        pay_status: dailyPayResult.status || '',
+                        
+                        // Backward compatibility
+                        snatch_share: tier1Amount + tier2Amount,
+                        performance_bonus: tier3Amount,
+                        
+                        // ❌ NO GRACE - Set to 0
+                        grace_used: 0,
+                        grace_protection: 0,
+                        pay_level: 1,
+                        pay_status: '✅ FULL PAY',
+                        
+                        // Stress - NO MERCY
+                        stress_penalty: stressPenalty,
+                        stress_penalty_level_name: stressPenaltyLevelName,
+                        stress_shortfall: stressShortfall,
+                        stress_shortfall_percent: stressShortfallPercent,
+                        mercy_applied: false,
+                        mercy_reduction_percent: 0,
+                        mercy_reason: '',
+                        
+                        // Jackpot
                         jackpot_share: jackpotShare,
                         jackpot_won: jackpotWon
                     })
@@ -13484,58 +12953,119 @@ async function closeAllBranches() {
                     .eq('is_closed', false);
 
                 if (updateError) {
-                    console.error(`Error closing ${item.name}:`, updateError);
+                    console.error(`Error closing ${worker.name}:`, updateError);
                 } else {
-                    await accrueBonus(
-                        log.worker_id,
-                        'daily_snatch',
-                        snatchShare,
-                        today,
-                        {
-                            credits: credits,
-                            rank: rank,
-                            total_workers: totalWorkers,
-                            pool_size: snatchPool,
-                            performance_bonus: performanceBonus,
-                            stress_bonus: stressBonus,
-                            jackpot_bonus: jackpotShare
+                    // Update worker's stress test history
+                    if (log.is_stress_test) {
+                        try {
+                            const { data: workerData } = await _supabase
+                                .from('workers')
+                                .select('stress_test_count, stress_test_pass_count, stress_test_fail_count, stress_streak, stress_beat_percent')
+                                .eq('id', log.worker_id)
+                                .single();
+
+                            const currentCount = workerData?.stress_test_count || 0;
+                            const currentPass = workerData?.stress_test_pass_count || 0;
+                            const currentFail = workerData?.stress_test_fail_count || 0;
+                            const currentStreak = workerData?.stress_streak || 0;
+
+                            const passed = credits >= stressTarget;
+                            let newStreak = passed ? currentStreak + 1 : 0;
+                            
+                            const beatPercent = passed ? Math.min(((credits - stressTarget) / stressTarget) * 100, 100) : 0;
+                            const currentBeatPct = workerData?.stress_beat_percent || 0;
+                            const newBeatPct = currentBeatPct > 0 ? (currentBeatPct + beatPercent) / 2 : beatPercent;
+
+                            await _supabase
+                                .from('workers')
+                                .update({
+                                    last_stress_test_date: today,
+                                    stress_test_count: currentCount + 1,
+                                    stress_test_pass_count: passed ? currentPass + 1 : currentPass,
+                                    stress_test_fail_count: !passed ? currentFail + 1 : currentFail,
+                                    stress_streak: newStreak,
+                                    stress_beat_percent: newBeatPct,
+                                    updated_at: new Date().toISOString()
+                                })
+                                .eq('id', log.worker_id);
+
+                        } catch (historyError) {
+                            console.error(`Error updating stress test history for ${worker.name}:`, historyError);
                         }
-                    );
+                    }
 
-                    await _supabase
-                        .from('daily_logs')
-                        .update({ 
-                            bonus_accrued: true,
-                            bonus_accrued_at: new Date().toISOString()
-                        })
-                        .eq('id', log.id);
+                    // Accrue bonus
+                    try {
+                        await accrueBonus(
+                            log.worker_id,
+                            'daily_bonus',
+                            totalBonus,
+                            today,
+                            {
+                                tier1: tier1Amount,
+                                tier2: tier2Amount,
+                                tier3: tier3Amount,
+                                credits: credits,
+                                tier1_winner: isTier1Winner,
+                                tier2_winner: isTier2Winner,
+                                tier3_score: tier3Score,
+                                jackpot_bonus: jackpotShare,
+                                stress_penalty: stressPenalty,
+                                mercy_applied: false
+                            }
+                        );
 
-                    totalClosed++;
-                    allResults.push({
-                        branch: branchName,
-                        name: item.name,
-                        jc_id: item.jc_id,
-                        sales: workerSales,
-                        items: workerItems,
-                        credits: credits,
-                        dailyPay: dailyPay,
-                        payLevel: dailyPayResult.level,
-                        payStatus: dailyPayResult.status,
-                        snatchShare: snatchShare,
-                        performanceBonus: performanceBonus,
-                        stressBonus: stressBonus,
-                        totalBonus: totalBonus,
-                        jackpotShare: jackpotShare,
-                        jackpotWon: jackpotWon,
-                        rank: rank,
-                        graceUsed: dailyPayResult.graceUsed || 0,
-                        graceProtection: dailyPayResult.protectionPercentage || 0
-                    });
+                        await _supabase
+                            .from('daily_logs')
+                            .update({ 
+                                bonus_accrued: true,
+                                bonus_accrued_at: new Date().toISOString()
+                            })
+                            .eq('id', log.id);
+
+                        totalClosed++;
+                        allResults.push({
+                            branch: branchName,
+                            name: worker.name,
+                            jc_id: worker.jc_id,
+                            sales: workerEffort?.sales || 0,
+                            items: workerEffort?.items || 0,
+                            credits: credits,
+                            dailyPay: dailyPay,
+                            payLevel: 1,
+                            payStatus: '✅ FULL PAY',
+                            tier1Amount: tier1Amount,
+                            tier2Amount: tier2Amount,
+                            tier3Amount: tier3Amount,
+                            totalBonus: totalBonus,
+                            isTier1Winner: isTier1Winner,
+                            isTier2Winner: isTier2Winner,
+                            tier3Score: tier3Score,
+                            stressPassed: stressPassed,
+                            stressPenalty: stressPenalty,
+                            stressPenaltyLevelName: stressPenaltyLevelName,
+                            stressShortfall: stressShortfall,
+                            stressShortfallPercent: stressShortfallPercent,
+                            jackpotShare: jackpotShare,
+                            jackpotWon: jackpotWon,
+                            rank: allResults.length + 1
+                        });
+
+                    } catch (accrualError) {
+                        console.error(`Error accruing bonus for ${worker.name}:`, accrualError);
+                    }
                 }
             }
         }
 
-        // Show results
+        // Sort results
+        allResults.sort((a, b) => b.totalBonus - a.totalBonus);
+        allResults.forEach((r, index) => r.rank = index + 1);
+
+        // ============================================================
+        // SHOW RESULTS
+        // ============================================================
+        
         let resultMsg = `✅ ALL BRANCHES CLOSED!\n\n📊 ${totalClosed} worker(s) closed:\n\n`;
         
         const resultsByBranch = {};
@@ -13549,13 +13079,19 @@ async function closeAllBranches() {
         for (const [branchName, results] of Object.entries(resultsByBranch)) {
             resultMsg += `📍 ${branchName}:\n`;
             for (const r of results) {
-                resultMsg += `   ${r.jackpotWon ? '🎉' : ''} ${r.name} (${r.jc_id}) (Rank #${r.rank}): UGX ${r.totalBonus.toFixed(2)} (${r.payStatus})\n`;
+                const tier1Badge = r.isTier1Winner ? '🥇 ' : '';
+                const tier2Badge = r.isTier2Winner ? '⏰ ' : '';
+                resultMsg += `   ${r.jackpotWon ? '🎉' : ''} ${tier1Badge}${tier2Badge}${r.name} (${r.jc_id}) (Rank #${r.rank}): UGX ${r.totalBonus.toFixed(2)} (${r.payStatus})\n`;
             }
             resultMsg += `\n`;
         }
         
         alert(resultMsg);
 
+        // ============================================================
+        // REFRESH DATA
+        // ============================================================
+        
         loadTodayActivity();
         loadCheckinBranches();
         loadStats();
