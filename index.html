@@ -17136,13 +17136,26 @@ checkBonusBalances();
     </div>
     
     <div style="display: flex; gap: 15px; align-items: center;">
-        <!-- 👇 UPDATE THIS LINK 👇 -->
         <a href="https://tinglej283-cyber.github.io/jeans_club_equity.apk"
            id="downloadAppLink"
            style="background: #FFD700; color: #0a0a0a; padding: 8px 24px; border-radius: 40px; text-decoration: none; font-weight: bold; font-size: 14px; display: flex; align-items: center; gap: 8px;">
              Download App
         </a>
-        
+        <button id="closeBarBtn" style="background: none; border: none; color: #888; font-size: 20px; cursor: pointer; padding: 0 8px;" title="Close">✕</button>
+    </div>
+</div>
+
+<!-- Installation Popup - NO CLOSE BUTTONS -->
+<div id="installPopup" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 20000; justify-content: center; align-items: center; text-align: center;">
+    <div style="background: linear-gradient(135deg, #1a1a2e 0%, #0a0a0a 100%); padding: 40px 30px; border-radius: 20px; max-width: 350px; width: 90%; margin: 20px; border: 2px solid #FFD700; box-shadow: 0 0 50px rgba(255,215,0,0.3);">
+        <div style="font-size: 60px; margin-bottom: 20px;">📲</div>
+        <h2 style="color: #FFD700; margin-bottom: 15px; font-size: 24px;">Finish Installation</h2>
+        <p style="color: white; font-size: 16px; line-height: 1.6;">
+            Please open the downloaded file and tap INSTALL to complete setup.
+        </p>
+        <div style="margin-top: 20px;">
+            <div style="display: inline-block; width: 40px; height: 40px; border: 3px solid #FFD700; border-top-color: transparent; border-radius: 50%; animation: spin 1s linear infinite;"></div>
+        </div>
     </div>
 </div>
 
@@ -17165,6 +17178,8 @@ function isAppInstalled() {
     if (isInWebView) {
         localStorage.setItem('jeansClubAppInstalled', 'true');
         localStorage.setItem('jeansClubInstallDate', Date.now().toString());
+        // ✅ Clear download flag when app is detected
+        localStorage.removeItem('downloadStarted');
         return true;
     }
     return localStorage.getItem('jeansClubAppInstalled') === 'true';
@@ -17184,9 +17199,29 @@ function checkAndHidePopup() {
     return false;
 }
 
-// 3. Show installation popup
+// 3. Show installation popup (ONLY if download was just clicked)
 function showInstallPopup() {
+    // ✅ ONLY show if download was just clicked (within last 10 seconds)
+    var downloadStartTime = localStorage.getItem('downloadStartTime');
+    var downloadStarted = localStorage.getItem('downloadStarted') === 'true';
+    
     if (isAppInstalled()) return;
+    
+    // ✅ Check if download was clicked within the last 10 seconds
+    if (downloadStartTime) {
+        var timeSinceDownload = Date.now() - parseInt(downloadStartTime);
+        if (timeSinceDownload > 10000) {
+            // More than 10 seconds ago - don't show popup
+            localStorage.removeItem('downloadStarted');
+            localStorage.removeItem('downloadStartTime');
+            return;
+        }
+    } else {
+        // No download timestamp - don't show popup
+        return;
+    }
+    
+    if (!downloadStarted) return;
     
     var popup = document.getElementById('installPopup');
     if (popup) {
@@ -17202,50 +17237,62 @@ function showInstallPopup() {
     }
 }
 
-// 4. Close popup manually
-function closeInstallPopup() {
-    document.getElementById('installPopup').style.display = 'none';
-    document.body.style.overflow = 'auto';
-}
-
-// 5. Handle download click
+// 4. Handle download click
 document.getElementById('downloadAppLink').addEventListener('click', function(e) {
+    // ✅ Set both flags with timestamp
     localStorage.setItem('downloadStarted', 'true');
     localStorage.setItem('downloadStartTime', Date.now().toString());
     
     // Hide floating bar
     document.getElementById('floatingDownloadBar').style.display = 'none';
     
-    // Show popup after 2 seconds
+    // ✅ Show popup after 2 seconds (with timeout check)
     setTimeout(function() {
         showInstallPopup();
     }, 2000);
 });
 
-// 6. Handle close button for floating bar
-document.getElementById('closeBarBtn').addEventListener('click', function() {
-    localStorage.setItem('downloadBarClosed', 'true');
-    document.getElementById('floatingDownloadBar').style.display = 'none';
-});
+// 5. Handle close button for floating bar
+var closeBtn = document.getElementById('closeBarBtn');
+if (closeBtn) {
+    closeBtn.addEventListener('click', function() {
+        localStorage.setItem('downloadBarClosed', 'true');
+        document.getElementById('floatingDownloadBar').style.display = 'none';
+    });
+}
 
-// 7. Check on page load
+// 6. Check on page load
 window.addEventListener('load', function() {
     if (isAppInstalled()) {
         document.getElementById('floatingDownloadBar').style.display = 'none';
+        localStorage.removeItem('downloadStarted');
+        localStorage.removeItem('downloadStartTime');
+        return;
     }
     
+    // ✅ Only check if download was started within last 10 seconds
+    var downloadStartTime = localStorage.getItem('downloadStartTime');
     var downloadStarted = localStorage.getItem('downloadStarted') === 'true';
-    if (downloadStarted && !isAppInstalled()) {
-        showInstallPopup();
+    
+    if (downloadStarted && downloadStartTime) {
+        var timeSinceDownload = Date.now() - parseInt(downloadStartTime);
+        if (timeSinceDownload < 10000) {
+            showInstallPopup();
+        } else {
+            // Too old - clear it
+            localStorage.removeItem('downloadStarted');
+            localStorage.removeItem('downloadStartTime');
+        }
     }
 });
 
-// 8. Check when page becomes visible again
+// 7. Check when page becomes visible again
 document.addEventListener('visibilitychange', function() {
     if (!document.hidden) {
         checkAndHidePopup();
     }
 });
+</script>
 </script>
 </body>
 </html>
