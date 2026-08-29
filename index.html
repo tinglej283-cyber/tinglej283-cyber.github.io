@@ -1603,6 +1603,102 @@ table td strong { color: #f0ebe6; font-weight: 500; }
         font-size: 20px !important;
     }
 }
+/* ============================================================
+   📱 TIME & PERFORMANCE - BIGGER GRAPHS ON PHONES
+   ============================================================ */
+
+@media (max-width: 768px) {
+    /* Make chart containers bigger */
+    #tabTimePerformance .chart-box {
+        padding: 16px !important;
+        min-height: 280px !important;
+    }
+    
+    #tabTimePerformance .chart-box canvas {
+        max-height: 250px !important;
+        min-height: 200px !important;
+        height: 250px !important;
+        width: 100% !important;
+    }
+    
+    /* Make the chart grid full width */
+    #tabTimePerformance .chart-grid {
+        grid-template-columns: 1fr !important;
+        gap: 20px !important;
+    }
+    
+    /* Make charts row full width */
+    #tabTimePerformance [style*="grid-template-columns:1fr 1fr"] {
+        grid-template-columns: 1fr !important;
+        gap: 20px !important;
+    }
+    
+    /* Increase chart box height */
+    #tabTimePerformance .chart-box {
+        height: auto !important;
+        min-height: 300px !important;
+    }
+    
+    /* Make stats cards bigger */
+    #tpStatsGrid {
+        grid-template-columns: 1fr 1fr !important;
+        gap: 10px !important;
+    }
+    
+    #tpStatsGrid .stat-card {
+        padding: 16px 12px !important;
+    }
+    
+    #tpStatsGrid .stat-card .number {
+        font-size: 22px !important;
+    }
+    
+    /* Make impact analysis bigger */
+    #tpImpactAnalysis [style*="grid-template-columns:1fr 1fr"] {
+        grid-template-columns: 1fr !important;
+        gap: 16px !important;
+    }
+    
+    /* Make worker impact bars bigger */
+    #tpImpactAnalysis .impact-bar-container {
+        padding: 8px 0 !important;
+    }
+    
+    #tpImpactAnalysis .impact-bar-label {
+        font-size: 12px !important;
+    }
+    
+    #tpImpactAnalysis .impact-bar-track {
+        height: 20px !important;
+    }
+}
+
+@media (max-width: 480px) {
+    /* Extra small phones */
+    #tabTimePerformance .chart-box {
+        min-height: 250px !important;
+        padding: 12px !important;
+    }
+    
+    #tabTimePerformance .chart-box canvas {
+        max-height: 200px !important;
+        min-height: 180px !important;
+        height: 200px !important;
+    }
+    
+    #tpStatsGrid {
+        grid-template-columns: 1fr 1fr !important;
+        gap: 6px !important;
+    }
+    
+    #tpStatsGrid .stat-card .number {
+        font-size: 18px !important;
+    }
+    
+    #tpStatsGrid .stat-card .label {
+        font-size: 9px !important;
+    }
+}
 </style>
 </head>
 <body>
