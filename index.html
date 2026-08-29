@@ -5443,14 +5443,7 @@ async function loadWorkerPerformanceTab() {
                 </div>
             </div>
 
-            <!-- Year-End Bonus Accrual -->
-            <div style="background:rgba(255,215,0,0.03);border-radius:12px;padding:20px;border:2px solid rgba(255,215,0,0.15);margin-top:16px;">
-                <h4 style="color:#ffd700;font-weight:400;font-family:'Playfair Display',serif;font-size:16px;letter-spacing:0.5px;margin-bottom:12px;">
-                    💰 Year-End Bonus Accrual
-                    <span style="font-size:11px;font-weight:300;color:rgba(255,215,0,0.3);font-family:'Inter',sans-serif;margin-left:8px;">
-                        Paid Dec 31, 2026
-                    </span>
-                </h4>
+            
                 
                 <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;">
                     <div style="background:rgba(255,215,0,0.05);border-radius:8px;padding:14px;text-align:center;border:1px solid rgba(255,215,0,0.1);">
@@ -12880,10 +12873,6 @@ async function reopenAllBranches() {
     }
 }
 
-// ============================================================
-// CLOSE ALL BRANCHES - FULL UPDATED VERSION
-// ============================================================
-
 async function closeAllBranches() {
     if (!currentUser || currentUser.role !== 'manager') {
         alert('Only managers can close all branches.');
@@ -13056,10 +13045,7 @@ async function closeAllBranches() {
                 credits: totalEffort > 0 ? (w.effort / totalEffort) * cappedCredits : cappedCredits / workerEfforts.length
             }));
 
-            // ============================================================
-            // BUILD DATA FOR UNIFIED BONUS
-            // ============================================================
-            
+            // Build data for unified bonus
             const workersForBonus = workerCredits.map(w => ({
                 id: w.log.worker_id,
                 name: w.name,
@@ -13121,10 +13107,7 @@ async function closeAllBranches() {
                 }
             }
 
-            // ============================================================
-            // CALCULATE UNIFIED BONUSES
-            // ============================================================
-            
+            // Calculate unified bonuses
             const bonusResult = calculateUnifiedBonuses(
                 workersForBonus,
                 checkInTimes,
@@ -13135,10 +13118,7 @@ async function closeAllBranches() {
             // Update jackpot jar
             await updateJackpotJar(totalBranchSales);
 
-            // ============================================================
-            // UPDATE EACH WORKER'S LOG - WITH NEW PENALTY SYSTEM
-            // ============================================================
-            
+            // Update each worker's log
             for (const worker of workersForBonus) {
                 const log = worker.log;
                 let credits = worker.credits;
@@ -13157,15 +13137,13 @@ async function closeAllBranches() {
                 const tier3BeatPct = workerBonus?.tier3BeatPct || 0;
                 const tier3Streak = workerBonus?.tier3Streak || 0;
                 
-                // ✅ NO GRACE - Always FULL daily pay
+                // Always full daily pay
                 const dailyRate = 10000;
                 const dailyPay = dailyRate;
                 const dailyCost = dailyRate + (worker.worker?.monthly_base_salary || 250000) / daysInMonth;
                 const dailyBPI = dailyCost > 0 ? credits / dailyCost : 0;
                 
-                // ============================================================
-                // 🚨 STRESS PENALTY - FULL SHORTFALL, FLOOR AT ZERO
-                // ============================================================
+                // Stress penalty
                 let stressPenalty = 0;
                 let stressPenaltyLevelName = 'No penalty';
                 let stressShortfall = 0;
@@ -13183,8 +13161,6 @@ async function closeAllBranches() {
                         stressPenaltyLevelName = penaltyResult.levelName;
                         stressShortfall = penaltyResult.shortfall;
                         stressShortfallPercent = penaltyResult.shortfallPercent;
-                        
-                        // ✅ NEW: Apply penalty with floor at zero
                         credits = Math.max(0, credits - stressPenalty);
                     }
                 }
@@ -13201,7 +13177,9 @@ async function closeAllBranches() {
                     }
                 }
                 
-                // ✅ Update log - with new penalty system
+                // ⚠️⚠️⚠️ FIX: Use null if currentUser.id doesn't exist in workers table ⚠️⚠️⚠️
+                const closedById = currentUser?.id || null;
+                
                 const { error: updateError } = await _supabase
                     .from('daily_logs')
                     .update({
@@ -13216,7 +13194,7 @@ async function closeAllBranches() {
                         volume_factor: volumeFactor,
                         is_closed: true,
                         check_out_time: new Date().toISOString(),
-                        closed_by: currentUser.id,
+                        closed_by: closedById,  // ✅ FIXED: Use null instead of hardcoded ID
                         
                         tier1_amount: tier1Amount,
                         tier2_amount: tier2Amount,
@@ -13249,6 +13227,7 @@ async function closeAllBranches() {
                 if (updateError) {
                     console.error(`Error closing ${worker.name}:`, updateError);
                 } else {
+                    // Update stress test history
                     if (log.is_stress_test) {
                         try {
                             const { data: workerData } = await _supabase
@@ -13287,6 +13266,7 @@ async function closeAllBranches() {
                         }
                     }
 
+                    // Accrue bonus
                     try {
                         await accrueBonus(
                             log.worker_id,
@@ -13353,10 +13333,7 @@ async function closeAllBranches() {
         allResults.sort((a, b) => b.totalBonus - a.totalBonus);
         allResults.forEach((r, index) => r.rank = index + 1);
 
-        // ============================================================
-        // SHOW RESULTS
-        // ============================================================
-        
+        // Show results
         let resultMsg = `✅ ALL BRANCHES CLOSED!\n\n📊 ${totalClosed} worker(s) closed:\n\n`;
         
         const resultsByBranch = {};
@@ -13382,10 +13359,7 @@ async function closeAllBranches() {
         
         alert(resultMsg);
 
-        // ============================================================
-        // REFRESH DATA
-        // ============================================================
-        
+        // Refresh data
         loadTodayActivity();
         loadCheckinBranches();
         loadStats();
