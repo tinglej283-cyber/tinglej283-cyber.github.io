@@ -1562,6 +1562,47 @@ table td strong { color: #f0ebe6; font-weight: 500; }
         scroll-snap-align: start !important;
     }
 }
+/* ============================================================
+   📱 BONUS BREAKDOWN - SCROLLABLE ON PHONES
+   ============================================================ */
+
+@media (max-width: 768px) {
+    /* Make the Unified Bonus Breakdown scrollable */
+    #tabMyPerformance .bonus-breakdown-container {
+        overflow-x: auto !important;
+        -webkit-overflow-scrolling: touch !important;
+        padding: 4px 0 !important;
+        margin: 0 -12px !important;
+        padding: 0 12px !important;
+    }
+    
+    #tabMyPerformance .bonus-breakdown-container > div {
+        min-width: 500px !important;
+    }
+    
+    /* Make the 3-tier grid smaller on phones */
+    #tabMyPerformance [style*="grid-template-columns:1fr 1fr 1fr"] {
+        grid-template-columns: 1fr 1fr 1fr !important;
+        gap: 6px !important;
+    }
+    
+    #tabMyPerformance [style*="grid-template-columns:1fr 1fr 1fr"] > div {
+        padding: 10px 6px !important;
+    }
+    
+    #tabMyPerformance [style*="grid-template-columns:1fr 1fr 1fr"] > div div[style*="font-size:24px"] {
+        font-size: 16px !important;
+    }
+    
+    /* Make the total bonus section fit */
+    #tabMyPerformance [style*="background:rgba(255,215,0,0.08)"] {
+        padding: 10px 12px !important;
+    }
+    
+    #tabMyPerformance [style*="background:rgba(255,215,0,0.08)"] div[style*="font-size:28px"] {
+        font-size: 20px !important;
+    }
+}
 </style>
 </head>
 <body>
