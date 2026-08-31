@@ -1959,8 +1959,11 @@ table td strong { color: #f0ebe6; font-weight: 500; }
                                 <div>👥 Team historical: <span id="calcTeamHistorical" style="color:#d4a574;">0 credits</span></div>
                                 <div>📊 Minimum target: <span id="calcBranchGeneral" style="color:#d4a574;">1,000 credits</span></div>
                                 <div style="border-top:1px solid rgba(255,255,255,0.06);margin-top:4px;padding-top:4px;">
-                                    <strong style="color:#ffd700;">Target = Average of all 3 + Minimum = <span id="calcTargetFinal">1,000</span> credits</strong>
-                                </div>
+    <strong style="color:#ffd700;">Target = (Your Avg + Your Latest + Team Avg + Branch Avg) ÷ Components Used = <span id="calcTargetFinal">1,000</span> credits</strong>
+    <div style="font-size:9px;color:rgba(255,255,255,0.2);margin-top:2px;">
+        Then: MAX(Target, 1,000) for minimum
+    </div>
+</div>
                             </div>
                         </details>
                     </div>
@@ -8264,70 +8267,139 @@ async function checkInToBranch(branchId, branchName) {
         document.getElementById('locationStatus').innerHTML = '❌ Error: ' + error.message;
     }
 }
-// ============================================================
-// ✅ UPDATED: assignStressTestAtCheckIn - REMOVES MISSING COLUMN
-// ============================================================
-
 async function assignStressTestAtCheckIn(workerId, branchId) {
     const today = new Date().toISOString().split('T')[0];
     
     try {
-        // Check if worker already has a stress test assigned
-        const { data: existingLog } = await _supabase
+        // ============================================================
+        // STEP 1: FIRST, LOAD ALL HISTORICAL DATA
+        // ============================================================
+        
+        // 1a: Worker's Average Credits
+        const { data: allLogs } = await _supabase
             .from('daily_logs')
-            .select('is_stress_test, stress_target')
+            .select('worker_credit')
             .eq('worker_id', workerId)
-            .eq('log_date', today)
-            .eq('is_closed', false)
-            .single();
-        
-        // If already assigned, skip
-        if (existingLog?.is_stress_test) {
-            console.log(`   ℹ️ ${currentUser.name} already has stress test assigned`);
-            return;
+            .eq('is_closed', true);
+
+        let avgCredits = 0;
+        if (allLogs && allLogs.length > 0) {
+            const total = allLogs.reduce((sum, log) => sum + (log.worker_credit || 0), 0);
+            avgCredits = total / allLogs.length;
         }
+
+        // 1b: Worker's Latest Credits
+        let latestCredits = 0;
+        if (allLogs && allLogs.length > 0) {
+            const { data: latestLog } = await _supabase
+                .from('daily_logs')
+                .select('worker_credit')
+                .eq('worker_id', workerId)
+                .eq('is_closed', true)
+                .order('log_date', { ascending: false })
+                .limit(1)
+                .maybeSingle();
+            latestCredits = latestLog?.worker_credit || 0;
+        }
+
+        // 1c: Team Average
+        let teamAvg = 0;
+        if (branchId) {
+            const { data: branchLogs } = await _supabase
+                .from('daily_logs')
+                .select('worker_credit')
+                .eq('branch_id', branchId)
+                .eq('log_date', today)
+                .neq('worker_id', workerId);
+
+            if (branchLogs && branchLogs.length > 0) {
+                const total = branchLogs.reduce((sum, log) => sum + (log.worker_credit || 0), 0);
+                teamAvg = total / branchLogs.length;
+            }
+        }
+
+        // 1d: Branch Average
+        let branchAvg = 0;
+        if (branchId) {
+            const monthStart = today.slice(0, 7) + '-01';
+            const { data: branchLogs } = await _supabase
+                .from('daily_logs')
+                .select('worker_credit')
+                .eq('branch_id', branchId)
+                .gte('log_date', monthStart)
+                .lte('log_date', today)
+                .eq('is_closed', true);
+
+            if (branchLogs && branchLogs.length > 0) {
+                const total = branchLogs.reduce((sum, log) => sum + (log.worker_credit || 0), 0);
+                branchAvg = total / branchLogs.length;
+            }
+        }
+
+        // ============================================================
+        // STEP 2: CALCULATE THE TARGET
+        // ============================================================
         
-        // Determine if worker should be tested
+        let target = 0;
+        let usedValues = 0;
+
+        if (avgCredits > 0) { target += avgCredits; usedValues++; }
+        if (latestCredits > 0) { target += latestCredits; usedValues++; }
+        if (teamAvg > 0) { target += teamAvg; usedValues++; }
+        if (branchAvg > 0) { target += branchAvg; usedValues++; }
+
+        if (usedValues === 0) {
+            target = 1000; // Minimum
+        } else {
+            target = target / usedValues;
+        }
+
+        // Apply minimum
+        const MIN_TARGET = 1000;
+        target = Math.max(target, MIN_TARGET);
+
+        // ============================================================
+        // STEP 3: CHECK IF WORKER SHOULD BE TESTED
+        // ============================================================
+        
         const shouldTest = await checkIfShouldStressTest(workerId, branchId);
         
         if (!shouldTest) {
-            console.log(`   ℹ️ ${currentUser.name} not selected for stress test today`);
+            console.log(`   ℹ️ Worker not selected for stress test today`);
             return;
         }
+
+        // ============================================================
+        // STEP 4: SAVE THE CORRECT TARGET
+        // ============================================================
         
-        // Calculate target
-        const stressTarget = await calculateStressTarget(workerId, branchId, today);
-        
-        // ✅ FIX: Removed 'stress_assigned_at' column (doesn't exist in your table)
         const { error } = await _supabase
             .from('daily_logs')
             .update({
                 is_stress_test: true,
-                stress_target: stressTarget.target
-                // ❌ REMOVED: stress_assigned_at: new Date().toISOString()
+                stress_target: target,
+                stress_assigned_at: new Date().toISOString(),
+                stress_avg_credits: avgCredits,
+                stress_latest_credits: latestCredits,
+                stress_team_avg: teamAvg,
+                stress_branch_avg: branchAvg
             })
             .eq('worker_id', workerId)
             .eq('log_date', today)
             .eq('is_closed', false);
-        
+
         if (error) {
             console.error('❌ Error assigning stress test:', error);
         } else {
-            console.log(`🧪 STRESS TEST ASSIGNED to ${currentUser.name} at check-in!`);
-            console.log(`   🎯 Target: ${stressTarget.targetDisplay} credits`);
-            console.log(`   📊 Based on: ${stressTarget.usedValues} data points`);
-            
-            // ✅ FIX: Immediately refresh the UI for the worker
-            if (currentUser.role === 'worker' && currentUser.id === workerId) {
-                setTimeout(async () => {
-                    await loadTodayStressTarget();
-                    console.log('🔄 Stress test UI refreshed after assignment!');
-                }, 300);
-            }
+            console.log(`🧪 STRESS TEST ASSIGNED to Worker with CORRECT target!`);
+            console.log(`   🎯 Target: ${Math.round(target).toLocaleString()} credits`);
+            console.log(`   📊 Components used: ${usedValues}`);
+            console.log(`   📈 Your Avg: ${Math.round(avgCredits).toLocaleString()}`);
+            console.log(`   📊 Your Latest: ${Math.round(latestCredits).toLocaleString()}`);
         }
-        
+
     } catch (error) {
-        console.error('Error assigning stress test at check-in:', error);
+        console.error('Error in assignStressTestAtCheckIn:', error);
     }
 }
 // ============================================================
