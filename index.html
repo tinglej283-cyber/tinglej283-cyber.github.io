@@ -4446,37 +4446,6 @@ async function calculateMonthlyBonus(workerId, yearMonth) {
     }
 }
 
-async function calculateStressBonus(workerId, stressTestResult) {
-    try {
-        if (!stressTestResult || !stressTestResult.passed) {
-            return {
-                stressBonus: 0,
-                targetMet: false,
-                status: '❌ NO BONUS - Stress Test Failed',
-                statusColor: '#e94560'
-            };
-        }
-
-        const lifetimeCredits = await getWorkerLifetimeCredits(workerId);
-        const stressBonus = lifetimeCredits * 0.05;
-        
-        return {
-            stressBonus: stressBonus,
-            targetMet: true,
-            status: '✅ STRESS BONUS EARNED!',
-            statusColor: '#7bcfa6',
-            lifetimeCredits: lifetimeCredits
-        };
-    } catch (error) {
-        console.error('Error calculating stress bonus:', error);
-        return {
-            stressBonus: 0,
-            targetMet: false,
-            status: '❌ ERROR',
-            statusColor: '#e94560'
-        };
-    }
-}
 
 // ============================================================
 // ✅ PERMANENT FIX: ACCRUE BONUS - CORRECT TOTAL CALCULATION
@@ -5467,6 +5436,77 @@ async function loadWorkerPayDashboard() {
         container.innerHTML = `<p style="color:#e94560;">Error: ${err.message}</p>`;
     }
 }
+// ============================================================
+// 💰 GET WORKER PAYMENT SUMMARY
+// ============================================================
+
+async function getWorkerPaymentSummary(workerId) {
+    try {
+        // Get all payment history for this worker
+        const { data: payments, error } = await _supabase
+            .from('bonus_payment_history')
+            .select('amount, payment_type, paid_at, remaining_balance')
+            .eq('worker_id', workerId)
+            .order('paid_at', { ascending: false });
+        
+        if (error) {
+            // Check if table exists - if not, return empty
+            if (error.code === '42P01') {
+                console.log('ℹ️ bonus_payment_history table not found yet');
+                return {
+                    totalPaid: 0,
+                    remainingBalance: 0,
+                    lastPayment: null,
+                    paymentCount: 0
+                };
+            }
+            console.error('Error fetching payment history:', error);
+            return {
+                totalPaid: 0,
+                remainingBalance: 0,
+                lastPayment: null,
+                paymentCount: 0
+            };
+        }
+        
+        if (!payments || payments.length === 0) {
+            return {
+                totalPaid: 0,
+                remainingBalance: 0,
+                lastPayment: null,
+                paymentCount: 0
+            };
+        }
+        
+        // Calculate total paid
+        const totalPaid = payments.reduce((sum, p) => sum + (p.amount || 0), 0);
+        
+        // Get remaining balance from the most recent payment
+        const latestPayment = payments[0];
+        const remainingBalance = latestPayment?.remaining_balance || 0;
+        
+        return {
+            totalPaid: totalPaid,
+            remainingBalance: remainingBalance,
+            lastPayment: latestPayment,
+            paymentCount: payments.length
+        };
+        
+    } catch (error) {
+        console.error('Error in getWorkerPaymentSummary:', error);
+        return {
+            totalPaid: 0,
+            remainingBalance: 0,
+            lastPayment: null,
+            paymentCount: 0
+        };
+    }
+}
+
+// ============================================================
+// 📈 LOAD WORKER PERFORMANCE TAB - WITH PAYMENT STATUS
+// ============================================================
+
 async function loadWorkerPerformanceTab() {
     if (!currentUser || currentUser.role !== 'worker') return;
     
@@ -5545,6 +5585,38 @@ async function loadWorkerPerformanceTab() {
 
         // ✅ LIFETIME AVERAGE (NEVER RESETS!)
         const overallAverageCredits = overallDaysWorked > 0 ? overallTotalCredits / overallDaysWorked : 0;
+
+        // ============================================================
+        // ✅ GET PAYMENT SUMMARY
+        // ============================================================
+        const paymentSummary = await getWorkerPaymentSummary(currentUser.id);
+        
+        // Calculate remaining to be paid
+        const totalPaid = paymentSummary.totalPaid || 0;
+        const remainingToBePaid = Math.max(0, overallTotalBonuses - totalPaid);
+        
+        // Determine payment status
+        let paymentStatus = '';
+        let paymentStatusColor = '';
+        let paymentStatusIcon = '';
+        
+        if (overallTotalBonuses === 0) {
+            paymentStatus = 'No Bonuses';
+            paymentStatusColor = 'rgba(255,255,255,0.3)';
+            paymentStatusIcon = '—';
+        } else if (remainingToBePaid === 0 && totalPaid > 0) {
+            paymentStatus = '✅ FULLY PAID';
+            paymentStatusColor = '#7bcfa6';
+            paymentStatusIcon = '✅';
+        } else if (totalPaid > 0 && remainingToBePaid > 0) {
+            paymentStatus = '⚠️ PARTIALLY PAID';
+            paymentStatusColor = '#ffd700';
+            paymentStatusIcon = '⚠️';
+        } else {
+            paymentStatus = '⏳ PENDING PAYMENT';
+            paymentStatusColor = '#e94560';
+            paymentStatusIcon = '⏳';
+        }
 
         // ============================================================
         // ✅ GET MONTHLY LOGS (FOR DAILY BREAKDOWN)
@@ -5666,6 +5738,131 @@ async function loadWorkerPerformanceTab() {
                         🧪 Tier 3: UGX ${overallTotalTier3.toFixed(2)}
                     </div>
                 </div>
+                
+                <!-- ============================================================
+                ✅ NEW: PAYMENT STATUS SECTION
+                ============================================================ -->
+                <div style="
+                    background: rgba(255,255,255,0.03);
+                    border-radius: 12px;
+                    padding: 16px 20px;
+                    border: 2px solid ${paymentStatusColor}44;
+                    margin-top: 16px;
+                ">
+                    <div style="
+                        font-size: 10px;
+                        color: rgba(255,255,255,0.3);
+                        text-transform: uppercase;
+                        letter-spacing: 2px;
+                        margin-bottom: 12px;
+                    ">
+                        💳 PAYMENT STATUS
+                    </div>
+                    
+                    <!-- 3-Column Grid -->
+                    <div style="
+                        display: grid;
+                        grid-template-columns: 1fr 1fr 1fr;
+                        gap: 12px;
+                        margin-bottom: 10px;
+                    ">
+                        <!-- Total Paid -->
+                        <div style="
+                            background: rgba(123,207,166,0.05);
+                            border-radius: 8px;
+                            padding: 12px 8px;
+                            text-align: center;
+                            border: 1px solid rgba(123,207,166,0.1);
+                        ">
+                            <div style="font-size: 8px; color: rgba(255,255,255,0.3);">
+                                💰 Total Paid
+                            </div>
+                            <div style="
+                                font-size: 18px;
+                                font-weight: 700;
+                                color: #7bcfa6;
+                            ">
+                                UGX ${totalPaid.toFixed(2)}
+                            </div>
+                            ${paymentSummary.paymentCount > 0 ? `<div style="font-size: 8px; color: rgba(123,207,166,0.3);">${paymentSummary.paymentCount} payment(s)</div>` : ''}
+                        </div>
+                        
+                        <!-- Total Remaining -->
+                        <div style="
+                            background: rgba(255,215,0,0.05);
+                            border-radius: 8px;
+                            padding: 12px 8px;
+                            text-align: center;
+                            border: 2px solid ${remainingToBePaid > 0 ? 'rgba(255,215,0,0.3)' : 'rgba(123,207,166,0.2)'};
+                        ">
+                            <div style="font-size: 8px; color: rgba(255,255,255,0.3);">
+                                💵 Remaining
+                            </div>
+                            <div style="
+                                font-size: 18px;
+                                font-weight: 700;
+                                color: ${remainingToBePaid > 0 ? '#ffd700' : '#7bcfa6'};
+                            ">
+                                UGX ${remainingToBePaid.toFixed(2)}
+                            </div>
+                            ${remainingToBePaid === 0 && totalPaid > 0 ? `<div style="font-size: 8px; color: #7bcfa6;">🎉 All paid!</div>` : ''}
+                        </div>
+                        
+                        <!-- Status -->
+                        <div style="
+                            background: ${paymentStatusColor}11;
+                            border-radius: 8px;
+                            padding: 12px 8px;
+                            text-align: center;
+                            border: 1px solid ${paymentStatusColor}33;
+                        ">
+                            <div style="font-size: 8px; color: rgba(255,255,255,0.3);">
+                                📊 Status
+                            </div>
+                            <div style="
+                                font-size: ${paymentStatus.includes('FULLY') ? '13px' : '14px'};
+                                font-weight: 700;
+                                color: ${paymentStatusColor};
+                            ">
+                                ${paymentStatusIcon} ${paymentStatus}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Last Payment -->
+                    <div style="
+                        margin-top: 8px;
+                        padding: 8px 12px;
+                        background: rgba(255,255,255,0.02);
+                        border-radius: 6px;
+                        font-size: 10px;
+                        color: rgba(255,255,255,0.2);
+                        text-align: center;
+                        border: 1px solid rgba(255,255,255,0.03);
+                    ">
+                        ${paymentSummary.lastPayment ? 
+                            `📅 Last Payment: ${new Date(paymentSummary.lastPayment.paid_at).toLocaleDateString()} (UGX ${paymentSummary.lastPayment.amount.toFixed(2)})` :
+                            '📅 Last Payment: Never'
+                        }
+                        ${paymentSummary.lastPayment && paymentSummary.lastPayment.remaining_balance > 0 ? 
+                            ` • Remaining after: UGX ${paymentSummary.lastPayment.remaining_balance.toFixed(2)}` : ''
+                        }
+                    </div>
+                    
+                    <!-- Payment Progress Bar -->
+                    ${overallTotalBonuses > 0 ? `
+                    <div style="margin-top: 10px;">
+                        <div style="display:flex;justify-content:space-between;font-size:8px;color:rgba(255,255,255,0.15);">
+                            <span>0%</span>
+                            <span>${((totalPaid / overallTotalBonuses) * 100).toFixed(0)}% Paid</span>
+                            <span>100%</span>
+                        </div>
+                        <div style="width:100%;height:4px;background:rgba(255,255,255,0.06);border-radius:2px;overflow:hidden;margin-top:2px;">
+                            <div style="height:100%;background:${totalPaid >= overallTotalBonuses ? '#7bcfa6' : '#ffd700'};border-radius:2px;width:${Math.min((totalPaid / overallTotalBonuses) * 100, 100)}%;transition:width 0.5s ease;"></div>
+                        </div>
+                    </div>
+                    ` : ''}
+                </div>
             </div>
         `;
 
@@ -5754,10 +5951,11 @@ async function loadWorkerPerformanceTab() {
             }
         }, 100);
 
-        console.log('✅ Worker Performance Tab loaded!');
-        console.log(`   💰 Lifetime Credits: ${Math.round(overallTotalCredits).toLocaleString()}`);
-        console.log(`   📊 Lifetime Avg: ${Math.round(overallAverageCredits).toLocaleString()}`);
-        console.log(`   📅 Days Worked: ${overallDaysWorked}`);
+        console.log('✅ Worker Performance Tab loaded with Payment Status!');
+        console.log(`   💰 Total Bonus Earned: UGX ${overallTotalBonuses.toFixed(2)}`);
+        console.log(`   💳 Total Paid: UGX ${totalPaid.toFixed(2)}`);
+        console.log(`   💵 Remaining: UGX ${remainingToBePaid.toFixed(2)}`);
+        console.log(`   📊 Status: ${paymentStatus}`);
 
     } catch (error) {
         console.error('Error loading worker performance tab:', error);
@@ -9570,7 +9768,43 @@ async function saveWorkerPay() {
     }
 }
 // ============================================================
-// 📋 closeDayByWorker() - WORKER VERSION (FULLY FIXED)
+// 🛠️ FIXED: calculateWorkerCredits - BRANCH LEVEL ONLY
+// ============================================================
+
+function calculateWorkerCredits(totalSales, totalItems, maxRevenue, maxItems, maxPrice) {
+    // If no sales, credits = 0
+    if (!totalSales || totalSales <= 0) return 0;
+    
+    // Use at least 1 item to avoid division by zero
+    const safeItems = Math.max(totalItems || 0, 1);
+    const avgPrice = totalSales / safeItems;
+    
+    // Calculate branch-level factors
+    let revenueFactor = Math.min(totalSales / maxRevenue, 1);
+    let volumeFactor = Math.min(safeItems / maxItems, 1);
+    let priceFactor = Math.min(avgPrice / maxPrice, 1);
+    
+    // Safeguards
+    if (revenueFactor === 0 && totalSales > 0) revenueFactor = 0.01;
+    if (volumeFactor === 0 && safeItems > 0) volumeFactor = 0.01;
+    if (priceFactor === 0 && avgPrice > 0) priceFactor = 0.01;
+    
+    // Calculate raw score
+    const rawScore = revenueFactor * volumeFactor * priceFactor;
+    const totalCreditsRaw = totalSales * rawScore * 5;
+    const budget = totalSales * 0.02;
+    const scalingFactor = totalCreditsRaw > 0 ? Math.min(budget / totalCreditsRaw, 1) : 1;
+    let credits = totalCreditsRaw * scalingFactor;
+    
+    // Fallback safeguard
+    if (credits === 0 && totalSales > 0) {
+        credits = Math.max(totalSales / 1000, 10);
+    }
+    
+    return Math.round(credits);
+}
+// ============================================================
+// 📋 closeDayByWorker() - WORKER VERSION (FULLY UPDATED)
 // ============================================================
 
 async function closeDayByWorker(branchId, branchName) {
@@ -9863,7 +10097,7 @@ async function closeDayByWorker(branchId, branchName) {
         let results = [];
         let totalJackpotWinners = 0;
 
-        // Calculate branch-level credits using the FIXED function
+        // ✅ Calculate branch-level credits using the FIXED function
         const cappedCredits = calculateWorkerCredits(
             totalBranchSales,
             totalBranchItems,
@@ -9872,47 +10106,22 @@ async function closeDayByWorker(branchId, branchName) {
             MAX_PRICE
         );
 
-        // Calculate worker efforts
-        const workerEfforts = refreshedLogs.map(log => {
-            let workerSales = log.daily_sales || 0;
-            let workerItems = log.items_sold || 0;
-            
-            if (workerSales === 0 && totalBranchSales > 0) {
-                workerSales = totalBranchSales / refreshedLogs.length;
-                workerItems = Math.round(totalBranchItems / refreshedLogs.length);
-            }
-            
-            const avgPrice = workerItems > 0 ? workerSales / workerItems : 0;
-            const wRevenueFactor = Math.min(workerSales / MAX_REVENUE, 1);
-            const wVolumeFactor = Math.min(workerItems / MAX_ITEMS, 1);
-            const wPriceFactor = Math.min(avgPrice / MAX_PRICE, 1);
-            return {
-                log: log,
-                effort: wRevenueFactor * wVolumeFactor * wPriceFactor,
-                sales: workerSales,
-                items: workerItems,
-                avgPrice: avgPrice,
-                name: log.workers?.full_name || 'Unknown',
-                jc_id: log.workers?.jc_id || 'N/A',
-                worker: log.workers
-            };
-        });
+        // ✅ SHARE EQUALLY among workers
+        const creditsPerWorker = Math.round(cappedCredits / refreshedLogs.length);
 
-        const totalEffort = workerEfforts.reduce((sum, w) => sum + w.effort, 0);
-        
-        const workerCredits = workerEfforts.map(w => ({
-            ...w,
-            credits: totalEffort > 0 ? (w.effort / totalEffort) * cappedCredits : cappedCredits / workerEfforts.length
-        }));
+        // Calculate branch factors
+        const branchRevenueFactor = Math.min(totalBranchSales / MAX_REVENUE, 1);
+        const branchVolumeFactor = Math.min(totalBranchItems / MAX_ITEMS, 1);
+        const branchPriceFactor = Math.min(branchAvgPrice / MAX_PRICE, 1);
 
         // Build data for unified bonus
-        const workersForBonus = workerCredits.map(w => ({
-            id: w.log.worker_id,
-            name: w.name,
-            credits: w.credits,
-            jc_id: w.jc_id,
-            log: w.log,
-            worker: w.worker
+        const workersForBonus = refreshedLogs.map(log => ({
+            id: log.worker_id,
+            name: log.workers?.full_name || 'Unknown',
+            credits: creditsPerWorker,
+            jc_id: log.workers?.jc_id || 'N/A',
+            log: log,
+            worker: log.workers
         }));
 
         // Get check-in times for Tier 2
@@ -9982,8 +10191,7 @@ async function closeDayByWorker(branchId, branchName) {
 
         for (const worker of workersForBonus) {
             const log = worker.log;
-            let credits = worker.credits;
-            const workerEffort = workerEfforts.find(w => w.log.worker_id === worker.id);
+            let credits = creditsPerWorker;
             
             const workerBonus = bonusResult.results.find(r => r.worker.id === worker.id);
             
@@ -10057,15 +10265,15 @@ async function closeDayByWorker(branchId, branchName) {
             const { error: updateError } = await _supabase
                 .from('daily_logs')
                 .update({
-                    daily_sales: workerEffort?.sales || 0,
-                    items_sold: workerEffort?.items || 0,
+                    daily_sales: totalBranchSales / refreshedLogs.length,
+                    items_sold: Math.round(totalBranchItems / refreshedLogs.length),
                     worker_credit: credits,
                     daily_cost: dailyCost,
                     daily_bpi: dailyBPI,
                     daily_pay: dailyPay,
-                    price_factor: workerEffort?.effort || 0,
-                    revenue_factor: Math.min(totalBranchSales / MAX_REVENUE, 1),
-                    volume_factor: Math.min(totalBranchItems / MAX_ITEMS, 1),
+                    revenue_factor: branchRevenueFactor,
+                    volume_factor: branchVolumeFactor,
+                    price_factor: branchPriceFactor,
                     is_closed: true,
                     check_out_time: new Date().toISOString(),
                     check_out_lat: location ? location.lat : null,
@@ -10306,7 +10514,8 @@ async function closeDayByWorker(branchId, branchName) {
     }
 }
 // ============================================================
-// 📋 closeDay() - MANAGER VERSION (FULLY FIXED)
+// ============================================================
+// 📋 closeDay() - MANAGER VERSION (FULLY UPDATED)
 // ============================================================
 
 async function closeDay(branchId, branchName) {
@@ -10432,9 +10641,8 @@ async function closeDay(branchId, branchName) {
 
         try {
             const daysInMonth = getDaysInMonth(today);
-            const branchAvgPrice = newTotalItems > 0 ? newTotalSales / newTotalItems : 0;
 
-            // Calculate branch-level credits
+            // ✅ Calculate branch-level credits using the FIXED function
             const branchCredits = calculateWorkerCredits(
                 newTotalSales,
                 newTotalItems,
@@ -10443,64 +10651,30 @@ async function closeDay(branchId, branchName) {
                 MAX_PRICE
             );
 
-            // Calculate worker efforts
-            const workerEfforts = openLogs.map(log => {
-                let workerSales = log.daily_sales || 0;
-                let workerItems = log.items_sold || 0;
-                
-                if (workerSales === 0 && newTotalSales > 0) {
-                    workerSales = newTotalSales / openLogs.length;
-                    workerItems = Math.round(newTotalItems / openLogs.length);
-                }
-                
-                const avgPrice = workerItems > 0 ? workerSales / workerItems : 0;
-                const wRevenueFactor = Math.min(workerSales / MAX_REVENUE, 1);
-                const wVolumeFactor = Math.min(workerItems / MAX_ITEMS, 1);
-                const wPriceFactor = Math.min(avgPrice / MAX_PRICE, 1);
-                return {
-                    log: log,
-                    effort: wRevenueFactor * wVolumeFactor * wPriceFactor,
-                    sales: workerSales,
-                    items: workerItems,
-                    avgPrice: avgPrice,
-                    name: log.workers?.full_name || 'Unknown',
-                    jc_id: log.workers?.jc_id || 'N/A',
-                    worker: log.workers
-                };
-            });
-
-            const totalEffort = workerEfforts.reduce((sum, w) => sum + w.effort, 0);
-            
-            const workerCredits = workerEfforts.map(w => ({
-                ...w,
-                credits: totalEffort > 0 ? (w.effort / totalEffort) * branchCredits : branchCredits / workerEfforts.length
-            }));
+            // ✅ SHARE EQUALLY among workers
+            const creditsPerWorker = Math.round(branchCredits / openLogs.length);
 
             let successCount = 0;
             let results = [];
 
-            for (const w of workerCredits) {
-                const log = w.log;
-                const credits = w.credits;
-                const workerEffort = workerEfforts.find(we => we.log.worker_id === log.worker_id);
-                
+            for (const log of openLogs) {
                 const dailyRate = 10000;
                 const dailyPay = dailyRate;
                 const dailyCost = dailyRate + (log.workers?.monthly_base_salary || 250000) / daysInMonth;
-                const dailyBPI = dailyCost > 0 ? credits / dailyCost : 0;
+                const dailyBPI = dailyCost > 0 ? creditsPerWorker / dailyCost : 0;
 
                 const { error: updateError } = await _supabase
                     .from('daily_logs')
                     .update({
-                        daily_sales: workerEffort?.sales || 0,
-                        items_sold: workerEffort?.items || 0,
-                        worker_credit: credits,
+                        daily_sales: newTotalSales / openLogs.length,
+                        items_sold: Math.round(newTotalItems / openLogs.length),
+                        worker_credit: creditsPerWorker,
                         daily_cost: dailyCost,
                         daily_bpi: dailyBPI,
                         daily_pay: dailyPay,
-                        price_factor: workerEffort?.effort || 0,
                         revenue_factor: Math.min(newTotalSales / MAX_REVENUE, 1),
                         volume_factor: Math.min(newTotalItems / MAX_ITEMS, 1),
+                        price_factor: Math.min((newTotalSales / newTotalItems) / MAX_PRICE, 1),
                         is_closed: true,
                         check_out_time: new Date().toISOString(),
                         is_reopened: false,
@@ -10512,9 +10686,9 @@ async function closeDay(branchId, branchName) {
                 if (!updateError) {
                     successCount++;
                     results.push({
-                        name: w.name,
-                        jc_id: w.jc_id,
-                        credits: credits,
+                        name: log.workers?.full_name || 'Unknown',
+                        jc_id: log.workers?.jc_id || 'N/A',
+                        credits: creditsPerWorker,
                         dailyPay: dailyPay
                     });
                 }
@@ -10523,7 +10697,8 @@ async function closeDay(branchId, branchName) {
             alert(`✅ Branch ${branchName} CLOSED (Reopened)!\n\n` +
                 `📊 ${successCount} worker(s) closed\n` +
                 `💰 Total Sales: UGX ${newTotalSales.toLocaleString()}\n` +
-                `📦 Total Items: ${newTotalItems}\n\n` +
+                `📦 Total Items: ${newTotalItems}\n` +
+                `💳 Each Worker: ${creditsPerWorker.toLocaleString()} credits\n\n` +
                 `✅ Existing data was PRESERVED\n` +
                 `✅ NO stress test was assigned\n` +
                 `✅ Credits INCREASED based on new total`);
@@ -10627,7 +10802,7 @@ async function closeDay(branchId, branchName) {
         let results = [];
         let totalJackpotWinners = 0;
 
-        // Calculate branch-level credits using the FIXED function
+        // ✅ Calculate branch-level credits using the FIXED function
         const cappedCredits = calculateWorkerCredits(
             totalBranchSales,
             totalBranchItems,
@@ -10636,47 +10811,22 @@ async function closeDay(branchId, branchName) {
             MAX_PRICE
         );
 
-        // Calculate worker efforts
-        const workerEfforts = refreshedLogs.map(log => {
-            let workerSales = log.daily_sales || 0;
-            let workerItems = log.items_sold || 0;
-            
-            if (workerSales === 0 && totalBranchSales > 0) {
-                workerSales = totalBranchSales / refreshedLogs.length;
-                workerItems = Math.round(totalBranchItems / refreshedLogs.length);
-            }
-            
-            const avgPrice = workerItems > 0 ? workerSales / workerItems : 0;
-            const wRevenueFactor = Math.min(workerSales / MAX_REVENUE, 1);
-            const wVolumeFactor = Math.min(workerItems / MAX_ITEMS, 1);
-            const wPriceFactor = Math.min(avgPrice / MAX_PRICE, 1);
-            return {
-                log: log,
-                effort: wRevenueFactor * wVolumeFactor * wPriceFactor,
-                sales: workerSales,
-                items: workerItems,
-                avgPrice: avgPrice,
-                name: log.workers?.full_name || 'Unknown',
-                jc_id: log.workers?.jc_id || 'N/A',
-                worker: log.workers
-            };
-        });
+        // ✅ SHARE EQUALLY among workers
+        const creditsPerWorker = Math.round(cappedCredits / refreshedLogs.length);
 
-        const totalEffort = workerEfforts.reduce((sum, w) => sum + w.effort, 0);
-        
-        const workerCredits = workerEfforts.map(w => ({
-            ...w,
-            credits: totalEffort > 0 ? (w.effort / totalEffort) * cappedCredits : cappedCredits / workerEfforts.length
-        }));
+        // Calculate branch factors
+        const branchRevenueFactor = Math.min(totalBranchSales / MAX_REVENUE, 1);
+        const branchVolumeFactor = Math.min(totalBranchItems / MAX_ITEMS, 1);
+        const branchPriceFactor = Math.min(branchAvgPrice / MAX_PRICE, 1);
 
         // Build data for unified bonus
-        const workersForBonus = workerCredits.map(w => ({
-            id: w.log.worker_id,
-            name: w.name,
-            credits: w.credits,
-            jc_id: w.jc_id,
-            log: w.log,
-            worker: w.worker
+        const workersForBonus = refreshedLogs.map(log => ({
+            id: log.worker_id,
+            name: log.workers?.full_name || 'Unknown',
+            credits: creditsPerWorker,
+            jc_id: log.workers?.jc_id || 'N/A',
+            log: log,
+            worker: log.workers
         }));
 
         // Get check-in times for Tier 2
@@ -10746,8 +10896,7 @@ async function closeDay(branchId, branchName) {
 
         for (const worker of workersForBonus) {
             const log = worker.log;
-            let credits = worker.credits;
-            const workerEffort = workerEfforts.find(w => w.log.worker_id === worker.id);
+            let credits = creditsPerWorker;
             
             const workerBonus = bonusResult.results.find(r => r.worker.id === worker.id);
             
@@ -10823,15 +10972,15 @@ async function closeDay(branchId, branchName) {
             const { error: updateError } = await _supabase
                 .from('daily_logs')
                 .update({
-                    daily_sales: workerEffort?.sales || 0,
-                    items_sold: workerEffort?.items || 0,
+                    daily_sales: totalBranchSales / refreshedLogs.length,
+                    items_sold: Math.round(totalBranchItems / refreshedLogs.length),
                     worker_credit: credits,
                     daily_cost: dailyCost,
                     daily_bpi: dailyBPI,
                     daily_pay: dailyPay,
-                    price_factor: workerEffort?.effort || 0,
-                    revenue_factor: Math.min(totalBranchSales / MAX_REVENUE, 1),
-                    volume_factor: Math.min(totalBranchItems / MAX_ITEMS, 1),
+                    revenue_factor: branchRevenueFactor,
+                    volume_factor: branchVolumeFactor,
+                    price_factor: branchPriceFactor,
                     is_closed: true,
                     check_out_time: new Date().toISOString(),
                     closed_by: closedById,
@@ -11949,7 +12098,7 @@ async function loadStressTestDashboard() {
                                 <th style="padding:8px 12px;text-align:left;color:rgba(255,255,255,0.4);">Result</th>
                                 <th style="padding:8px 12px;text-align:left;color:rgba(255,255,255,0.4);">Penalty</th>
                                 <th style="padding:8px 12px;text-align:left;color:rgba(255,255,255,0.4);">Final</th>
-                                <th style="padding:8px 12px;text-align:left;color:rgba(255,255,255,0.4);">Bonus</th>
+                                
                             </tr>
                         </thead>
                         <tbody>
@@ -12011,7 +12160,7 @@ async function loadStressTestDashboard() {
                         <td style="padding:6px 12px;color:${statusColor};font-weight:600;font-size:11px;">${statusText}</td>
                         <td style="padding:6px 12px;color:${penaltyColor};font-weight:600;font-size:11px;">${penaltyDisplay}</td>
                         <td style="padding:6px 12px;font-size:11px;">${finalDisplay}</td>
-                        <td style="padding:6px 12px;color:#ffd700;font-size:11px;">${bonus > 0 ? '🏆 UGX ' + bonus.toFixed(2) : '-'}</td>
+                        
                     </tr>
                 `;
                 
