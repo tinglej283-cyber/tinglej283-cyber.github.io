@@ -5708,10 +5708,6 @@ async function getWorkerPaymentSummary(workerId) {
     }
 }
 
-// ============================================================
-// 📈 LOAD WORKER PERFORMANCE TAB - WITH PAYMENT STATUS
-// ============================================================
-
 async function loadWorkerPerformanceTab() {
     if (!currentUser || currentUser.role !== 'worker') return;
     
@@ -5800,27 +5796,16 @@ async function loadWorkerPerformanceTab() {
         const totalPaid = paymentSummary.totalPaid || 0;
         const remainingToBePaid = Math.max(0, overallTotalBonuses - totalPaid);
         
-        // Determine payment status
-        let paymentStatus = '';
-        let paymentStatusColor = '';
-        let paymentStatusIcon = '';
-        
+        // Determine payment status (for the border color only)
+        let paymentStatusColor = 'rgba(255,255,255,0.3)';
         if (overallTotalBonuses === 0) {
-            paymentStatus = 'No Bonuses';
             paymentStatusColor = 'rgba(255,255,255,0.3)';
-            paymentStatusIcon = '—';
         } else if (remainingToBePaid === 0 && totalPaid > 0) {
-            paymentStatus = '✅ FULLY PAID';
             paymentStatusColor = '#7bcfa6';
-            paymentStatusIcon = '✅';
         } else if (totalPaid > 0 && remainingToBePaid > 0) {
-            paymentStatus = '⚠️ PARTIALLY PAID';
             paymentStatusColor = '#ffd700';
-            paymentStatusIcon = '⚠️';
         } else {
-            paymentStatus = '⏳ PENDING PAYMENT';
             paymentStatusColor = '#e94560';
-            paymentStatusIcon = '⏳';
         }
 
         // ============================================================
@@ -5945,7 +5930,7 @@ async function loadWorkerPerformanceTab() {
                 </div>
                 
                 <!-- ============================================================
-                ✅ NEW: PAYMENT STATUS SECTION
+                ✅ PAYMENT STATUS - TOTAL PAID + REMAINING ONLY (2 COLUMNS)
                 ============================================================ -->
                 <div style="
                     background: rgba(255,255,255,0.03);
@@ -5964,10 +5949,10 @@ async function loadWorkerPerformanceTab() {
                         💳 PAYMENT STATUS
                     </div>
                     
-                    <!-- 3-Column Grid -->
+                    <!-- 2-Column Grid (Total Paid + Remaining ONLY - NO STATUS CARD) -->
                     <div style="
                         display: grid;
-                        grid-template-columns: 1fr 1fr 1fr;
+                        grid-template-columns: 1fr 1fr;
                         gap: 12px;
                         margin-bottom: 10px;
                     ">
@@ -5977,7 +5962,7 @@ async function loadWorkerPerformanceTab() {
                             border-radius: 8px;
                             padding: 12px 8px;
                             text-align: center;
-                            border: 1px solid rgba(123,207,166,0.1);
+                            border: 2px solid rgba(123,207,166,0.2);
                         ">
                             <div style="font-size: 8px; color: rgba(255,255,255,0.3);">
                                 💰 Total Paid
@@ -6011,26 +5996,6 @@ async function loadWorkerPerformanceTab() {
                                 UGX ${remainingToBePaid.toFixed(2)}
                             </div>
                             ${remainingToBePaid === 0 && totalPaid > 0 ? `<div style="font-size: 8px; color: #7bcfa6;">🎉 All paid!</div>` : ''}
-                        </div>
-                        
-                        <!-- Status -->
-                        <div style="
-                            background: ${paymentStatusColor}11;
-                            border-radius: 8px;
-                            padding: 12px 8px;
-                            text-align: center;
-                            border: 1px solid ${paymentStatusColor}33;
-                        ">
-                            <div style="font-size: 8px; color: rgba(255,255,255,0.3);">
-                                📊 Status
-                            </div>
-                            <div style="
-                                font-size: ${paymentStatus.includes('FULLY') ? '13px' : '14px'};
-                                font-weight: 700;
-                                color: ${paymentStatusColor};
-                            ">
-                                ${paymentStatusIcon} ${paymentStatus}
-                            </div>
                         </div>
                     </div>
                     
@@ -6156,11 +6121,10 @@ async function loadWorkerPerformanceTab() {
             }
         }, 100);
 
-        console.log('✅ Worker Performance Tab loaded with Payment Status!');
+        console.log('✅ Worker Performance Tab loaded with Payment Status (2 columns)!');
         console.log(`   💰 Total Bonus Earned: UGX ${overallTotalBonuses.toFixed(2)}`);
         console.log(`   💳 Total Paid: UGX ${totalPaid.toFixed(2)}`);
         console.log(`   💵 Remaining: UGX ${remainingToBePaid.toFixed(2)}`);
-        console.log(`   📊 Status: ${paymentStatus}`);
 
     } catch (error) {
         console.error('Error loading worker performance tab:', error);
