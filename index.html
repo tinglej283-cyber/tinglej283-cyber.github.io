@@ -1956,8 +1956,11 @@ table td strong { color: #f0ebe6; font-weight: 500; }
         padding: 8px 3px;
     }
 }
-.payment-status-card.status .value.status-value {
-    font-size: 8px !important;
+@media (max-width: 480px) {
+    .payment-status-card .value.status-value {
+        font-size: 9px !important;  /* ← Added !important */
+        line-height: 1.1;
+    }
 }
 </style>
 </head>
