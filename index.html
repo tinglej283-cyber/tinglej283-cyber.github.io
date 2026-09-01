@@ -15887,71 +15887,59 @@ function formatCurrency(amount) {
     return 'UGX ' + amount.toLocaleString();
 }
 
-// Fetch real data from Supabase
+// ============================================================
+// ============================================================
+// ✅ FIXED: fetchTimePerformanceData - Returns empty array on error
+// ============================================================
+
 async function fetchTimePerformanceData(branchId = null, days = 30) {
     try {
         const startDate = new Date();
         startDate.setDate(startDate.getDate() - days);
         const startStr = startDate.toISOString().split('T')[0];
         
+        console.log(`📊 Fetching data from ${startStr} to today`);
+        
         let query = _supabase
             .from('daily_logs')
             .select(`
                 *,
                 workers:worker_id (id, full_name, jc_id, daily_rate, monthly_base_salary),
-                branches:branch_id (name, latitude, longitude)
+                branches:branch_id (id, name, latitude, longitude)
             `)
             .eq('is_closed', true)
             .gte('log_date', startStr)
             .order('log_date', { ascending: false });
 
         if (branchId && branchId !== 'all') {
-            query = query.eq('branch_id', branchId);
+            // ✅ Only filter if it looks like a UUID
+            const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(branchId);
+            if (isUUID) {
+                query = query.eq('branch_id', branchId);
+                console.log(`🔍 Filtering by branch ID: ${branchId}`);
+            } else {
+                console.warn(`⚠️ "${branchId}" is not a UUID, ignoring filter`);
+            }
         }
 
         const { data, error } = await query;
         
         if (error) {
-            console.error('Error fetching time performance data:', error);
-            return null;
+            console.error('❌ Database error:', error);
+            return []; // ✅ Return empty array, not null!
         }
 
-        // Process data with Uganda time
-        const processed = data.map(record => {
-            const checkIn = record.check_in_time ? new Date(record.check_in_time) : null;
-            const checkOut = record.check_out_time ? new Date(record.check_out_time) : null;
-            
-            if (!checkIn || !checkOut) {
-                return null;
-            }
-            
-            const ugandaCheckIn = getUgandaTime(checkIn);
-            const ugandaCheckOut = getUgandaTime(checkOut);
-            
-            return {
-                ...record,
-                worker_name: record.workers?.full_name || 'Unknown',
-                jc_id: record.workers?.jc_id || 'N/A',
-                branch_name: record.branches?.name || 'Unknown',
-                check_in_display: formatUgandaTime(ugandaCheckIn),
-                check_out_display: formatUgandaTime(ugandaCheckOut),
-                uganda_date: formatUgandaDate(ugandaCheckIn),
-                uganda_time_in: formatUgandaTime(ugandaCheckIn),
-                uganda_time_out: formatUgandaTime(ugandaCheckOut),
-                // On-Time: Check-in at or before 7:00 AM
-                is_on_time: ugandaCheckIn.getHours() < 7 || 
-                           (ugandaCheckIn.getHours() === 7 && ugandaCheckIn.getMinutes() === 0),
-                check_in_hour: ugandaCheckIn.getHours() + ugandaCheckIn.getMinutes()/60,
-                check_out_hour: ugandaCheckOut.getHours() + ugandaCheckOut.getMinutes()/60,
-                hours_worked: (ugandaCheckOut - ugandaCheckIn) / (1000 * 60 * 60)
-            };
-        }).filter(r => r !== null);
+        if (!data || data.length === 0) {
+            console.log('📭 No data found');
+            return []; // ✅ Return empty array
+        }
 
-        return processed;
+        console.log(`✅ Found ${data.length} records`);
+        return data;
 
     } catch (error) {
-        console.error('Error in fetchTimePerformanceData:', error);
-        return null;
+        console.error('❌ Error in fetchTimePerformanceData:', error);
+        return []; // ✅ Return empty array, not null!
     }
 }
 
@@ -16072,8 +16060,13 @@ function calculateWorkerStatsFromData(data) {
     
     return workerMap;
 }
+// ============================================================
+// 📊 TIME & PERFORMANCE - COMPLETE REWRITE
+// ============================================================
+// ============================================================
+// ✅ FIXED: loadTimePerformanceTab - CHECK DATA BEFORE PROCESSING
+// ============================================================
 
-// Load Time Performance Tab
 async function loadTimePerformanceTab() {
     if (!currentUser || currentUser.role !== 'manager') return;
     
@@ -16090,111 +16083,1100 @@ async function loadTimePerformanceTab() {
         const period = parseInt(document.getElementById('tpPeriodFilter')?.value || 30);
         const branch = document.getElementById('tpBranchFilter')?.value || 'all';
         
-        // Auto-delete old data
-        await autoDeleteOldTimeData(31);
+        // ============================================================
+        // STEP 1: Get branch ID (handle name vs UUID)
+        // ============================================================
+        let branchId = branch;
+        if (branch && branch !== 'all') {
+            const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(branch);
+            if (!isUUID) {
+                console.log(`🔍 Looking up branch ID for: ${branch}`);
+                const { data: branchData, error: branchError } = await _supabase
+                    .from('branches')
+                    .select('id')
+                    .eq('name', branch)
+                    .maybeSingle();
+                
+                if (branchError) {
+                    console.warn('⚠️ Error looking up branch:', branchError);
+                } else if (branchData) {
+                    branchId = branchData.id;
+                    console.log(`✅ Found branch ID: ${branchId}`);
+                } else {
+                    console.warn(`⚠️ Branch "${branch}" not found, using "all"`);
+                    branchId = 'all';
+                }
+            }
+        }
         
-        // Fetch data
-        const rawData = await fetchTimePerformanceData(branch, period);
-        if (!rawData || rawData.length === 0) {
+        // ============================================================
+        // STEP 2: Fetch data
+        // ============================================================
+        console.log(`📊 Fetching data for branch: ${branchId}, period: ${period} days`);
+        let rawData = null;
+        try {
+            rawData = await fetchTimePerformanceData(branchId, period);
+        } catch (fetchError) {
+            console.error('❌ Error in fetchTimePerformanceData:', fetchError);
+            rawData = null;
+        }
+        
+        // ============================================================
+        // STEP 3: ✅ CRITICAL CHECK - Is data null or empty?
+        // ============================================================
+        console.log('📊 Raw data received:', rawData ? `${rawData.length} records` : 'NULL');
+        
+        if (!rawData) {
+            console.error('❌ rawData is NULL! Fetch failed.');
             document.getElementById('tpStatsGrid').innerHTML = `
-                <div style="grid-column:1/-1;text-align:center;padding:40px;color:rgba(255,255,255,0.3);">
-                    📭 No data available for this period.<br>
-                    <span style="font-size:11px;">Make sure you have closed days with check-in/out times recorded.</span>
+                <div style="grid-column:1/-1;text-align:center;padding:40px;color:#e94560;">
+                    <div style="font-size:40px;margin-bottom:10px;">❌</div>
+                    <div style="font-size:14px;">Failed to load data</div>
+                    <div style="font-size:11px;margin-top:4px;">The database query returned null</div>
+                    <div style="font-size:10px;margin-top:8px;color:rgba(255,255,255,0.15);">
+                        Check the console for errors
+                    </div>
                 </div>
             `;
             return;
         }
         
-        // Calculate stats
-        const workerStats = calculateWorkerStatsFromData(rawData);
-        const workersArray = Object.values(workerStats);
+        if (!Array.isArray(rawData) || rawData.length === 0) {
+            console.warn('⚠️ rawData is empty array');
+            document.getElementById('tpStatsGrid').innerHTML = `
+                <div style="grid-column:1/-1;text-align:center;padding:40px;color:rgba(255,255,255,0.3);">
+                    <div style="font-size:40px;margin-bottom:10px;">📭</div>
+                    <div style="font-size:14px;">No data available</div>
+                    <div style="font-size:11px;margin-top:4px;">
+                        ${branchId !== 'all' ? `Branch: ${branch}` : 'All Branches'} • 
+                        Period: ${period} days
+                    </div>
+                    <div style="font-size:10px;margin-top:8px;color:rgba(255,255,255,0.15);">
+                        Make sure you have closed days with check-in/out times
+                    </div>
+                    <div style="font-size:10px;margin-top:4px;color:rgba(255,255,255,0.1);">
+                        💡 Try "All Branches" or close more days
+                    </div>
+                </div>
+            `;
+            return;
+        }
         
-        // Store data globally
-        tpData.workers = workersArray;
-        tpData.timeData = rawData;
-        tpData.stats = workerStats;
+        // ============================================================
+        // STEP 4: ✅ Only process if we have valid data
+        // ============================================================
+        console.log(`✅ Processing ${rawData.length} records...`);
+        
+        let processedData = [];
+        try {
+            processedData = processTimeData(rawData);
+        } catch (processError) {
+            console.error('❌ Error processing data:', processError);
+            document.getElementById('tpStatsGrid').innerHTML = `
+                <div style="grid-column:1/-1;text-align:center;padding:40px;color:#e94560;">
+                    <div style="font-size:40px;margin-bottom:10px;">⚠️</div>
+                    <div style="font-size:14px;">Error processing data</div>
+                    <div style="font-size:11px;margin-top:4px;">${processError.message}</div>
+                    <div style="font-size:10px;margin-top:8px;color:rgba(255,255,255,0.15);">
+                        Check console for details
+                    </div>
+                </div>
+            `;
+            return;
+        }
+        
+        if (!processedData || processedData.length === 0) {
+            console.warn('⚠️ processedData is empty');
+            document.getElementById('tpStatsGrid').innerHTML = `
+                <div style="grid-column:1/-1;text-align:center;padding:40px;color:rgba(255,255,255,0.3);">
+                    <div style="font-size:40px;margin-bottom:10px;">📭</div>
+                    <div style="font-size:14px;">No data after processing</div>
+                </div>
+            `;
+            return;
+        }
+        
+        // ============================================================
+        // STEP 5: Continue with rendering
+        // ============================================================
+        console.log(`✅ Successfully processed ${processedData.length} records`);
+        
+        const branchStats = calculateBranchStats(processedData);
+        const workerImpact = calculateWorkerImpact(processedData);
+        const teamStats = calculateTeamStats(processedData);
+        const consistency = calculateConsistency(processedData);
+        
+        // Store globally for export
+        window.tpData = {
+            workers: workerImpact,
+            timeData: processedData,
+            branchStats: branchStats,
+            teamStats: teamStats,
+            consistency: consistency,
+            rawData: rawData
+        };
         
         // Render everything
-        renderTimeStats(workersArray, rawData);
-        renderTimeCharts(workersArray, rawData);
-        renderTimeImpact(workersArray, rawData);
-        renderTimeDailyDetails(workersArray);
-        renderTimeSummaryTable(workersArray);
+        renderTimeStatsNew(processedData, branchStats, teamStats);
+        renderTimeChartsNew(processedData);
+        renderWorkerImpactTable(workerImpact);
+        renderTeamAnalysis(teamStats);
+        renderConsistencyReport(consistency);
+        renderBranchSalesHistory(branchStats);
+        renderSummaryAnswers(processedData, branchStats, workerImpact, teamStats, consistency);
         
-        // Populate branch filter
+        // Populate branch filter with IDs
         populateTimeBranchFilter(rawData);
         
-        console.log('✅ Time & Performance tab loaded!');
-        console.log(`   📊 ${rawData.length} records, ${workersArray.length} workers`);
-        console.log(`   🎯 On-Time Target: 7:00 AM (Uganda Time)`);
+        console.log('✅ Time & Performance tab loaded successfully!');
+        console.log(`   📊 ${processedData.length} records processed`);
+        console.log(`   👥 ${workerImpact.length} workers analyzed`);
+        console.log(`   🏢 ${Object.keys(branchStats).length} branches`);
         
     } catch (error) {
-        console.error('Error loading time performance tab:', error);
+        console.error('❌ Error loading time performance tab:', error);
         document.getElementById('tpStatsGrid').innerHTML = `
             <div style="grid-column:1/-1;text-align:center;padding:40px;color:#e94560;">
-                ❌ Error loading data: ${error.message}
+                <div style="font-size:40px;margin-bottom:10px;">❌</div>
+                <div style="font-size:14px;">Error loading data</div>
+                <div style="font-size:11px;margin-top:4px;">${error.message}</div>
+                <div style="font-size:10px;margin-top:8px;color:rgba(255,255,255,0.15);">
+                    Try refreshing the page or selecting a different branch
+                </div>
             </div>
         `;
     }
 }
 
-function renderTimeStats(workersArray, timeData) {
-    const totalSales = timeData.reduce((s, r) => s + (r.daily_sales || 0), 0);
-    const avgSales = totalSales / timeData.length;
-    const avgHours = timeData.reduce((s, r) => s + r.hours_worked, 0) / timeData.length;
-    const onTimeCount = workersArray.filter(w => w.on_time_rate >= 70).length;
-    const onTimeRate = (onTimeCount / workersArray.length) * 100;
+// ============================================================
+// DATA PROCESSING FUNCTIONS
+// ============================================================
+
+function processTimeData(rawData) {
+    return rawData.map(record => {
+        let isOnTime = false;
+        let checkInHour = 0;
+        let checkInMinute = 0;
+        let hoursWorked = 0;
+        let checkInDisplay = 'N/A';
+        let checkOutDisplay = 'N/A';
+        
+        if (record.check_in_time) {
+            const checkIn = new Date(record.check_in_time);
+            const ugandaTime = new Date(checkIn.toLocaleString('en-US', { timeZone: 'Africa/Nairobi' }));
+            checkInHour = ugandaTime.getHours();
+            checkInMinute = ugandaTime.getMinutes();
+            isOnTime = (checkInHour < 7) || (checkInHour === 7 && checkInMinute === 0);
+            checkInDisplay = `${String(checkInHour).padStart(2, '0')}:${String(checkInMinute).padStart(2, '0')}`;
+        }
+        
+        if (record.check_in_time && record.check_out_time) {
+            hoursWorked = (new Date(record.check_out_time) - new Date(record.check_in_time)) / (1000 * 60 * 60);
+            const checkOut = new Date(record.check_out_time);
+            const ugandaOut = new Date(checkOut.toLocaleString('en-US', { timeZone: 'Africa/Nairobi' }));
+            checkOutDisplay = `${String(ugandaOut.getHours()).padStart(2, '0')}:${String(ugandaOut.getMinutes()).padStart(2, '0')}`;
+        }
+        
+        return {
+            ...record,
+            is_on_time: isOnTime,
+            check_in_display: checkInDisplay,
+            check_out_display: checkOutDisplay,
+            hours_worked: hoursWorked,
+            worker_name: record.workers?.full_name || 'Unknown',
+            jc_id: record.workers?.jc_id || 'N/A',
+            branch_name: record.branches?.name || 'Unknown',
+            daily_sales: record.daily_sales || 0,
+            status: isOnTime ? 'EARLY' : 'LATE'
+        };
+    });
+}
+
+// ============================================================
+// ============================================================
+// ✅ FIXED: BRANCH STATS CALCULATION - USES TOTAL SALES
+// ============================================================
+
+function calculateBranchStats(processedData) {
+    const branchStats = {};
     
-    const earlyRecords = timeData.filter(r => r.is_on_time);
-    const lateRecords = timeData.filter(r => !r.is_on_time);
-    const earlyAvgSales = earlyRecords.length > 0 ? earlyRecords.reduce((s, r) => s + (r.daily_sales || 0), 0) / earlyRecords.length : 0;
-    const lateAvgSales = lateRecords.length > 0 ? lateRecords.reduce((s, r) => s + (r.daily_sales || 0), 0) / lateRecords.length : 0;
-    const impactAmount = earlyAvgSales - lateAvgSales;
-    const impactPercent = lateAvgSales > 0 ? (impactAmount / lateAvgSales) * 100 : 0;
+    // First, group by branch and date to get TOTAL daily sales
+    const branchDateGroups = {};
     
-    // Calculate correlation
-    const paired = timeData.map(r => ({ hours: r.hours_worked, sales: r.daily_sales || 0 }));
-    const avgH = paired.reduce((s, p) => s + p.hours, 0) / paired.length;
-    const avgS = paired.reduce((s, p) => s + p.sales, 0) / paired.length;
-    let num = 0, denH = 0, denS = 0;
-    for (const p of paired) {
-        num += (p.hours - avgH) * (p.sales - avgS);
-        denH += (p.hours - avgH) ** 2;
-        denS += (p.sales - avgS) ** 2;
+    processedData.forEach(r => {
+        const key = `${r.branch_name}|${r.log_date}`;
+        if (!branchDateGroups[key]) {
+            branchDateGroups[key] = {
+                branch: r.branch_name,
+                date: r.log_date,
+                total_sales: 0,
+                total_hours: 0,
+                worker_count: 0,
+                early_count: 0,
+                late_count: 0,
+                workers: []
+            };
+        }
+        const group = branchDateGroups[key];
+        group.total_sales += r.daily_sales;  // ← SUMMING ALL WORKERS!
+        group.total_hours += r.hours_worked;
+        group.worker_count++;
+        group.workers.push(r.worker_name);
+        if (r.is_on_time) group.early_count++;
+        else group.late_count++;
+    });
+    
+    // Now calculate branch stats from the grouped data
+    const branchDateArray = Object.values(branchDateGroups);
+    
+    branchDateArray.forEach(day => {
+        if (!branchStats[day.branch]) {
+            branchStats[day.branch] = {
+                daily_totals: [],      // ← TOTAL sales per day
+                daily_hours: [],
+                daily_workers: [],
+                daily_early: [],
+                daily_late: [],
+                dates: []
+            };
+        }
+        const stats = branchStats[day.branch];
+        stats.daily_totals.push(day.total_sales);     // ← TOTAL sales!
+        stats.daily_hours.push(day.total_hours);
+        stats.daily_workers.push(day.worker_count);
+        stats.daily_early.push(day.early_count);
+        stats.daily_late.push(day.late_count);
+        stats.dates.push(day.date);
+    });
+    
+    // Calculate averages
+    for (const [branch, stats] of Object.entries(branchStats)) {
+        const days = stats.daily_totals.length;
+        
+        // TOTAL sales averages
+        stats.total_sales = stats.daily_totals.reduce((a, b) => a + b, 0);
+        stats.avg_daily_sales = days > 0 ? stats.total_sales / days : 0;  // ← TOTAL daily average!
+        
+        // Total hours
+        stats.total_hours = stats.daily_hours.reduce((a, b) => a + b, 0);
+        stats.avg_daily_hours = days > 0 ? stats.total_hours / days : 0;
+        
+        // Total workers
+        stats.total_workers = stats.daily_workers.reduce((a, b) => a + b, 0);
+        stats.avg_daily_workers = days > 0 ? stats.total_workers / days : 0;
+        
+        // Early/Late counts
+        stats.total_early = stats.daily_early.reduce((a, b) => a + b, 0);
+        stats.total_late = stats.daily_late.reduce((a, b) => a + b, 0);
+        stats.early_pct = stats.total_workers > 0 ? (stats.total_early / stats.total_workers * 100) : 0;
+        
+        // Min/Max
+        stats.max_sales = Math.max(...stats.daily_totals);
+        stats.min_sales = Math.min(...stats.daily_totals);
+        
+        // 7-day average (TOTAL sales)
+        const last7 = stats.daily_totals.slice(-7);
+        stats.avg_7_days = last7.length > 0 ? last7.reduce((a, b) => a + b, 0) / last7.length : 0;
+        
+        // 31-day average (TOTAL sales)
+        const last31 = stats.daily_totals.slice(-31);
+        stats.avg_31_days = last31.length > 0 ? last31.reduce((a, b) => a + b, 0) / last31.length : 0;
+        
+        // Store the daily data for display
+        stats.daily_data = branchDateArray
+            .filter(d => d.branch === branch)
+            .sort((a, b) => a.date.localeCompare(b.date));
     }
-    const correlation = denH > 0 && denS > 0 ? num / Math.sqrt(denH * denS) : 0;
     
+    return branchStats;
+}
+
+// ============================================================
+// WORKER IMPACT CALCULATION
+// ============================================================
+
+function calculateWorkerImpact(processedData) {
+    const workerData = {};
+    
+    processedData.forEach(r => {
+        if (!workerData[r.worker_id]) {
+            workerData[r.worker_id] = {
+                id: r.worker_id,
+                name: r.worker_name,
+                jc_id: r.jc_id,
+                branch: r.branch_name,
+                early_sales: [],
+                late_sales: [],
+                early_hours: [],
+                late_hours: [],
+                early_count: 0,
+                late_count: 0,
+                total_count: 0,
+                dates: []
+            };
+        }
+        const stats = workerData[r.worker_id];
+        stats.total_count++;
+        stats.dates.push(r.log_date);
+        if (r.is_on_time) {
+            stats.early_sales.push(r.daily_sales);
+            stats.early_hours.push(r.hours_worked);
+            stats.early_count++;
+        } else {
+            stats.late_sales.push(r.daily_sales);
+            stats.late_hours.push(r.hours_worked);
+            stats.late_count++;
+        }
+    });
+    
+    // Calculate impact for each worker
+    const results = Object.values(workerData)
+        .filter(w => w.total_count >= 3)
+        .map(w => {
+            const earlyAvg = w.early_sales.length > 0 ? w.early_sales.reduce((a, b) => a + b, 0) / w.early_sales.length : 0;
+            const lateAvg = w.late_sales.length > 0 ? w.late_sales.reduce((a, b) => a + b, 0) / w.late_sales.length : 0;
+            const earlyHours = w.early_hours.length > 0 ? w.early_hours.reduce((a, b) => a + b, 0) / w.early_hours.length : 0;
+            const lateHours = w.late_hours.length > 0 ? w.late_hours.reduce((a, b) => a + b, 0) / w.late_hours.length : 0;
+            const diff = earlyAvg - lateAvg;
+            const diffPct = lateAvg > 0 ? (diff / lateAvg * 100) : 0;
+            
+            // Hours-sales correlation for this worker
+            const allData = [];
+            w.early_sales.forEach((s, i) => allData.push({ hours: w.early_hours[i] || 0, sales: s }));
+            w.late_sales.forEach((s, i) => allData.push({ hours: w.late_hours[i] || 0, sales: s }));
+            
+            const avgHours = allData.reduce((sum, d) => sum + d.hours, 0) / allData.length;
+            const avgSales = allData.reduce((sum, d) => sum + d.sales, 0) / allData.length;
+            let num = 0, denH = 0, denS = 0;
+            for (const d of allData) {
+                num += (d.hours - avgHours) * (d.sales - avgSales);
+                denH += (d.hours - avgHours) ** 2;
+                denS += (d.sales - avgSales) ** 2;
+            }
+            const correlation = denH > 0 && denS > 0 ? num / Math.sqrt(denH * denS) : 0;
+            
+            return {
+                ...w,
+                earlyAvg: earlyAvg,
+                lateAvg: lateAvg,
+                earlyHours: earlyHours,
+                lateHours: lateHours,
+                impact: diff,
+                impactPct: diffPct,
+                hoursDiff: earlyHours - lateHours,
+                correlation: correlation,
+                status: diff > 0 ? '✅ IMPROVES WHEN EARLY' : diff < 0 ? '🔴 WORSE WHEN EARLY' : '➡️ NO CHANGE',
+                statusColor: diff > 0 ? '🟢' : diff < 0 ? '🔴' : '🟡',
+                earlyPct: w.total_count > 0 ? (w.early_count / w.total_count * 100) : 0,
+                latePct: w.total_count > 0 ? (w.late_count / w.total_count * 100) : 0
+            };
+        })
+        .sort((a, b) => b.impact - a.impact);
+    
+    return results;
+}
+
+// ============================================================
+// TEAM STATS CALCULATION
+// ============================================================
+
+function calculateTeamStats(processedData) {
+    // Group by date and branch
+    const dateGroups = {};
+    processedData.forEach(r => {
+        const key = `${r.log_date}|${r.branch_id}`;
+        if (!dateGroups[key]) {
+            dateGroups[key] = {
+                date: r.log_date,
+                branch: r.branch_name,
+                branch_id: r.branch_id,
+                early: 0,
+                late: 0,
+                total_sales: 0,
+                total_hours: 0,
+                workers: [],
+                worker_names: [],
+                early_names: [],
+                late_names: []
+            };
+        }
+        const group = dateGroups[key];
+        if (r.is_on_time) {
+            group.early++;
+            group.early_names.push(r.worker_name);
+        } else {
+            group.late++;
+            group.late_names.push(r.worker_name);
+        }
+        group.total_sales += r.daily_sales;
+        group.total_hours += r.hours_worked;
+        group.workers.push(r.worker_id);
+        group.worker_names.push(r.worker_name);
+    });
+    
+    const teamData = Object.values(dateGroups);
+    
+    // Categorize teams
+    const earlyTeams = teamData.filter(d => d.early > d.late);
+    const lateTeams = teamData.filter(d => d.late > d.early);
+    const balancedTeams = teamData.filter(d => d.early === d.late);
+    
+    const earlyTeamAvgSales = earlyTeams.length > 0 ? earlyTeams.reduce((s, d) => s + d.total_sales, 0) / earlyTeams.length : 0;
+    const lateTeamAvgSales = lateTeams.length > 0 ? lateTeams.reduce((s, d) => s + d.total_sales, 0) / lateTeams.length : 0;
+    const balancedAvgSales = balancedTeams.length > 0 ? balancedTeams.reduce((s, d) => s + d.total_sales, 0) / balancedTeams.length : 0;
+    
+    const earlyTeamAvgHours = earlyTeams.length > 0 ? earlyTeams.reduce((s, d) => s + d.total_hours, 0) / earlyTeams.length : 0;
+    const lateTeamAvgHours = lateTeams.length > 0 ? lateTeams.reduce((s, d) => s + d.total_hours, 0) / lateTeams.length : 0;
+    
+    const earlyTeamAvgWorkers = earlyTeams.length > 0 ? earlyTeams.reduce((s, d) => s + d.workers.length, 0) / earlyTeams.length : 0;
+    const lateTeamAvgWorkers = lateTeams.length > 0 ? lateTeams.reduce((s, d) => s + d.workers.length, 0) / lateTeams.length : 0;
+    
+    return {
+        earlyTeams: earlyTeams,
+        lateTeams: lateTeams,
+        balancedTeams: balancedTeams,
+        earlyTeamAvgSales: earlyTeamAvgSales,
+        lateTeamAvgSales: lateTeamAvgSales,
+        balancedAvgSales: balancedAvgSales,
+        earlyTeamAvgHours: earlyTeamAvgHours,
+        lateTeamAvgHours: lateTeamAvgHours,
+        earlyTeamAvgWorkers: earlyTeamAvgWorkers,
+        lateTeamAvgWorkers: lateTeamAvgWorkers,
+        diff: earlyTeamAvgSales - lateTeamAvgSales,
+        diffPct: lateTeamAvgSales > 0 ? ((earlyTeamAvgSales - lateTeamAvgSales) / lateTeamAvgSales * 100) : 0
+    };
+}
+
+// ============================================================
+// CONSISTENCY CALCULATION
+// ============================================================
+
+function calculateConsistency(processedData) {
+    const workerData = {};
+    processedData.forEach(r => {
+        if (!workerData[r.worker_id]) {
+            workerData[r.worker_id] = {
+                name: r.worker_name,
+                jc_id: r.jc_id,
+                branch: r.branch_name,
+                early: 0,
+                late: 0,
+                total: 0,
+                early_sales: [],
+                late_sales: []
+            };
+        }
+        const stats = workerData[r.worker_id];
+        stats.total++;
+        if (r.is_on_time) {
+            stats.early++;
+            stats.early_sales.push(r.daily_sales);
+        } else {
+            stats.late++;
+            stats.late_sales.push(r.daily_sales);
+        }
+    });
+    
+    return Object.values(workerData)
+        .filter(w => w.total >= 3)
+        .map(w => {
+            const earlyPct = w.total > 0 ? (w.early / w.total * 100) : 0;
+            const latePct = w.total > 0 ? (w.late / w.total * 100) : 0;
+            const earlyAvg = w.early_sales.length > 0 ? w.early_sales.reduce((a, b) => a + b, 0) / w.early_sales.length : 0;
+            const lateAvg = w.late_sales.length > 0 ? w.late_sales.reduce((a, b) => a + b, 0) / w.late_sales.length : 0;
+            
+            return {
+                ...w,
+                earlyPct: earlyPct,
+                latePct: latePct,
+                earlyAvg: earlyAvg,
+                lateAvg: lateAvg,
+                status: earlyPct >= 70 ? '🌟 CONSISTENT EARLY' : 
+                        earlyPct >= 50 ? '✅ OFTEN EARLY' : 
+                        latePct >= 70 ? '🔴 CONSISTENT LATE' : 
+                        latePct >= 50 ? '⚠️ OFTEN LATE' : '🟡 MIXED'
+            };
+        })
+        .sort((a, b) => b.earlyPct - a.earlyPct);
+}
+
+// ============================================================
+// RENDER FUNCTIONS
+// ============================================================
+
+// ============================================================
+// ============================================================
+// ✅ FIXED: STATS CARD - SHOWS BRANCH NAME IN TOTAL
+// ============================================================
+
+function renderTimeStatsNew(processedData, branchStats, teamStats) {
+    const totalRecords = processedData.length;
+    
+    // Get ALL unique dates
+    const uniqueDates = [...new Set(processedData.map(r => r.log_date))];
+    const totalDays = uniqueDates.length;
+    
+    // ============================================================
+    // 1. DAILY AVERAGE = Average of ALL past days worked
+    // ============================================================
+    const totalSales = processedData.reduce((s, r) => s + r.daily_sales, 0);
+    const dailyAvg = totalDays > 0 ? totalSales / totalDays : 0;
+    
+    // ============================================================
+    // 2. Get branch names for display
+    // ============================================================
+    const branches = [...new Set(processedData.map(r => r.branch_name))];
+    const branchNames = branches.join(', ');
+    
+    // ============================================================
+    // 3. 7-DAY AVERAGE = ONLY shows after 7 days
+    // ============================================================
+    let avg7Days = null;
+    let avg7DaysDisplay = '⏳ Waiting...';
+    let avg7DaysColor = '#d4a574';
+    
+    if (totalDays >= 7) {
+        const sortedDates = uniqueDates.sort((a, b) => b.localeCompare(a));
+        const last7Dates = sortedDates.slice(0, 7);
+        
+        const last7Sales = processedData
+            .filter(r => last7Dates.includes(r.log_date))
+            .reduce((s, r) => s + r.daily_sales, 0);
+        
+        avg7Days = last7Sales / 7;
+        avg7DaysDisplay = 'UGX ' + avg7Days.toLocaleString();
+        avg7DaysColor = '#7bcfa6';
+    } else {
+        avg7DaysDisplay = `⏳ Need ${7 - totalDays} more day${7 - totalDays > 1 ? 's' : ''}`;
+    }
+    
+    // ============================================================
+    // 4. 31-DAY AVERAGE = ONLY shows after 31 days
+    // ============================================================
+    let avg31Days = null;
+    let avg31DaysDisplay = '⏳ Waiting...';
+    let avg31DaysColor = '#d4a574';
+    
+    if (totalDays >= 31) {
+        const sortedDates = uniqueDates.sort((a, b) => b.localeCompare(a));
+        const last31Dates = sortedDates.slice(0, 31);
+        
+        const last31Sales = processedData
+            .filter(r => last31Dates.includes(r.log_date))
+            .reduce((s, r) => s + r.daily_sales, 0);
+        
+        avg31Days = last31Sales / 31;
+        avg31DaysDisplay = 'UGX ' + avg31Days.toLocaleString();
+        avg31DaysColor = '#7bcfa6';
+    } else if (totalDays < 31) {
+        avg31DaysDisplay = `⏳ Need ${31 - totalDays} more day${31 - totalDays > 1 ? 's' : ''}`;
+    }
+    
+    // ============================================================
+    // 5. Early/Late Stats
+    // ============================================================
+    const totalEarly = processedData.filter(r => r.is_on_time).length;
+    const totalLate = processedData.filter(r => !r.is_on_time).length;
+    const earlyPct = totalRecords > 0 ? (totalEarly / totalRecords * 100) : 0;
+    const totalHours = processedData.reduce((s, r) => s + r.hours_worked, 0);
+    const avgHours = totalRecords > 0 ? totalHours / totalRecords : 0;
+    
+    // Team impact
+    const teamDiff = teamStats.diff;
+    const teamDiffPct = teamStats.diffPct;
+    
+    // ============================================================
+    // 6. BUILD THE STATS CARD
+    // ============================================================
     const statsHTML = `
         <div class="stat-card" style="text-align:center;">
-            <div class="number">${workersArray.length}</div>
-            <div class="label">👥 Workers</div>
+            <div class="number">${totalRecords}</div>
+            <div class="label">📊 Total Records</div>
+            <div style="font-size:8px;color:rgba(255,255,255,0.15);">${branchNames}</div>
+        </div>
+        
+        <!-- DAILY AVERAGE - ALWAYS SHOWS -->
+        <div class="stat-card" style="text-align:center;border:2px solid #ffd70044;">
+            <div class="number" style="color:#ffd700;font-size:24px;">UGX ${dailyAvg.toLocaleString()}</div>
+            <div class="label">💰 Daily Avg (All Days)</div>
+            <div style="font-size:9px;color:rgba(255,255,255,0.2);">
+                📍 ${branches.length === 1 ? branches[0] : branches.length + ' branches'} • 
+                ${totalDays} day${totalDays > 1 ? 's' : ''} • 
+                UGX ${totalSales.toLocaleString()} total
+            </div>
+        </div>
+        
+        <!-- 7-DAY AVERAGE - ONLY AFTER 7 DAYS -->
+        <div class="stat-card" style="text-align:center;border:2px solid ${totalDays >= 7 ? '#7bcfa644' : '#d4a57444'};">
+            <div class="number" style="color:${avg7DaysColor};font-size:${totalDays >= 7 ? '24px' : '16px'};">${avg7DaysDisplay}</div>
+            <div class="label">📊 7-Day Avg</div>
+            <div style="font-size:9px;color:${totalDays >= 7 ? 'rgba(255,255,255,0.2)' : '#d4a574'};">
+                ${totalDays >= 7 ? '✅ Last 7 days' : `⏳ ${7 - totalDays} more day${7 - totalDays > 1 ? 's' : ''} needed`}
+            </div>
+        </div>
+        
+        <!-- 31-DAY AVERAGE - ONLY AFTER 31 DAYS -->
+        <div class="stat-card" style="text-align:center;border:2px solid ${totalDays >= 31 ? '#7bcfa644' : '#d4a57444'};">
+            <div class="number" style="color:${avg31DaysColor};font-size:${totalDays >= 31 ? '24px' : '16px'};">${avg31DaysDisplay}</div>
+            <div class="label">📊 31-Day Avg</div>
+            <div style="font-size:9px;color:${totalDays >= 31 ? 'rgba(255,255,255,0.2)' : '#d4a574'};">
+                ${totalDays >= 31 ? '✅ Last 31 days' : `⏳ ${31 - totalDays} more day${31 - totalDays > 1 ? 's' : ''} needed`}
+            </div>
+        </div>
+        
+        <div class="stat-card" style="text-align:center;border:2px solid ${teamDiffPct > 0 ? '#7bcfa644' : '#e9456044'};">
+            <div class="number" style="color:${teamDiffPct > 0 ? '#7bcfa6' : '#e94560'};">${teamDiffPct > 0 ? '+' : ''}${teamDiffPct.toFixed(0)}%</div>
+            <div class="label">🎯 Early Team Impact</div>
+            <div style="font-size:9px;color:rgba(255,255,255,0.2);">${teamDiff > 0 ? 'Early teams sell more' : 'Late teams sell more'}</div>
         </div>
         <div class="stat-card" style="text-align:center;">
-            <div class="number" style="color:#7bcfa6;">${formatCurrency(totalSales)}</div>
-            <div class="label">💰 Total Sales</div>
-        </div>
-        <div class="stat-card" style="text-align:center;">
-            <div class="number" style="color:#ffd700;">${avgHours.toFixed(1)}h</div>
-            <div class="label">⏳ Avg Hours</div>
-        </div>
-        <div class="stat-card" style="text-align:center;border:2px solid ${onTimeRate >= 70 ? '#7bcfa6' : onTimeRate >= 50 ? '#d4a574' : '#e94560'};">
-            <div class="number" style="color:${onTimeRate >= 70 ? '#7bcfa6' : onTimeRate >= 50 ? '#d4a574' : '#e94560'};">${onTimeRate.toFixed(0)}%</div>
-            <div class="label">✅ On-Time (≤7AM)</div>
-        </div>
-        <div class="stat-card" style="text-align:center;">
-            <div class="number" style="color:${correlation > 0.5 ? '#7bcfa6' : '#d4a574'};">${(correlation * 100).toFixed(0)}%</div>
-            <div class="label">📈 Hours → Sales</div>
-        </div>
-        <div class="stat-card" style="text-align:center;border:2px solid ${impactPercent > 20 ? '#7bcfa6' : impactPercent > 0 ? '#d4a574' : '#e94560'};">
-            <div class="number" style="color:${impactPercent > 20 ? '#7bcfa6' : impactPercent > 0 ? '#d4a574' : '#e94560'};">${impactPercent > 0 ? '+' : ''}${impactPercent.toFixed(0)}%</div>
-            <div class="label">🎯 Impact of ≤7AM</div>
+            <div class="number">${avgHours.toFixed(1)}h</div>
+            <div class="label">⏰ Avg Hours Worked</div>
         </div>
     `;
     
     document.getElementById('tpStatsGrid').innerHTML = statsHTML;
 }
 
-function renderTimeCharts(workersArray, timeData) {
+function renderWorkerImpactTable(workerImpact) {
+    const container = document.getElementById('tpImpactAnalysis');
+    if (!container) return;
+    
+    if (workerImpact.length === 0) {
+        container.innerHTML = '<p style="color:rgba(255,255,255,0.3);text-align:center;padding:20px;">Not enough data for worker impact analysis (need 3+ days per worker)</p>';
+        return;
+    }
+    
+    let html = `
+        <div style="margin-bottom:16px;">
+            <h4 style="color:#f0ebe6;font-weight:400;font-family:'Playfair Display',serif;font-size:16px;letter-spacing:0.5px;margin-bottom:10px;">
+                👤 WORKER IMPACT ANALYSIS
+                <span style="font-size:11px;font-weight:300;color:rgba(255,255,255,0.3);font-family:'Inter',sans-serif;margin-left:8px;">
+                    Does each worker sell more when early?
+                </span>
+            </h4>
+            
+            <div style="overflow-x:auto;">
+                <table style="width:100%;font-size:11px;border-collapse:collapse;">
+                    <thead>
+                        <tr style="background:rgba(255,255,255,0.03);border-bottom:2px solid rgba(255,255,255,0.06);">
+                            <th style="padding:8px 10px;text-align:left;color:rgba(255,255,255,0.4);">Worker</th>
+                            <th style="padding:8px 10px;text-align:left;color:rgba(255,255,255,0.4);">Branch</th>
+                            <th style="padding:8px 10px;text-align:right;color:#7bcfa6;">Early Avg</th>
+                            <th style="padding:8px 10px;text-align:right;color:#e94560;">Late Avg</th>
+                            <th style="padding:8px 10px;text-align:right;color:#ffd700;">Impact</th>
+                            <th style="padding:8px 10px;text-align:center;color:rgba(255,255,255,0.4);">Status</th>
+                            <th style="padding:8px 10px;text-align:center;color:rgba(255,255,255,0.4);">Early %</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+    `;
+    
+    workerImpact.slice(0, 15).forEach(w => {
+        const statusColor = w.impact > 0 ? '#7bcfa6' : w.impact < 0 ? '#e94560' : '#d4a574';
+        html += `
+            <tr style="border-bottom:1px solid rgba(255,255,255,0.03);">
+                <td style="padding:6px 10px;color:#f0ebe6;font-weight:500;">${w.name}</td>
+                <td style="padding:6px 10px;color:rgba(255,255,255,0.4);font-size:10px;">${w.branch}</td>
+                <td style="padding:6px 10px;text-align:right;color:#7bcfa6;">UGX ${w.earlyAvg.toLocaleString()}</td>
+                <td style="padding:6px 10px;text-align:right;color:#e94560;">UGX ${w.lateAvg.toLocaleString()}</td>
+                <td style="padding:6px 10px;text-align:right;color:${statusColor};font-weight:600;">${w.impact > 0 ? '+' : ''}UGX ${w.impact.toLocaleString()}</td>
+                <td style="padding:6px 10px;text-align:center;color:${statusColor};font-size:10px;">${w.status}</td>
+                <td style="padding:6px 10px;text-align:center;color:rgba(255,255,255,0.4);font-size:10px;">${w.earlyPct.toFixed(0)}%</td>
+            </tr>
+        `;
+    });
+    
+    html += `
+                    </tbody>
+                </table>
+            </div>
+            <div style="margin-top:8px;font-size:9px;color:rgba(255,255,255,0.2);text-align:center;">
+                💡 Workers with HIGH impact benefit most from coming early
+            </div>
+        </div>
+    `;
+    
+    container.innerHTML = html;
+}
+
+function renderTeamAnalysis(teamStats) {
+    const container = document.getElementById('tpDailyDetailsContent');
+    if (!container) return;
+    
+    const earlyTeamAvgSales = teamStats.earlyTeamAvgSales;
+    const lateTeamAvgSales = teamStats.lateTeamAvgSales;
+    const diff = teamStats.diff;
+    const diffPct = teamStats.diffPct;
+    const earlyTeamAvgHours = teamStats.earlyTeamAvgHours;
+    const lateTeamAvgHours = teamStats.lateTeamAvgHours;
+    
+    let html = `
+        <div style="margin-bottom:16px;">
+            <h4 style="color:#f0ebe6;font-weight:400;font-family:'Playfair Display',serif;font-size:16px;letter-spacing:0.5px;margin-bottom:10px;">
+                👥 TEAM IMPACT ANALYSIS
+                <span style="font-size:11px;font-weight:300;color:rgba(255,255,255,0.3);font-family:'Inter',sans-serif;margin-left:8px;">
+                    Do teams with more early birds sell more?
+                </span>
+            </h4>
+            
+            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:12px;">
+                <div style="background:rgba(123,207,166,0.05);border:2px solid rgba(123,207,166,0.2);border-radius:10px;padding:12px;text-align:center;">
+                    <div style="font-size:9px;color:rgba(123,207,166,0.4);text-transform:uppercase;letter-spacing:1px;">✅ Early Teams</div>
+                    <div style="font-size:18px;font-weight:700;color:#7bcfa6;">UGX ${earlyTeamAvgSales.toLocaleString()}</div>
+                    <div style="font-size:10px;color:rgba(255,255,255,0.2);">${teamStats.earlyTeams.length} days</div>
+                    <div style="font-size:10px;color:rgba(255,255,255,0.2);">${earlyTeamAvgHours.toFixed(1)}h avg</div>
+                </div>
+                <div style="background:rgba(233,69,96,0.05);border:2px solid rgba(233,69,96,0.2);border-radius:10px;padding:12px;text-align:center;">
+                    <div style="font-size:9px;color:rgba(233,69,96,0.4);text-transform:uppercase;letter-spacing:1px;">🔴 Late Teams</div>
+                    <div style="font-size:18px;font-weight:700;color:#e94560;">UGX ${lateTeamAvgSales.toLocaleString()}</div>
+                    <div style="font-size:10px;color:rgba(255,255,255,0.2);">${teamStats.lateTeams.length} days</div>
+                    <div style="font-size:10px;color:rgba(255,255,255,0.2);">${lateTeamAvgHours.toFixed(1)}h avg</div>
+                </div>
+                <div style="background:rgba(255,215,0,0.05);border:2px solid ${diffPct > 0 ? 'rgba(123,207,166,0.3)' : 'rgba(233,69,96,0.3)'};border-radius:10px;padding:12px;text-align:center;">
+                    <div style="font-size:9px;color:rgba(255,215,0,0.4);text-transform:uppercase;letter-spacing:1px;">🎯 Impact</div>
+                    <div style="font-size:18px;font-weight:700;color:${diffPct > 0 ? '#7bcfa6' : '#e94560'};">${diffPct > 0 ? '+' : ''}${diffPct.toFixed(0)}%</div>
+                    <div style="font-size:10px;color:rgba(255,255,255,0.2);">${diffPct > 0 ? '✅ Early teams sell more' : '⚠️ Late teams sell more'}</div>
+                    <div style="font-size:10px;color:rgba(255,255,255,0.2);">UGX ${diff.toLocaleString()} difference</div>
+                </div>
+            </div>
+            
+            <div style="background:rgba(255,255,255,0.02);border-radius:8px;padding:12px;border:1px solid rgba(255,255,255,0.04);">
+                <div style="font-size:10px;color:rgba(255,255,255,0.3);margin-bottom:6px;">📊 TEAM BREAKDOWN:</div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:11px;">
+                    <div>
+                        <span style="color:#7bcfa6;">✅ Early Teams:</span>
+                        <span style="color:rgba(255,255,255,0.4);">${teamStats.earlyTeams.length} days</span>
+                        <span style="color:rgba(255,255,255,0.2);">(avg ${teamStats.earlyTeamAvgWorkers.toFixed(1)} workers)</span>
+                    </div>
+                    <div>
+                        <span style="color:#e94560;">🔴 Late Teams:</span>
+                        <span style="color:rgba(255,255,255,0.4);">${teamStats.lateTeams.length} days</span>
+                        <span style="color:rgba(255,255,255,0.2);">(avg ${teamStats.lateTeamAvgWorkers.toFixed(1)} workers)</span>
+                    </div>
+                    <div style="grid-column:1/-1;">
+                        <span style="color:#d4a574;">🟡 Balanced Teams:</span>
+                        <span style="color:rgba(255,255,255,0.4);">${teamStats.balancedTeams.length} days</span>
+                        <span style="color:rgba(255,255,255,0.2);">(UGX ${teamStats.balancedAvgSales.toLocaleString()} avg)</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div style="margin-top:8px;padding:8px 12px;background:rgba(212,165,116,0.05);border-radius:6px;border:1px solid rgba(212,165,116,0.08);font-size:10px;color:rgba(255,255,255,0.3);text-align:center;">
+                💡 ${diffPct > 0 ? `✅ Teams with MORE early birds make ${diffPct.toFixed(0)}% MORE sales and work ${(earlyTeamAvgHours - lateTeamAvgHours).toFixed(1)} hours longer` : diffPct < 0 ? `⚠️ Teams with MORE late comers make ${Math.abs(diffPct).toFixed(0)}% MORE sales - investigate why!` : '🟡 No clear difference between early and late teams'}
+            </div>
+        </div>
+    `;
+    
+    container.innerHTML = html;
+}
+
+function renderConsistencyReport(consistency) {
+    const container = document.getElementById('tpSummaryContent');
+    if (!container) return;
+    
+    const earlyBirds = consistency.filter(w => w.earlyPct >= 70);
+    const lateComers = consistency.filter(w => w.latePct >= 70);
+    const mixed = consistency.filter(w => w.earlyPct < 70 && w.latePct < 70);
+    
+    let html = `
+        <div style="margin-bottom:16px;">
+            <h4 style="color:#f0ebe6;font-weight:400;font-family:'Playfair Display',serif;font-size:16px;letter-spacing:0.5px;margin-bottom:10px;">
+                🏆 CONSISTENCY REPORT
+                <span style="font-size:11px;font-weight:300;color:rgba(255,255,255,0.3);font-family:'Inter',sans-serif;margin-left:8px;">
+                    Who is always early or always late?
+                </span>
+            </h4>
+            
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;">
+                <div style="background:rgba(123,207,166,0.05);border:2px solid rgba(123,207,166,0.2);border-radius:10px;padding:12px;">
+                    <div style="font-size:9px;color:rgba(123,207,166,0.4);text-transform:uppercase;letter-spacing:1px;">🌟 Consistent Early Birds</div>
+                    ${earlyBirds.length > 0 ? earlyBirds.slice(0, 5).map(w => `
+                        <div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid rgba(255,255,255,0.03);font-size:11px;">
+                            <span style="color:#f0ebe6;">${w.name}</span>
+                            <span style="color:#7bcfa6;">${w.earlyPct.toFixed(0)}%</span>
+                            <span style="color:rgba(255,255,255,0.2);font-size:9px;">${w.early}/${w.total} days</span>
+                        </div>
+                    `).join('') : '<div style="padding:8px;color:rgba(255,255,255,0.3);font-size:11px;">⚠️ No consistent early birds</div>'}
+                </div>
+                <div style="background:rgba(233,69,96,0.05);border:2px solid rgba(233,69,96,0.2);border-radius:10px;padding:12px;">
+                    <div style="font-size:9px;color:rgba(233,69,96,0.4);text-transform:uppercase;letter-spacing:1px;">🔴 Consistent Late Comers</div>
+                    ${lateComers.length > 0 ? lateComers.slice(0, 5).map(w => `
+                        <div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid rgba(255,255,255,0.03);font-size:11px;">
+                            <span style="color:#f0ebe6;">${w.name}</span>
+                            <span style="color:#e94560;">${w.latePct.toFixed(0)}%</span>
+                            <span style="color:rgba(255,255,255,0.2);font-size:9px;">${w.late}/${w.total} days</span>
+                        </div>
+                    `).join('') : '<div style="padding:8px;color:rgba(255,255,255,0.3);font-size:11px;">✅ No consistent late comers</div>'}
+                </div>
+            </div>
+            
+            <div style="background:rgba(255,255,255,0.02);border-radius:8px;padding:10px 14px;border:1px solid rgba(255,255,255,0.04);display:flex;justify-content:space-between;font-size:10px;color:rgba(255,255,255,0.3);">
+                <span>🌟 Early Birds: ${earlyBirds.length} workers</span>
+                <span>🔴 Late Comers: ${lateComers.length} workers</span>
+                <span>🟡 Mixed: ${mixed.length} workers</span>
+            </div>
+        </div>
+    `;
+    
+    container.innerHTML = html;
+}
+
+// ============================================================
+// ✅ FIXED: BRANCH SALES HISTORY - WAITS FOR REQUIRED DAYS
+// ============================================================
+
+function renderBranchSalesHistory(branchStats) {
+    const container = document.getElementById('tpImpactAnalysis');
+    if (!container) return;
+    
+    let html = `
+        <div style="margin-top:16px;border-top:1px solid rgba(255,255,255,0.06);padding-top:16px;">
+            <h4 style="color:#f0ebe6;font-weight:400;font-family:'Playfair Display',serif;font-size:16px;letter-spacing:0.5px;margin-bottom:10px;">
+                📊 BRANCH SALES HISTORY
+                <span style="font-size:11px;font-weight:300;color:rgba(255,255,255,0.3);font-family:'Inter',sans-serif;margin-left:8px;">
+                    TOTAL branch sales (all workers combined)
+                </span>
+            </h4>
+            
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+    `;
+    
+    for (const [branch, stats] of Object.entries(branchStats)) {
+        const totalDays = stats.daily_totals.length;
+        
+        // DAILY AVG = Average of ALL days (ALWAYS shows)
+        const dailyAvg = stats.avg_daily_sales;
+        
+        // 7-DAY AVG = ONLY shows after 7 days
+        let avg7DaysDisplay = '⏳ Waiting...';
+        let avg7DaysColor = '#d4a574';
+        let avg7DaysValue = null;
+        
+        if (totalDays >= 7) {
+            const last7 = stats.daily_totals.slice(-7);
+            avg7DaysValue = last7.reduce((a, b) => a + b, 0) / 7;
+            avg7DaysDisplay = 'UGX ' + avg7DaysValue.toLocaleString();
+            avg7DaysColor = '#7bcfa6';
+        } else {
+            avg7DaysDisplay = `⏳ Need ${7 - totalDays} more day${7 - totalDays > 1 ? 's' : ''}`;
+        }
+        
+        // 31-DAY AVG = ONLY shows after 31 days
+        let avg31DaysDisplay = '⏳ Waiting...';
+        let avg31DaysColor = '#d4a574';
+        let avg31DaysValue = null;
+        
+        if (totalDays >= 31) {
+            const last31 = stats.daily_totals.slice(-31);
+            avg31DaysValue = last31.reduce((a, b) => a + b, 0) / 31;
+            avg31DaysDisplay = 'UGX ' + avg31DaysValue.toLocaleString();
+            avg31DaysColor = '#7bcfa6';
+        } else {
+            avg31DaysDisplay = `⏳ Need ${31 - totalDays} more day${31 - totalDays > 1 ? 's' : ''}`;
+        }
+        
+        // Highest/Lowest - ALWAYS show (from available data)
+        const maxSales = stats.max_sales;
+        const minSales = stats.min_sales;
+        const avgWorkers = stats.avg_daily_workers;
+        const earlyPct = stats.early_pct;
+        const avgHours = stats.avg_daily_hours;
+        
+        html += `
+            <div style="background:rgba(255,255,255,0.02);border-radius:8px;padding:12px;border:1px solid rgba(255,255,255,0.04);">
+                <div style="font-size:13px;font-weight:600;color:#f0ebe6;">📍 ${branch}</div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;margin-top:6px;font-size:10px;">
+                    
+                    <!-- Days - ALWAYS shows -->
+                    <span style="color:rgba(255,255,255,0.3);">📅 Days:</span>
+                    <span style="color:#f0ebe6;">${totalDays}</span>
+                    
+                    <!-- DAILY AVG - ALWAYS shows -->
+                    <span style="color:rgba(255,255,255,0.3);">💰 Daily Avg:</span>
+                    <span style="color:#ffd700;font-weight:600;">UGX ${dailyAvg.toLocaleString()}</span>
+                    
+                    <!-- 7-DAY AVG - ONLY after 7 days -->
+                    <span style="color:rgba(255,255,255,0.3);">📊 7-Day Avg:</span>
+                    <span style="color:${avg7DaysColor};font-weight:600;">${avg7DaysDisplay}</span>
+                    
+                    <!-- 31-DAY AVG - ONLY after 31 days -->
+                    <span style="color:rgba(255,255,255,0.3);">📊 31-Day Avg:</span>
+                    <span style="color:${avg31DaysColor};font-weight:600;">${avg31DaysDisplay}</span>
+                    
+                    <!-- Highest/Lowest - ALWAYS shows -->
+                    <span style="color:rgba(255,255,255,0.3);">📈 Highest Day:</span>
+                    <span style="color:#7bcfa6;font-weight:600;">UGX ${maxSales.toLocaleString()}</span>
+                    
+                    <span style="color:rgba(255,255,255,0.3);">📉 Lowest Day:</span>
+                    <span style="color:#e94560;font-weight:600;">UGX ${minSales.toLocaleString()}</span>
+                    
+                    <!-- Workers - ALWAYS shows -->
+                    <span style="color:rgba(255,255,255,0.3);">👥 Avg Workers:</span>
+                    <span style="color:#f0ebe6;">${avgWorkers.toFixed(1)}</span>
+                    
+                    <!-- Early % - ALWAYS shows -->
+                    <span style="color:rgba(255,255,255,0.3);">✅ Early %:</span>
+                    <span style="color:${earlyPct >= 50 ? '#7bcfa6' : '#e94560'};">${earlyPct.toFixed(0)}%</span>
+                    
+                    <!-- Hours - ALWAYS shows -->
+                    <span style="color:rgba(255,255,255,0.3);">⏰ Avg Hours:</span>
+                    <span style="color:#f0ebe6;">${avgHours.toFixed(1)}h</span>
+                </div>
+                
+                <!-- Daily breakdown - ALWAYS shows -->
+                <details style="margin-top:8px;">
+                    <summary style="font-size:9px;color:rgba(255,255,255,0.2);cursor:pointer;">📅 View daily breakdown</summary>
+                    <div style="margin-top:4px;max-height:150px;overflow-y:auto;font-size:9px;">
+                        ${stats.daily_data.map(d => `
+                            <div style="display:flex;justify-content:space-between;padding:2px 0;border-bottom:1px solid rgba(255,255,255,0.02);">
+                                <span style="color:rgba(255,255,255,0.4);">${d.date}</span>
+                                <span style="color:#ffd700;font-weight:600;">UGX ${d.total_sales.toLocaleString()}</span>
+                                <span style="color:rgba(255,255,255,0.3);">${d.worker_count} workers</span>
+                                <span style="color:${d.early_count > 0 ? '#7bcfa6' : '#e94560'};">${d.early_count} early / ${d.late_count} late</span>
+                            </div>
+                        `).join('')}
+                    </div>
+                </details>
+            </div>
+        `;
+    }
+    
+    html += `
+            </div>
+        </div>
+    `;
+    
+    // Append to existing container
+    const existingHtml = container.innerHTML;
+    container.innerHTML = existingHtml + html;
+}
+
+// ============================================================
+// ✅ FIXED: SUMMARY ANSWERS - SHOWS TOTAL SALES
+// ============================================================
+
+function renderSummaryAnswers(processedData, branchStats, workerImpact, teamStats, consistency) {
+    const container = document.getElementById('tpImpactAnalysis');
+    if (!container) return;
+    
+    // Calculate key metrics
+    const totalEarly = processedData.filter(r => r.is_on_time).length;
+    const totalLate = processedData.filter(r => !r.is_on_time).length;
+    const earlyPct = processedData.length > 0 ? (totalEarly / processedData.length * 100) : 0;
+    
+    const positiveImpact = workerImpact.filter(w => w.impact > 0);
+    const negativeImpact = workerImpact.filter(w => w.impact < 0);
+    
+    const earlyBirds = consistency.filter(w => w.earlyPct >= 70);
+    const lateComers = consistency.filter(w => w.latePct >= 70);
+    
+    const teamDiffPct = teamStats.diffPct;
+    
+    // Branch averages - NOW USING TOTAL SALES!
+    let branchAvgHtml = '';
+    for (const [branch, stats] of Object.entries(branchStats)) {
+        const totalAvg = stats.avg_daily_sales;      // ← TOTAL daily average
+        const total7Day = stats.avg_7_days;           // ← TOTAL 7-day average
+        const total31Day = stats.avg_31_days;         // ← TOTAL 31-day average
+        const totalMax = stats.max_sales;             // ← TOTAL highest
+        const totalMin = stats.min_sales;             // ← TOTAL lowest
+        
+        branchAvgHtml += `
+            <div style="font-size:11px;color:rgba(255,255,255,0.4);padding:4px 0;border-bottom:1px solid rgba(255,255,255,0.02);">
+                📍 ${branch}:
+                <span style="color:#ffd700;">Daily TOTAL: UGX ${totalAvg.toLocaleString()}</span>
+                | 7-Day: UGX ${total7Day.toLocaleString()}
+                | 31-Day: UGX ${total31Day.toLocaleString()}
+                | 📈 High: UGX ${totalMax.toLocaleString()}
+                | 📉 Low: UGX ${totalMin.toLocaleString()}
+            </div>
+        `;
+    }
+    
+    let html = `
+        <div style="margin-top:16px;border-top:1px solid rgba(255,255,255,0.06);padding-top:16px;">
+            <h4 style="color:#f0ebe6;font-weight:400;font-family:'Playfair Display',serif;font-size:16px;letter-spacing:0.5px;margin-bottom:10px;">
+                📋 SUMMARY - ALL YOUR QUESTIONS ANSWERED
+                <span style="font-size:11px;font-weight:300;color:rgba(255,255,255,0.3);font-family:'Inter',sans-serif;margin-left:8px;">
+                    (TOTAL branch sales, not per worker)
+                </span>
+            </h4>
+            
+            <div style="background:rgba(255,255,255,0.02);border-radius:8px;padding:14px;border:1px solid rgba(255,255,255,0.04);">
+                
+                <div style="margin-bottom:8px;padding-bottom:8px;border-bottom:1px solid rgba(255,255,255,0.03);">
+                    <div style="font-weight:600;color:#d4a574;font-size:12px;">✅ Q1: What are the average sales of this branch? (TOTAL sales)</div>
+                    ${branchAvgHtml}
+                </div>
+                
+                <div style="margin-bottom:8px;padding-bottom:8px;border-bottom:1px solid rgba(255,255,255,0.03);">
+                    <div style="font-weight:600;color:#d4a574;font-size:12px;">✅ Q2: Does this worker increase sales when early?</div>
+                    <div style="font-size:11px;color:rgba(255,255,255,0.4);">
+                        ${positiveImpact.length > 0 ? positiveImpact.slice(0, 5).map(w => 
+                            `🟢 ${w.name}: +${w.impactPct.toFixed(0)}% (UGX ${w.impact.toLocaleString()}) | ${w.early_count} early days`
+                        ).join(' | ') : '⚠️ No workers who improve when early (need 3+ days of data)'}
+                    </div>
+                </div>
+                
+                <div style="margin-bottom:8px;padding-bottom:8px;border-bottom:1px solid rgba(255,255,255,0.03);">
+                    <div style="font-weight:600;color:#d4a574;font-size:12px;">✅ Q3: Does this worker reduce sales when late?</div>
+                    <div style="font-size:11px;color:rgba(255,255,255,0.4);">
+                        ${negativeImpact.length > 0 ? negativeImpact.slice(0, 5).map(w => 
+                            `🔴 ${w.name}: -${Math.abs(w.impactPct).toFixed(0)}% (UGX ${Math.abs(w.impact).toLocaleString()}) | ${w.late_count} late days`
+                        ).join(' | ') : '✅ No workers who reduce when late (need 3+ days of data)'}
+                    </div>
+                </div>
+                
+                <div style="margin-bottom:8px;padding-bottom:8px;border-bottom:1px solid rgba(255,255,255,0.03);">
+                    <div style="font-weight:600;color:#d4a574;font-size:12px;">✅ Q4: Do total hours worked affect sales?</div>
+                    <div style="font-size:11px;color:rgba(255,255,255,0.4);">
+                        ${workerImpact.filter(w => w.correlation > 0.5).length} workers have STRONG hours-sales correlation
+                        ${workerImpact.filter(w => w.correlation > 0.5).slice(0, 3).map(w => 
+                            ` | 📈 ${w.name}: ${w.correlation.toFixed(2)}`
+                        ).join('')}
+                        ${workerImpact.length === 0 ? ' (Need 3+ days of data per worker)' : ''}
+                    </div>
+                </div>
+                
+                <div style="margin-bottom:8px;padding-bottom:8px;border-bottom:1px solid rgba(255,255,255,0.03);">
+                    <div style="font-weight:600;color:#d4a574;font-size:12px;">✅ Q5: Do more early birds increase team sales?</div>
+                    <div style="font-size:11px;color:${teamDiffPct > 0 ? '#7bcfa6' : '#e94560'};">
+                        ${teamDiffPct > 0 ? '✅ YES - Early teams make MORE sales!' : teamDiffPct < 0 ? '❌ NO - Late teams make MORE sales!' : '🟡 UNCLEAR - Need more data'}
+                        <br>
+                        Early teams: UGX ${teamStats.earlyTeamAvgSales.toLocaleString()} | Late teams: UGX ${teamStats.lateTeamAvgSales.toLocaleString()}
+                        <br>
+                        Difference: ${teamDiffPct > 0 ? '+' : ''}${teamDiffPct.toFixed(0)}%
+                    </div>
+                </div>
+                
+                <div style="margin-bottom:8px;padding-bottom:8px;border-bottom:1px solid rgba(255,255,255,0.03);">
+                    <div style="font-weight:600;color:#d4a574;font-size:12px;">✅ Q6: Who are the consistent early birds and late comers?</div>
+                    <div style="font-size:11px;color:rgba(255,255,255,0.4);">
+                        🌟 Early Birds (70%+ early): ${earlyBirds.length > 0 ? earlyBirds.map(w => `${w.name} (${w.earlyPct.toFixed(0)}%)`).join(', ') : 'None found'}
+                    </div>
+                    <div style="font-size:11px;color:rgba(255,255,255,0.4);">
+                        🔴 Late Comers (70%+ late): ${lateComers.length > 0 ? lateComers.map(w => `${w.name} (${w.latePct.toFixed(0)}%)`).join(', ') : 'None found'}
+                    </div>
+                </div>
+                
+                <div style="margin-top:8px;padding:8px 12px;background:rgba(212,165,116,0.05);border-radius:6px;border:1px solid rgba(212,165,116,0.08);font-size:10px;color:rgba(255,255,255,0.3);text-align:center;">
+                    📊 Overall: ${earlyPct.toFixed(0)}% early birds | ${workerImpact.length} workers analyzed | ${Object.keys(branchStats).length} branches
+                    <br>
+                    💡 ${earlyPct === 0 ? '⚠️ No early birds yet! Encourage workers to check in before 7AM to see the impact.' : ''}
+                </div>
+            </div>
+        </div>
+    `;
+    
+    container.innerHTML += html;
+}
+
+// ============================================================
+// CHART FUNCTIONS (Keep existing but update data)
+// ============================================================
+
+function renderTimeChartsNew(processedData) {
     // Destroy old charts
     for (const key in tpChartInstances) {
         if (tpChartInstances[key]) {
@@ -16203,31 +17185,28 @@ function renderTimeCharts(workersArray, timeData) {
         }
     }
     
-    // Check-In Distribution
+    // Check-In Distribution with Sales overlay
     const checkInCtx = document.getElementById('tpCheckInChart');
     if (checkInCtx) {
         const timeSlots = [
-            { label: '6:00-6:30', count: 0, color: '#7bcfa6', sales: 0 },
-            { label: '6:30-7:00', count: 0, color: '#7bcfa6', sales: 0 },
-            { label: '7:00-7:30', count: 0, color: '#d4a574', sales: 0 },
-            { label: '7:30-8:00', count: 0, color: '#d4a574', sales: 0 },
-            { label: '8:00-8:30', count: 0, color: '#e94560', sales: 0 },
-            { label: '8:30-9:00', count: 0, color: '#e94560', sales: 0 },
-            { label: '9:00+', count: 0, color: '#ff0000', sales: 0 }
+            { label: '6:00-6:30', min: 6.0, max: 6.5, count: 0, sales: 0 },
+            { label: '6:30-7:00', min: 6.5, max: 7.0, count: 0, sales: 0 },
+            { label: '7:00-7:30', min: 7.0, max: 7.5, count: 0, sales: 0 },
+            { label: '7:30-8:00', min: 7.5, max: 8.0, count: 0, sales: 0 },
+            { label: '8:00-8:30', min: 8.0, max: 8.5, count: 0, sales: 0 },
+            { label: '8:30-9:00', min: 8.5, max: 9.0, count: 0, sales: 0 },
+            { label: '9:00+', min: 9.0, max: 24.0, count: 0, sales: 0 }
         ];
         
-        for (const record of timeData) {
-            const hour = record.check_in_hour;
-            let idx = 0;
-            if (hour >= 6.5 && hour < 7) idx = 1;
-            else if (hour >= 7 && hour < 7.5) idx = 2;
-            else if (hour >= 7.5 && hour < 8) idx = 3;
-            else if (hour >= 8 && hour < 8.5) idx = 4;
-            else if (hour >= 8.5 && hour < 9) idx = 5;
-            else if (hour >= 9) idx = 6;
-            timeSlots[idx].count++;
-            timeSlots[idx].sales += record.daily_sales || 0;
-        }
+        processedData.forEach(r => {
+            const hour = parseFloat(r.check_in_display.split(':')[0]) || 0;
+            const minute = parseInt(r.check_in_display.split(':')[1]) || 0;
+            const total = hour + (minute / 60);
+            let slot = timeSlots.find(s => total >= s.min && total < s.max);
+            if (!slot) slot = timeSlots[timeSlots.length - 1];
+            slot.count++;
+            slot.sales += r.daily_sales;
+        });
         
         const ctx = checkInCtx.getContext('2d');
         tpChartInstances.checkIn = new Chart(ctx, {
@@ -16238,8 +17217,8 @@ function renderTimeCharts(workersArray, timeData) {
                     {
                         label: 'Workers',
                         data: timeSlots.map(s => s.count),
-                        backgroundColor: timeSlots.map(s => s.color + '80'),
-                        borderColor: timeSlots.map(s => s.color),
+                        backgroundColor: timeSlots.map(s => s.count > 0 ? 'rgba(123,207,166,0.6)' : 'rgba(255,255,255,0.05)'),
+                        borderColor: timeSlots.map(s => s.count > 0 ? '#7bcfa6' : 'rgba(255,255,255,0.1)'),
                         borderWidth: 2,
                         borderRadius: 4,
                         order: 2
@@ -16297,11 +17276,11 @@ function renderTimeCharts(workersArray, timeData) {
         });
     }
     
-    // Scatter Chart
+    // Scatter Chart - Hours vs Sales
     const scatterCtx = document.getElementById('tpScatterChart');
     if (scatterCtx) {
         const ctx = scatterCtx.getContext('2d');
-        const sampled = timeData.slice(0, 60);
+        const sampled = processedData.slice(0, 60);
         const colors = sampled.map(r => r.is_on_time ? 'rgba(123,207,166,0.7)' : 'rgba(233,69,96,0.7)');
         const borderColors = sampled.map(r => r.is_on_time ? '#7bcfa6' : '#e94560');
         
@@ -16310,7 +17289,7 @@ function renderTimeCharts(workersArray, timeData) {
             data: {
                 datasets: [{
                     label: 'Workers',
-                    data: sampled.map(p => ({ x: p.hours_worked, y: p.daily_sales || 0 })),
+                    data: sampled.map(p => ({ x: p.hours_worked, y: p.daily_sales })),
                     backgroundColor: colors,
                     borderColor: borderColors,
                     borderWidth: 1.5,
@@ -16334,7 +17313,7 @@ function renderTimeCharts(workersArray, timeData) {
                 scales: {
                     x: {
                         title: { display: true, text: 'Hours Worked', color: 'rgba(255,255,255,0.3)', font: { size: 9 } },
-                        min: 4,
+                        min: 0,
                         max: 12,
                         ticks: { color: 'rgba(255,255,255,0.3)', font: { size: 8 } },
                         grid: { color: 'rgba(255,255,255,0.05)' }
@@ -16353,342 +17332,44 @@ function renderTimeCharts(workersArray, timeData) {
             }
         });
     }
-    
-    // Weekly Trend
-    const weeklyCtx = document.getElementById('tpWeeklyChart');
-    if (weeklyCtx) {
-        const ctx = weeklyCtx.getContext('2d');
-        const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
-        const weeklySales = days.map(day => {
-            const records = timeData.filter(r => {
-                const d = new Date(r.log_date);
-                return d.toLocaleDateString('en-US', { weekday: 'long' }) === day;
-            });
-            return records.length > 0 ? records.reduce((s, r) => s + (r.daily_sales || 0), 0) / records.length : 0;
-        });
-        const weeklyOnTime = days.map(day => {
-            const records = timeData.filter(r => {
-                const d = new Date(r.log_date);
-                return d.toLocaleDateString('en-US', { weekday: 'long' }) === day;
-            });
-            return records.length > 0 ? (records.filter(r => r.is_on_time).length / records.length * 100) : 0;
-        });
-        
-        tpChartInstances.weekly = new Chart(ctx, {
-            type: 'bar',
-            data: {
-                labels: days,
-                datasets: [
-                    {
-                        label: 'Avg Sales (UGX)',
-                        data: weeklySales,
-                        backgroundColor: 'rgba(212,165,116,0.6)',
-                        borderColor: '#d4a574',
-                        borderWidth: 2,
-                        borderRadius: 4,
-                        order: 2,
-                        yAxisID: 'y'
-                    },
-                    {
-                        label: 'On-Time % (7AM)',
-                        data: weeklyOnTime,
-                        type: 'line',
-                        borderColor: '#ffd700',
-                        backgroundColor: 'rgba(255,215,0,0.1)',
-                        borderWidth: 2,
-                        pointBackgroundColor: '#ffd700',
-                        pointRadius: 4,
-                        tension: 0.4,
-                        order: 1,
-                        yAxisID: 'y1'
-                    }
-                ]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: { 
-                        labels: { 
-                            color: 'rgba(255,255,255,0.4)', 
-                            font: { size: 9 },
-                            boxWidth: 12
-                        } 
-                    }
-                },
-                scales: {
-                    y: {
-                        beginAtZero: true,
-                        position: 'left',
-                        ticks: { 
-                            color: 'rgba(255,255,255,0.3)', 
-                            font: { size: 8 },
-                            callback: function(value) { return (value/1000000).toFixed(1) + 'M'; }
-                        },
-                        grid: { color: 'rgba(255,255,255,0.05)' }
-                    },
-                    y1: {
-                        beginAtZero: true,
-                        position: 'right',
-                        max: 100,
-                        ticks: { 
-                            color: 'rgba(255,215,0,0.3)', 
-                            font: { size: 8 },
-                            callback: function(value) { return value + '%'; }
-                        },
-                        grid: { display: false }
-                    },
-                    x: {
-                        ticks: { color: 'rgba(255,255,255,0.3)', font: { size: 8 } },
-                        grid: { display: false }
-                    }
-                }
-            }
-        });
-    }
-    
-    // Daily Patterns
-    const patternsCtx = document.getElementById('tpDailyPatternsChart');
-    if (patternsCtx) {
-        const ctx = patternsCtx.getContext('2d');
-        const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
-        const dayHours = days.map(day => {
-            const records = timeData.filter(r => {
-                const d = new Date(r.log_date);
-                return d.toLocaleDateString('en-US', { weekday: 'long' }) === day;
-            });
-            return records.length > 0 ? records.reduce((s, r) => s + r.hours_worked, 0) / records.length : 0;
-        });
-        
-        tpChartInstances.daily = new Chart(ctx, {
-            type: 'bar',
-            data: {
-                labels: days,
-                datasets: [{
-                    label: 'Avg Hours Worked',
-                    data: dayHours,
-                    backgroundColor: dayHours.map(h => h >= 8 ? 'rgba(123,207,166,0.6)' : h >= 7 ? 'rgba(212,165,116,0.6)' : 'rgba(233,69,96,0.6)'),
-                    borderColor: dayHours.map(h => h >= 8 ? '#7bcfa6' : h >= 7 ? '#d4a574' : '#e94560'),
-                    borderWidth: 2,
-                    borderRadius: 4
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: { display: false }
-                },
-                scales: {
-                    y: {
-                        beginAtZero: true,
-                        max: 12,
-                        ticks: { color: 'rgba(255,255,255,0.3)', font: { size: 8 } },
-                        grid: { color: 'rgba(255,255,255,0.05)' }
-                    },
-                    x: {
-                        ticks: { color: 'rgba(255,255,255,0.3)', font: { size: 8 } },
-                        grid: { display: false }
-                    }
-                }
-            }
-        });
-    }
 }
 
-function renderTimeImpact(workersArray, timeData) {
-    const sortedByImpact = [...workersArray].sort((a, b) => b.sales_impact - a.sales_impact);
-    
-    const earlyRecords = timeData.filter(r => r.is_on_time);
-    const lateRecords = timeData.filter(r => !r.is_on_time);
-    const earlyAvgSales = earlyRecords.length > 0 ? earlyRecords.reduce((s, r) => s + (r.daily_sales || 0), 0) / earlyRecords.length : 0;
-    const lateAvgSales = lateRecords.length > 0 ? lateRecords.reduce((s, r) => s + (r.daily_sales || 0), 0) / lateRecords.length : 0;
-    const impactAmount = earlyAvgSales - lateAvgSales;
-    const impactPercent = lateAvgSales > 0 ? (impactAmount / lateAvgSales) * 100 : 0;
-    
-    let impactRows = '';
-    for (const w of sortedByImpact.slice(0, 6)) {
-        const barWidth = Math.min(Math.abs(w.sales_impact) / 300000 * 100, 100);
-        const color = w.sales_impact > 0 ? '#7bcfa6' : '#e94560';
-        impactRows += `
-            <div style="display:flex;align-items:center;gap:10px;padding:4px 0;border-bottom:1px solid rgba(255,255,255,0.03);">
-                <span style="font-size:12px;color:#f0ebe6;min-width:80px;">${w.name}</span>
-                <div style="flex:1;height:16px;background:rgba(255,255,255,0.06);border-radius:4px;overflow:hidden;position:relative;">
-                    <div style="height:100%;background:${color};border-radius:4px;width:${Math.max(barWidth, 2)}%;transition:width 0.5s ease;"></div>
-                </div>
-                <span style="font-size:11px;color:${color};min-width:80px;text-align:right;">${w.sales_impact > 0 ? '+' : ''}${formatCurrency(w.sales_impact)}</span>
-            </div>
-        `;
-    }
-    
-    const html = `
-        <h4 style="color:#f0ebe6;font-weight:400;font-family:'Playfair Display',serif;font-size:16px;letter-spacing:0.5px;margin-bottom:10px;">
-            🎯 Worker Impact Analysis — 7AM Check-In Impact on Sales
-            <span style="font-size:11px;font-weight:300;color:rgba(255,255,255,0.3);font-family:'Inter',sans-serif;margin-left:8px;">(Early ≤7AM vs Late >7AM)</span>
-        </h4>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
-            <div>
-                <div style="font-size:11px;color:rgba(255,255,255,0.3);margin-bottom:6px;">
-                    📊 Sales Impact (≤7AM vs >7AM)
-                    <span style="margin-left:10px;color:#7bcfa6;">🟢 Positive = Early better</span>
-                    <span style="margin-left:10px;color:#e94560;">🔴 Negative = Late better</span>
-                </div>
-                ${impactRows}
-            </div>
-            <div>
-                <div style="font-size:11px;color:rgba(255,255,255,0.3);margin-bottom:6px;">💡 Key Insights — 7AM Target</div>
-                <div style="background:rgba(255,255,255,0.03);border-radius:8px;padding:12px;border:1px solid rgba(255,255,255,0.06);">
-                    <div style="padding:6px 0;border-bottom:1px solid rgba(255,255,255,0.03);">
-                        <span style="color:#7bcfa6;">🟢 Top Impact:</span>
-                        <span style="color:#f0ebe6;font-size:13px;">${sortedByImpact[0]?.name || 'N/A'}</span>
-                        <span style="color:#7bcfa6;font-size:12px;float:right;">+${formatCurrency(sortedByImpact[0]?.sales_impact || 0)}</span>
-                    </div>
-                    <div style="padding:6px 0;border-bottom:1px solid rgba(255,255,255,0.03);">
-                        <span style="color:#e94560;">🔴 Worst Impact:</span>
-                        <span style="color:#f0ebe6;font-size:13px;">${sortedByImpact[sortedByImpact.length-1]?.name || 'N/A'}</span>
-                        <span style="color:#e94560;font-size:12px;float:right;">${formatCurrency(sortedByImpact[sortedByImpact.length-1]?.sales_impact || 0)}</span>
-                    </div>
-                    <div style="padding:6px 0;">
-                        <span style="color:#d4a574;">📊 Avg Impact:</span>
-                        <span style="color:#f0ebe6;font-size:13px;">${formatCurrency(workersArray.reduce((s, w) => s + w.sales_impact, 0) / workersArray.length)}</span>
-                        <span style="color:rgba(255,255,255,0.3);font-size:11px;float:right;">per worker</span>
-                    </div>
-                </div>
-                <div style="margin-top:8px;padding:8px 12px;background:rgba(212,165,116,0.05);border-radius:6px;border:1px solid rgba(212,165,116,0.1);font-size:11px;color:rgba(255,255,255,0.4);">
-                    💡 Workers who check in ≤7:00 AM generate 
-                    <span style="color:#7bcfa6;font-weight:600;">${impactPercent > 0 ? '+' : ''}${impactPercent.toFixed(0)}%</span> 
-                    more sales on average (${formatCurrency(impactAmount)} difference)
-                </div>
-                <div style="margin-top:6px;padding:6px 12px;background:rgba(255,215,0,0.05);border-radius:6px;border:1px solid rgba(255,215,0,0.1);font-size:10px;color:#ffd700;text-align:center;">
-                    🎯 ON-TIME TARGET: 7:00 AM (Uganda Time)
-                </div>
-            </div>
-        </div>
-    `;
-    
-    document.getElementById('tpImpactAnalysis').innerHTML = html;
-}
+// ============================================================
+// HELPER FUNCTIONS
+// ============================================================
 
-function renderTimeDailyDetails(workersArray) {
-    let html = '';
-    const sorted = [...workersArray].sort((a, b) => b.sales_impact - a.sales_impact);
-    
-    for (const w of sorted) {
-        html += `
-            <details style="margin:4px 0;background:rgba(255,255,255,0.02);border-radius:6px;border:1px solid rgba(255,255,255,0.04);">
-                <summary style="padding:8px 14px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;font-size:12px;color:#f0ebe6;">
-                    <span>${w.name} (${w.jc_id})</span>
-                    <span style="color:${w.on_time_rate >= 70 ? '#7bcfa6' : w.on_time_rate >= 50 ? '#d4a574' : '#e94560'};font-size:11px;">
-                        ${w.daily_records.length} days • ${Math.round(w.on_time_rate)}% on-time (7AM target)
-                    </span>
-                </summary>
-                <div style="padding:8px 14px;overflow-x:auto;">
-                    <table style="width:100%;font-size:10px;border-collapse:collapse;">
-                        <thead>
-                            <tr style="background:rgba(255,255,255,0.03);">
-                                <th style="padding:4px 8px;text-align:left;color:rgba(255,255,255,0.3);">Date</th>
-                                <th style="padding:4px 8px;text-align:left;color:rgba(255,255,255,0.3);">Check In</th>
-                                <th style="padding:4px 8px;text-align:left;color:rgba(255,255,255,0.3);">Check Out</th>
-                                <th style="padding:4px 8px;text-align:left;color:rgba(255,255,255,0.3);">Hours</th>
-                                <th style="padding:4px 8px;text-align:left;color:rgba(255,255,255,0.3);">Sales</th>
-                                <th style="padding:4px 8px;text-align:left;color:rgba(255,255,255,0.3);">Status</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            ${w.daily_records.slice(-14).map(day => `
-                                <tr style="border-bottom:1px solid rgba(255,255,255,0.02);">
-                                    <td style="padding:4px 8px;color:rgba(255,255,255,0.5);">${day.date}</td>
-                                    <td style="padding:4px 8px;color:${day.is_on_time ? '#7bcfa6' : '#e94560'};font-weight:${day.is_on_time ? '600' : '400'};">${day.check_in}</td>
-                                    <td style="padding:4px 8px;color:rgba(255,255,255,0.5);">${day.check_out}</td>
-                                    <td style="padding:4px 8px;color:#ffd700;">${day.hours.toFixed(1)}h</td>
-                                    <td style="padding:4px 8px;color:#7bcfa6;">${day.sales}</td>
-                                    <td style="padding:4px 8px;color:${day.is_on_time ? '#7bcfa6' : '#e94560'};">
-                                        ${day.is_on_time ? '✅ On Time (≤7AM)' : '🔴 Late (>7AM)'}
-                                    </td>
-                                </tr>
-                            `).join('')}
-                        </tbody>
-                    </table>
-                    ${w.daily_records.length > 14 ? `<div style="font-size:9px;color:rgba(255,255,255,0.15);margin-top:4px;">Showing last 14 days of ${w.daily_records.length} total days</div>` : ''}
-                    <div style="font-size:9px;color:rgba(255,255,255,0.1);margin-top:4px;">⏰ On-Time Target: 7:00 AM (Uganda Time)</div>
-                </div>
-            </details>
-        `;
-    }
-    
-    document.getElementById('tpDailyDetailsContent').innerHTML = html;
-}
-
-function renderTimeSummaryTable(workersArray) {
-    const sorted = [...workersArray].sort((a, b) => b.sales_impact - a.sales_impact);
-    
-    let rows = '';
-    for (const w of sorted) {
-        const statusColor = w.on_time_rate >= 70 ? '#7bcfa6' : w.on_time_rate >= 50 ? '#d4a574' : '#e94560';
-        const statusIcon = w.on_time_rate >= 70 ? '✅' : w.on_time_rate >= 50 ? '⚠️' : '🔴';
-        const impactColor = w.sales_impact > 0 ? '#7bcfa6' : w.sales_impact < 0 ? '#e94560' : '#d4a574';
-        const impactIcon = w.sales_impact > 50000 ? '📈' : w.sales_impact < -50000 ? '📉' : '➡️';
-        
-        rows += `
-            <tr style="border-bottom:1px solid rgba(255,255,255,0.04);">
-                <td style="padding:6px 10px;color:#f0ebe6;font-weight:500;">${w.name}</td>
-                <td style="padding:6px 10px;color:rgba(255,255,255,0.4);font-size:10px;">${w.jc_id}</td>
-                <td style="padding:6px 10px;color:rgba(255,255,255,0.6);font-size:11px;">${w.avg_check_in_display}</td>
-                <td style="padding:6px 10px;color:rgba(255,255,255,0.6);font-size:11px;">${w.avg_check_out_display}</td>
-                <td style="padding:6px 10px;color:#ffd700;font-weight:600;">${w.avg_hours.toFixed(1)}h</td>
-                <td style="padding:6px 10px;color:#7bcfa6;font-weight:600;">${formatCurrency(w.avg_sales)}</td>
-                <td style="padding:6px 10px;color:${statusColor};">${statusIcon} ${Math.round(w.on_time_rate)}%</td>
-                <td style="padding:6px 10px;color:${impactColor};font-weight:600;">${impactIcon} ${formatCurrency(w.sales_impact)}</td>
-                <td style="padding:6px 10px;color:${w.hours_sales_correlation > 0.5 ? '#7bcfa6' : '#d4a574'};">${(w.hours_sales_correlation * 100).toFixed(0)}%</td>
-            </tr>
-        `;
-    }
-    
-    const html = `
-        <table style="width:100%;font-size:11px;border-collapse:collapse;">
-            <thead>
-                <tr style="background:rgba(255,255,255,0.03);position:sticky;top:0;z-index:5;">
-                    <th style="padding:6px 10px;text-align:left;color:rgba(255,255,255,0.4);font-size:9px;text-transform:uppercase;">Worker</th>
-                    <th style="padding:6px 10px;text-align:left;color:rgba(255,255,255,0.4);font-size:9px;text-transform:uppercase;">JC ID</th>
-                    <th style="padding:6px 10px;text-align:left;color:rgba(255,255,255,0.4);font-size:9px;text-transform:uppercase;">Check In</th>
-                    <th style="padding:6px 10px;text-align:left;color:rgba(255,255,255,0.4);font-size:9px;text-transform:uppercase;">Check Out</th>
-                    <th style="padding:6px 10px;text-align:left;color:rgba(255,255,255,0.4);font-size:9px;text-transform:uppercase;">Hours</th>
-                    <th style="padding:6px 10px;text-align:left;color:rgba(255,255,255,0.4);font-size:9px;text-transform:uppercase;">Avg Sales</th>
-                    <th style="padding:6px 10px;text-align:left;color:rgba(255,255,255,0.4);font-size:9px;text-transform:uppercase;">On-Time</th>
-                    <th style="padding:6px 10px;text-align:left;color:rgba(255,255,255,0.4);font-size:9px;text-transform:uppercase;">Impact</th>
-                    <th style="padding:6px 10px;text-align:left;color:rgba(255,255,255,0.4);font-size:9px;text-transform:uppercase;">Correlation</th>
-                </tr>
-            </thead>
-            <tbody>${rows}</tbody>
-        </table>
-        <div style="margin-top:8px;padding:6px 12px;background:rgba(255,255,255,0.02);border-radius:6px;font-size:9px;color:rgba(255,255,255,0.2);display:flex;gap:16px;flex-wrap:wrap;">
-            <span>🟢 On-Time ≥ 70% (≤7AM)</span>
-            <span>⚠️ Mixed 50-69%</span>
-            <span>🔴 Late &lt; 50% (>7AM)</span>
-            <span>📈 Impact = Early Sales (≤7AM) - Late Sales (>7AM)</span>
-            <span>🎯 Target: 7:00 AM Uganda Time</span>
-        </div>
-    `;
-    
-    document.getElementById('tpSummaryContent').innerHTML = html;
-}
+// ============================================================
+// ✅ FIXED: POPULATE BRANCH FILTER - USE IDs, NOT NAMES
+// ============================================================
 
 function populateTimeBranchFilter(data) {
     const filter = document.getElementById('tpBranchFilter');
     if (!filter) return;
     
-    const branches = [...new Set(data.map(r => r.branch_name))];
+    // Get unique branches with their IDs
+    const branchMap = {};
+    data.forEach(r => {
+        if (r.branches?.id && r.branches?.name) {
+            branchMap[r.branches.id] = r.branches.name;
+        }
+    });
+    
     const currentValue = filter.value;
     
+    // Build options with IDs as values, Names as display
     filter.innerHTML = '<option value="all">All Branches</option>';
-    for (const branch of branches) {
-        if (branch) {
-            filter.innerHTML += `<option value="${branch}">${branch}</option>`;
-        }
+    for (const [id, name] of Object.entries(branchMap)) {
+        filter.innerHTML += `<option value="${id}">${name}</option>`;
     }
     
-    if (currentValue) filter.value = currentValue;
+    if (currentValue && branchMap[currentValue]) {
+        filter.value = currentValue;
+    }
 }
+
+
+
+console.log('✅ Time & Performance functions updated!');
 
 // Global share functions
 window.shareTimeWhatsApp = function() {
