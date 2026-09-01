@@ -9,7 +9,7 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js">
     </script>
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-<style>
+    <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
 
 body {
@@ -1706,234 +1706,17 @@ table td strong { color: #f0ebe6; font-weight: 500; }
     opacity: 1 !important;
 }
 /* ============================================================
-   📱 PAYMENT STATUS - MATCH TIER CARDS EXACTLY
+   📱 PAYMENT STATUS - FIXED FOR PHONES
    ============================================================ */
 
-/* Container - Same as Tier section */
+/* Container */
 .payment-status-wrapper {
     background: rgba(255,255,255,0.03);
     border-radius: 12px;
     padding: 16px 20px;
     border: 1px solid rgba(255,255,255,0.06);
     margin-top: 16px;
-}
-
-/* Title - Same style as "Unified Bonus Breakdown" */
-.payment-status-title {
-    color: #f0ebe6;
-    font-weight: 400;
-    font-family: 'Playfair Display', serif;
-    font-size: 16px;
-    letter-spacing: 0.5px;
-    margin-bottom: 12px;
-}
-
-/* 3-Column Grid - IDENTICAL to Tier cards */
-.payment-status-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr 1fr;
-    gap: 12px;
-    margin-bottom: 16px;
-}
-
-/* Each Card - EXACT match to Tier cards */
-.payment-status-card {
-    background: rgba(255,255,255,0.03);
-    border-radius: 10px;
-    padding: 16px;
-    text-align: center;
-    border: 1px solid rgba(255,255,255,0.06);
-}
-
-/* Paid Card - Matches Tier 1 (gold) */
-.payment-status-card.paid {
-    border: 2px solid rgba(123,207,166,0.2);
-    background: rgba(123,207,166,0.05);
-}
-
-/* Remaining Card - Matches Tier 2 (green) */
-.payment-status-card.remaining {
-    border: 2px solid rgba(255,215,0,0.2);
-    background: rgba(255,215,0,0.05);
-}
-
-/* Status Card - Matches Tier 3 (gold/bronze) */
-.payment-status-card.status {
-    border: 2px solid rgba(212,165,116,0.2);
-    background: rgba(212,165,116,0.05);
-}
-
-/* Label - EXACT match to Tier labels */
-.payment-status-card .label {
-    font-size: 9px;
-    color: rgba(255,215,0,0.4);
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    margin-bottom: 4px;
-}
-
-/* Value - EXACT match to Tier values */
-.payment-status-card .value {
-    font-size: 24px;
-    font-weight: 700;
-    font-family: 'Playfair Display', serif;
-}
-
-/* Paid value - Green like Tier 2 */
-.payment-status-card .value.paid-value {
-    color: #7bcfa6;
-}
-
-/* Remaining value - Gold like Tier 1 */
-.payment-status-card .value.remaining-value {
-    color: #ffd700;
-}
-
-/* Status value - Gold like Tier 3 */
-.payment-status-card .value.status-value {
-    font-size: 3px;
-    color: #d4a574;
-}
-
-/* Sub text - EXACT match */
-.payment-status-card .sub {
-    font-size: 9px;
-    color: rgba(255,255,255,0.2);
-    margin-top: 4px;
-}
-
-/* Status colors */
-.status-fully-paid { color: #7bcfa6; }
-.status-partially-paid { color: #ffd700; }
-.status-pending { color: #e94560; }
-.status-no-bonus { color: rgba(255,255,255,0.3); }
-
-/* Last Payment row */
-.payment-last {
-    padding: 8px 12px;
-    background: rgba(255,255,255,0.02);
-    border-radius: 6px;
-    font-size: 11px;
-    color: rgba(255,255,255,0.3);
-    text-align: center;
-    border: 1px solid rgba(255,255,255,0.04);
-    margin-top: 8px;
-}
-
-/* Progress bar */
-.payment-progress {
-    margin-top: 10px;
-}
-
-.payment-progress-labels {
-    display: flex;
-    justify-content: space-between;
-    font-size: 9px;
-    color: rgba(255,255,255,0.2);
-}
-
-.payment-progress-track {
-    width: 100%;
-    height: 6px;
-    background: rgba(255,255,255,0.06);
-    border-radius: 3px;
     overflow: hidden;
-    margin-top: 2px;
-}
-
-.payment-progress-fill {
-    height: 100%;
-    border-radius: 3px;
-    transition: width 0.5s ease;
-}
-
-.payment-progress-fill.complete { background: #7bcfa6; }
-.payment-progress-fill.partial { background: #ffd700; }
-.payment-progress-fill.none { background: #e94560; }
-
-/* ============================================================
-   📱 PHONE RESPONSIVENESS - MATCH TIER CARDS
-   ============================================================ */
-
-@media (max-width: 768px) {
-    .payment-status-grid {
-        gap: 8px;
-    }
-    
-    .payment-status-card {
-        padding: 12px 8px;
-    }
-    
-    .payment-status-card .value {
-        font-size: 18px;
-    }
-    
-    .payment-status-card .value.status-value {
-        font-size: 12px;
-    }
-    
-    .payment-status-card .label {
-        font-size: 8px;
-    }
-    
-    .payment-status-card .sub {
-        font-size: 8px;
-    }
-    
-    .payment-last {
-        font-size: 10px;
-        padding: 6px 10px;
-    }
-}
-
-@media (max-width: 480px) {
-    .payment-status-grid {
-        gap: 6px;
-    }
-    
-    .payment-status-card {
-        padding: 10px 4px;
-        border-radius: 8px;
-    }
-    
-    .payment-status-card .value {
-        font-size: 15px;
-    }
-    
-    .payment-status-card .value.status-value {
-        font-size: 10px;
-    }
-    
-    .payment-status-card .label {
-        font-size: 7px;
-        letter-spacing: 0.5px;
-    }
-    
-    .payment-status-card .sub {
-        font-size: 7px;
-    }
-    
-    .payment-last {
-        font-size: 9px;
-        padding: 4px 8px;
-    }
-    
-    .payment-progress-labels {
-        font-size: 8px;
-    }
-}
-/* ============================================================
-   📱 FIX: PAYMENT STATUS - NO OVERFLOW
-   ============================================================ */
-
-/* Payment Status Container */
-.payment-status-wrapper {
-    background: rgba(255,255,255,0.03);
-    border-radius: 12px;
-    padding: 16px 20px;
-    border: 1px solid rgba(255,255,255,0.06);
-    margin-top: 16px;
-    overflow: hidden; /* ← Prevents overflow */
 }
 
 .payment-status-title {
@@ -1945,6 +1728,7 @@ table td strong { color: #f0ebe6; font-weight: 500; }
     margin-bottom: 12px;
 }
 
+/* 3-Column Grid */
 .payment-status-grid {
     display: grid;
     grid-template-columns: 1fr 1fr 1fr;
@@ -1952,14 +1736,15 @@ table td strong { color: #f0ebe6; font-weight: 500; }
     margin-bottom: 16px;
 }
 
+/* Each Card */
 .payment-status-card {
     background: rgba(255,255,255,0.03);
     border-radius: 10px;
     padding: 16px 10px;
     text-align: center;
     border: 1px solid rgba(255,255,255,0.06);
-    overflow: hidden; /* ← Prevents overflow */
-    word-wrap: break-word; /* ← Wraps long words */
+    overflow: hidden;
+    word-wrap: break-word;
 }
 
 .payment-status-card.paid {
@@ -1989,8 +1774,8 @@ table td strong { color: #f0ebe6; font-weight: 500; }
     font-size: 24px;
     font-weight: 700;
     font-family: 'Playfair Display', serif;
-    word-break: break-word; /* ← Breaks long words */
-    line-height: 1.2; /* ← Reduces line height */
+    word-break: break-word;
+    line-height: 1.2;
 }
 
 .payment-status-card .value.paid-value {
@@ -2001,10 +1786,13 @@ table td strong { color: #f0ebe6; font-weight: 500; }
     color: #ffd700;
 }
 
+/* ✅ THIS IS THE ONE THAT CONTROLS THE STATUS TEXT */
 .payment-status-card .value.status-value {
     font-size: 18px;
     color: #d4a574;
     word-break: break-word;
+    line-height: 1.2;
+    white-space: normal;
 }
 
 .payment-status-card .sub {
@@ -2062,7 +1850,7 @@ table td strong { color: #f0ebe6; font-weight: 500; }
 .payment-progress-fill.none { background: #e94560; }
 
 /* ============================================================
-   📱 PHONE RESPONSIVENESS - NO OVERFLOW
+   📱 PHONE RESPONSIVENESS - STATUS TEXT SIZES
    ============================================================ */
 
 @media (max-width: 768px) {
@@ -2082,8 +1870,9 @@ table td strong { color: #f0ebe6; font-weight: 500; }
         font-size: 18px;
     }
     
+    /* Tablet status text */
     .payment-status-card .value.status-value {
-        font-size: 14px; /* ← Smaller on tablets */
+        font-size: 14px;
     }
     
     .payment-status-card .label {
@@ -2116,11 +1905,12 @@ table td strong { color: #f0ebe6; font-weight: 500; }
     }
     
     .payment-status-card .value {
-        font-size: 14px; /* ← Smaller on phones */
+        font-size: 14px;
     }
     
+    /* ✅ PHONE status text - MUCH SMALLER to fit */
     .payment-status-card .value.status-value {
-        font-size: 10px; /* ← Fits on phones */
+        font-size: 10px;
         line-height: 1.1;
     }
     
@@ -2153,6 +1943,7 @@ table td strong { color: #f0ebe6; font-weight: 500; }
         font-size: 12px;
     }
     
+    /* ✅ VERY SMALL PHONES - even smaller */
     .payment-status-card .value.status-value {
         font-size: 9px;
     }
@@ -2163,77 +1954,6 @@ table td strong { color: #f0ebe6; font-weight: 500; }
     
     .payment-status-card {
         padding: 8px 3px;
-    }
-}
-/* ============================================================
-   📱 FIX: STATUS TEXT SIZE ON PHONES
-   ============================================================ */
-
-
-
-/* ============================================================
-   📱 PHONE RESPONSIVENESS - REDUCE STATUS TEXT SIZE
-   ============================================================ */
-
-@media (max-width: 768px) {
-    .payment-status-card.status .value.status-value {
-        font-size: 14px; /* Smaller on tablets */
-    }
-}
-
-@media (max-width: 480px) {
-    .payment-status-card.status .value.status-value {
-        font-size: 11px; /* Much smaller on phones */
-        line-height: 1.1;
-    }
-    
-    .payment-status-card.status {
-        padding: 8px 4px; /* Less padding = more room */
-    }
-}
-
-@media (max-width: 380px) {
-    .payment-status-card.status .value.status-value {
-        font-size: 9px; /* Tiny on very small phones */
-    }
-}
-/* ============================================================
-   📱 FIX: PAYMENT STATUS - STATUS TEXT SIZE ON PHONES
-   ============================================================ */
-
-/* Payment Status Card - Status specifically */
-.payment-status-card.status .value.status-value {
-    font-size: 18px;
-    color: #d4a574;
-    word-break: break-word;
-    line-height: 1.2;
-    white-space: normal; /* Allows wrapping */
-}
-
-/* ============================================================
-   📱 PHONE RESPONSIVENESS - REDUCE STATUS TEXT SIZE
-   ============================================================ */
-
-@media (max-width: 768px) {
-    .payment-status-card.status .value.status-value {
-        font-size: 14px; /* Smaller on tablets */
-    }
-}
-
-@media (max-width: 480px) {
-    .payment-status-card.status .value.status-value {
-        font-size: 11px; /* Much smaller on phones */
-        line-height: 1.1;
-    }
-    
-    .payment-status-card.status {
-        padding: 8px 4px; /* Less padding = more room */
-    }
-}
-
-@media (max-width: 380px) {
-    .payment-status-card.status .value.status-value {
-        font-size: 9px; /* Tiny on very small phones */
     }
 }
 </style>
