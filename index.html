@@ -2165,6 +2165,45 @@ table td strong { color: #f0ebe6; font-weight: 500; }
         padding: 8px 3px;
     }
 }
+/* ============================================================
+   📱 FIX: STATUS TEXT SIZE ON PHONES
+   ============================================================ */
+
+/* Payment Status Card - Status specifically */
+.payment-status-card.status .value.status-value {
+    font-size: 18px;
+    color: #d4a574;
+    word-break: break-word;
+    line-height: 1.2;
+    white-space: normal; /* Allows wrapping */
+}
+
+/* ============================================================
+   📱 PHONE RESPONSIVENESS - REDUCE STATUS TEXT SIZE
+   ============================================================ */
+
+@media (max-width: 768px) {
+    .payment-status-card.status .value.status-value {
+        font-size: 14px; /* Smaller on tablets */
+    }
+}
+
+@media (max-width: 480px) {
+    .payment-status-card.status .value.status-value {
+        font-size: 11px; /* Much smaller on phones */
+        line-height: 1.1;
+    }
+    
+    .payment-status-card.status {
+        padding: 8px 4px; /* Less padding = more room */
+    }
+}
+
+@media (max-width: 380px) {
+    .payment-status-card.status .value.status-value {
+        font-size: 9px; /* Tiny on very small phones */
+    }
+}
 </style>
 </head>
 <body>
