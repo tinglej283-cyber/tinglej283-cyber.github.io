@@ -9570,6 +9570,9 @@ async function saveWorkerPay() {
     }
 }
 // ============================================================
+// 📋 closeDayByWorker() - WORKER VERSION (FULLY FIXED)
+// ============================================================
+
 async function closeDayByWorker(branchId, branchName) {
     if (!currentUser || currentUser.role !== 'worker') {
         alert('Only workers can close their own day.');
@@ -9578,10 +9581,6 @@ async function closeDayByWorker(branchId, branchName) {
 
     const today = new Date().toISOString().split('T')[0];
 
-    // ============================================================
-    // STEP 1: CHECK IF THIS IS A REOPENED BRANCH
-    // ============================================================
-    
     const { data: existingLog, error: checkError } = await _supabase
         .from('daily_logs')
         .select('*, workers:worker_id (full_name, jc_id, daily_rate, monthly_base_salary, total_credits)')
@@ -9601,13 +9600,9 @@ async function closeDayByWorker(branchId, branchName) {
         return;
     }
 
-    // ✅ Check if this is a REOPENED branch
     const isReopened = existingLog?.is_reopened === true;
 
-    // ============================================================
-    // STEP 2: LOCATION VERIFICATION
-    // ============================================================
-    
+    // Location verification
     const { data: branchLoc, error: locError } = await _supabase
         .from('branch_locations')
         .select('latitude, longitude, buffer_radius')
@@ -9655,19 +9650,14 @@ async function closeDayByWorker(branchId, branchName) {
 
     document.getElementById('locationStatus').innerHTML = `✅ Location verified! (${distance.toFixed(0)}m from branch)`;
 
-    // ============================================================
-    // STEP 3A: IF REOPENED - ONLY ALLOW ADDING
-    // ============================================================
-    
+    // Handle reopened branch
     if (isReopened) {
         console.log(`🔄 REOPENED BRANCH: ${branchName} - No stress test will be assigned`);
         
-        // Get current values
         const currentCredits = existingLog?.worker_credit || 0;
         const currentSales = existingLog?.daily_sales || 0;
         const currentItems = existingLog?.items_sold || 0;
 
-        // Get additional sales
         const salesInput = prompt(`📊 Enter ADDITIONAL SALES to ADD to ${branchName} today:\n\n` +
             `Current Sales: UGX ${currentSales.toLocaleString()}\n` +
             `Current Credits: ${Math.round(currentCredits).toLocaleString()}\n\n` +
@@ -9682,7 +9672,6 @@ async function closeDayByWorker(branchId, branchName) {
             return;
         }
 
-        // Get additional items
         const itemsInput = prompt(`📦 Enter ADDITIONAL ITEMS to ADD to ${branchName} today:\n\n` +
             `Current Items: ${currentItems}\n\n` +
             `Enter the NEW AMOUNT to ADD (not total):`, "0");
@@ -9696,7 +9685,6 @@ async function closeDayByWorker(branchId, branchName) {
             return;
         }
 
-        // Calculate new totals (ONLY ADD)
         const newTotalSales = currentSales + additionalSales;
         const newTotalItems = currentItems + additionalItems;
 
@@ -9713,18 +9701,14 @@ async function closeDayByWorker(branchId, branchName) {
             return;
         }
 
-        // Recalculate credits based on new totals
-        const avgPrice = newTotalItems > 0 ? newTotalSales / newTotalItems : 0;
-        const revenueFactor = Math.min(newTotalSales / MAX_REVENUE, 1);
-        const volumeFactor = Math.min(newTotalItems / MAX_ITEMS, 1);
-        const priceFactor = Math.min(avgPrice / MAX_PRICE, 1);
-        const rawScore = revenueFactor * volumeFactor * priceFactor;
-        const totalCredits = newTotalSales * rawScore * 5;
-        const budget = newTotalSales * 0.02;
-        const scalingFactor = totalCredits > 0 ? Math.min(budget / totalCredits, 1) : 0;
-        const newCredits = totalCredits * scalingFactor;
+        const newCredits = calculateWorkerCredits(
+            newTotalSales,
+            newTotalItems,
+            MAX_REVENUE,
+            MAX_ITEMS,
+            MAX_PRICE
+        );
 
-        // ✅ ONLY UPDATE - NO STRESS TEST, NO PENALTY
         const { error: updateError } = await _supabase
             .from('daily_logs')
             .update({
@@ -9736,7 +9720,6 @@ async function closeDayByWorker(branchId, branchName) {
                 check_out_lat: location ? location.lat : null,
                 check_out_lng: location ? location.lng : null,
                 check_out_accuracy: location ? location.accuracy : null,
-                // ✅ STRESS TEST FIELDS: PRESERVED, NOT CHANGED
                 is_reopened: false,
                 reopened_closed_at: new Date().toISOString()
             })
@@ -9758,7 +9741,6 @@ async function closeDayByWorker(branchId, branchName) {
             `✅ NO stress test was assigned\n` +
             `✅ Credits INCREASED based on new total`);
 
-        // Refresh
         loadTodayActivity();
         loadCheckinBranches();
         loadStats();
@@ -9766,21 +9748,14 @@ async function closeDayByWorker(branchId, branchName) {
         loadDailyCreditsDisplay();
         loadWorkerPerformanceTab();
         loadTodayStressTarget();
-        
         return;
     }
 
-    // ============================================================
-    // STEP 3B: NORMAL CLOSING (NOT REOPENED)
-    // ============================================================
-    
-    // Get ALL open logs at this branch
+    // Normal closing
+    // Get all open logs at this branch
     const { data: openLogs, error: fetchError } = await _supabase
         .from('daily_logs')
-        .select(`
-            *,
-            workers:worker_id (id, full_name, daily_rate, monthly_base_salary, jc_id, total_credits)
-        `)
+        .select(`*, workers:worker_id (id, full_name, daily_rate, monthly_base_salary, jc_id)`)
         .eq('branch_id', branchId)
         .eq('log_date', today)
         .eq('is_closed', false);
@@ -9796,13 +9771,6 @@ async function closeDayByWorker(branchId, branchName) {
         return;
     }
 
-    const myLog = openLogs.find(log => log.worker_id === currentUser.id);
-    if (!myLog) {
-        alert('❌ You are not checked in at this branch.');
-        return;
-    }
-
-    // Show workers at branch
     const workerCount = openLogs.length;
     const workerNames = openLogs.map(log => log.workers?.full_name || 'Unknown').join(', ');
     
@@ -9816,7 +9784,6 @@ async function closeDayByWorker(branchId, branchName) {
         return;
     }
 
-    // Get total sales
     const salesInput = prompt(`📊 Enter TOTAL SALES for ${branchName} today:\n\n` +
         `(Enter amount in UGX, numbers only)`, "0");
     if (salesInput === null) {
@@ -9829,7 +9796,6 @@ async function closeDayByWorker(branchId, branchName) {
         return;
     }
 
-    // Get total items
     const itemsInput = prompt(`📦 Enter TOTAL ITEMS SOLD at ${branchName} today:\n\n` +
         `(Enter number of items sold)`, "0");
     if (itemsInput === null) {
@@ -9844,7 +9810,6 @@ async function closeDayByWorker(branchId, branchName) {
 
     const branchAvgPrice = totalBranchItems > 0 ? totalBranchSales / totalBranchItems : 0;
 
-    // Final confirmation
     const confirmFinal = `📊 Confirm ${branchName} closing:\n\n` +
         `💰 Total Sales: UGX ${totalBranchSales.toLocaleString()}\n` +
         `📦 Total Items: ${totalBranchItems}\n` +
@@ -9857,7 +9822,6 @@ async function closeDayByWorker(branchId, branchName) {
         return;
     }
 
-    // Double check
     const { data: recheckClosed } = await _supabase
         .from('daily_logs')
         .select('id')
@@ -9873,18 +9837,11 @@ async function closeDayByWorker(branchId, branchName) {
         return;
     }
 
-    // ============================================================
-    // STEP 4: ASSIGN STRESS TEST TO EVERYONE (NORMAL CLOSING ONLY)
-    // ============================================================
-    
+    // Assign stress test to everyone
     console.log(`🧪 Assigning stress test to ALL workers at ${branchName}...`);
     const assignedCount = await assignStressTestToEveryone(branchId, today);
     console.log(`   ✅ ${assignedCount} worker(s) assigned stress tests`);
 
-    // ============================================================
-    // STEP 5: REFRESH LOGS
-    // ============================================================
-    
     const { data: refreshedLogs, error: refreshError } = await _supabase
         .from('daily_logs')
         .select(`
@@ -9901,24 +9858,19 @@ async function closeDayByWorker(branchId, branchName) {
         return;
     }
 
-    // ============================================================
-    // STEP 6: CALCULATE CREDITS FOR EACH WORKER
-    // ============================================================
-    
     try {
         const daysInMonth = getDaysInMonth(today);
         let results = [];
         let totalJackpotWinners = 0;
 
-        // Calculate branch-level credits
-        const revenueFactor = Math.min(totalBranchSales / MAX_REVENUE, 1);
-        const volumeFactor = Math.min(totalBranchItems / MAX_ITEMS, 1);
-        const priceFactor = Math.min(branchAvgPrice / MAX_PRICE, 1);
-        const rawScore = revenueFactor * volumeFactor * priceFactor;
-        const totalCredits = totalBranchSales * rawScore * 5;
-        const budget = totalBranchSales * 0.02;
-        const scalingFactor = totalCredits > 0 ? Math.min(budget / totalCredits, 1) : 0;
-        const cappedCredits = totalCredits * scalingFactor;
+        // Calculate branch-level credits using the FIXED function
+        const cappedCredits = calculateWorkerCredits(
+            totalBranchSales,
+            totalBranchItems,
+            MAX_REVENUE,
+            MAX_ITEMS,
+            MAX_PRICE
+        );
 
         // Calculate worker efforts
         const workerEfforts = refreshedLogs.map(log => {
@@ -10026,10 +9978,6 @@ async function closeDayByWorker(branchId, branchName) {
         // Update jackpot jar
         await updateJackpotJar(totalBranchSales);
 
-        // ============================================================
-        // STEP 7: UPDATE EACH WORKER'S LOG
-        // ============================================================
-        
         let closedCount = 0;
 
         for (const worker of workersForBonus) {
@@ -10050,7 +9998,6 @@ async function closeDayByWorker(branchId, branchName) {
             const tier3BeatPct = workerBonus?.tier3BeatPct || 0;
             const tier3Streak = workerBonus?.tier3Streak || 0;
             
-            // Always full daily pay
             const dailyRate = 10000;
             const dailyPay = dailyRate;
             const dailyCost = dailyRate + (worker.worker?.monthly_base_salary || 250000) / daysInMonth;
@@ -10117,8 +10064,8 @@ async function closeDayByWorker(branchId, branchName) {
                     daily_bpi: dailyBPI,
                     daily_pay: dailyPay,
                     price_factor: workerEffort?.effort || 0,
-                    revenue_factor: revenueFactor,
-                    volume_factor: volumeFactor,
+                    revenue_factor: Math.min(totalBranchSales / MAX_REVENUE, 1),
+                    volume_factor: Math.min(totalBranchItems / MAX_ITEMS, 1),
                     is_closed: true,
                     check_out_time: new Date().toISOString(),
                     check_out_lat: location ? location.lat : null,
@@ -10142,13 +10089,13 @@ async function closeDayByWorker(branchId, branchName) {
                     pay_level: 1,
                     pay_status: '✅ FULL PAY',
                     
-                    jackpot_share: jackpotShare,
-                    jackpot_won: jackpotWon,
-                    
                     stress_penalty: stressPenalty,
                     stress_penalty_level_name: stressPenaltyLevelName,
                     stress_shortfall: stressShortfall,
-                    stress_shortfall_percent: stressShortfallPercent
+                    stress_shortfall_percent: stressShortfallPercent,
+                    
+                    jackpot_share: jackpotShare,
+                    jackpot_won: jackpotWon
                 })
                 .eq('id', log.id)
                 .eq('is_closed', false);
@@ -10170,13 +10117,8 @@ async function closeDayByWorker(branchId, branchName) {
                         const currentStreak = workerData?.stress_streak || 0;
 
                         const passed = credits >= stressTarget;
-                        let newStreak = 0;
-                        if (passed) {
-                            newStreak = currentStreak + 1;
-                        } else {
-                            newStreak = 0;
-                        }
-
+                        let newStreak = passed ? currentStreak + 1 : 0;
+                        
                         const beatPercent = passed ? Math.min(((credits - stressTarget) / stressTarget) * 100, 100) : 0;
                         const currentBeatPct = workerData?.stress_beat_percent || 0;
                         const newBeatPct = currentBeatPct > 0 ? (currentBeatPct + beatPercent) / 2 : beatPercent;
@@ -10247,9 +10189,9 @@ async function closeDayByWorker(branchId, branchName) {
                         stressShortfallPercent: stressShortfallPercent,
                         jackpotWon: jackpotWon,
                         jackpotShare: jackpotShare,
-                        isMe: log.worker_id === currentUser.id,
                         rank: results.length + 1,
-                        checkInTime: log.check_in_time || 'N/A'
+                        checkInTime: log.check_in_time || 'N/A',
+                        isMe: log.worker_id === currentUser.id
                     });
 
                 } catch (accrualError) {
@@ -10262,10 +10204,7 @@ async function closeDayByWorker(branchId, branchName) {
         results.sort((a, b) => b.totalBonus - a.totalBonus);
         results.forEach((r, index) => r.rank = index + 1);
 
-        // ============================================================
-        // STEP 8: SHOW RESULTS
-        // ============================================================
-        
+        // Show results
         let resultMsg = `✅ Branch ${branchName} CLOSED!\n\n`;
         
         const t1Winner = results.find(r => r.isTier1Winner);
@@ -10283,36 +10222,27 @@ async function closeDayByWorker(branchId, branchName) {
         }
         
         resultMsg += `📊 ${closedCount} worker(s) closed:\n\n`;
-        
         for (const r of results) {
             const meTag = r.isMe ? ' ⭐ (YOU)' : '';
-            const passedEmoji = r.stressPassed === true ? '✅' : r.stressPassed === false ? '❌' : '—';
-            const tier1Badge = r.isTier1Winner ? '🥇 ' : '';
-            const tier2Badge = r.isTier2Winner ? '⏰ ' : '';
-            
-            resultMsg += `${r.jackpotWon ? '🎉' : ''} ${tier1Badge}${tier2Badge}${r.name}${meTag} (${r.jc_id}) (Rank #${r.rank}):\n`;
+            const t1Badge = r.isTier1Winner ? '🥇 ' : '';
+            const t2Badge = r.isTier2Winner ? '⏰ ' : '';
+            resultMsg += `${r.jackpotWon ? '🎉' : ''} ${t1Badge}${t2Badge}${r.name}${meTag} (${r.jc_id}) (Rank #${r.rank}):\n`;
             resultMsg += `   💳 Credits: ${Math.round(r.credits).toLocaleString()}\n`;
             resultMsg += `   💵 Daily Pay: UGX ${r.dailyPay.toFixed(2)} (Full Pay)\n`;
             resultMsg += `   🏆 Tier 1: UGX ${r.tier1Amount.toFixed(2)}\n`;
             resultMsg += `   ⏰ Tier 2: UGX ${r.tier2Amount.toFixed(2)}\n`;
             resultMsg += `   🧪 Tier 3: UGX ${r.tier3Amount.toFixed(2)}\n`;
             resultMsg += `   💰 Total Bonus: UGX ${r.totalBonus.toFixed(2)}\n`;
-            resultMsg += `   🧪 Stress Test: ${passedEmoji} ${r.stressPassed === true ? 'PASSED' : r.stressPassed === false ? 'FAILED' : 'No Test'}\n`;
-            
+            resultMsg += `   🧪 Stress Test: ${r.stressPassed === true ? '✅ PASSED' : r.stressPassed === false ? '❌ FAILED' : 'No Test'}\n`;
             if (r.stressPenalty > 0) {
                 resultMsg += `   📉 Penalty: -${r.stressPenalty} credits (${r.stressPenaltyLevelName})\n`;
-                resultMsg += `      📊 Missed target by ${r.stressShortfall.toLocaleString()} credits (${r.stressShortfallPercent}% shortfall)\n`;
             }
             if (r.jackpotWon) resultMsg += `   💰 JACKPOT BONUS: UGX ${r.jackpotShare.toFixed(2)} 🎉\n`;
             resultMsg += `\n`;
         }
-        
         alert(resultMsg);
 
-        // ============================================================
-        // STEP 9: SHOW NOTIFICATION
-        // ============================================================
-        
+        // Show notification
         if (results && results.length > 0) {
             try {
                 const t1WinnerNotif = results.find(r => r.isTier1Winner);
@@ -10347,14 +10277,10 @@ async function closeDayByWorker(branchId, branchName) {
             }
         }
 
-        // ============================================================
-        // STEP 10: REFRESH DATA
-        // ============================================================
-        
+        // Refresh data
         loadTodayActivity();
         loadCheckinBranches();
         loadStats();
-        loadLocationMonitoring();
         
         if (currentUser.role === 'worker') {
             loadWorkerProfile();
@@ -10380,6 +10306,9 @@ async function closeDayByWorker(branchId, branchName) {
     }
 }
 // ============================================================
+// 📋 closeDay() - MANAGER VERSION (FULLY FIXED)
+// ============================================================
+
 async function closeDay(branchId, branchName) {
     if (!currentUser || currentUser.role !== 'manager') {
         alert('Only managers can close workers\' days.');
@@ -10388,10 +10317,7 @@ async function closeDay(branchId, branchName) {
 
     const today = new Date().toISOString().split('T')[0];
 
-    // ============================================================
-    // STEP 1: CHECK IF THIS IS A REOPENED BRANCH
-    // ============================================================
-    
+    // Check if this is a reopened branch
     const { data: existingLogs, error: checkError } = await _supabase
         .from('daily_logs')
         .select('is_reopened')
@@ -10408,10 +10334,7 @@ async function closeDay(branchId, branchName) {
 
     const isReopened = existingLogs && existingLogs.length > 0 && existingLogs[0].is_reopened === true;
 
-    // ============================================================
-    // STEP 2: GET ALL OPEN LOGS AT THIS BRANCH
-    // ============================================================
-    
+    // Get all open logs at this branch
     const { data: openLogs, error: fetchError } = await _supabase
         .from('daily_logs')
         .select(`
@@ -10433,10 +10356,7 @@ async function closeDay(branchId, branchName) {
         return;
     }
 
-    // ============================================================
-    // STEP 3: SHOW WORKERS AT BRANCH
-    // ============================================================
-    
+    // Show workers at branch
     const workerCount = openLogs.length;
     let workerList = '👥 Workers at this branch:\n\n';
     openLogs.forEach((log, index) => {
@@ -10449,13 +10369,12 @@ async function closeDay(branchId, branchName) {
     alert(workerList);
 
     // ============================================================
-    // STEP 4A: IF REOPENED - ONLY ALLOW ADDING
+    // HANDLE REOPENED BRANCH
     // ============================================================
     
     if (isReopened) {
         console.log(`🔄 REOPENED BRANCH: ${branchName} - No stress test will be assigned`);
         
-        // Get current totals
         let currentTotalSales = 0;
         let currentTotalItems = 0;
         let currentTotalCredits = 0;
@@ -10466,7 +10385,6 @@ async function closeDay(branchId, branchName) {
             currentTotalCredits += log.worker_credit || 0;
         }
 
-        // Get additional sales
         const salesInput = prompt(`📊 Enter ADDITIONAL SALES to ADD to ${branchName} today:\n\n` +
             `Current Total Sales: UGX ${currentTotalSales.toLocaleString()}\n` +
             `Current Total Credits: ${Math.round(currentTotalCredits).toLocaleString()}\n` +
@@ -10482,7 +10400,6 @@ async function closeDay(branchId, branchName) {
             return;
         }
 
-        // Get additional items
         const itemsInput = prompt(`📦 Enter ADDITIONAL ITEMS to ADD to ${branchName} today:\n\n` +
             `Current Total Items: ${currentTotalItems}\n\n` +
             `Enter the NEW AMOUNT to ADD (not total):`, "0");
@@ -10496,7 +10413,6 @@ async function closeDay(branchId, branchName) {
             return;
         }
 
-        // Calculate new totals
         const newTotalSales = currentTotalSales + additionalSales;
         const newTotalItems = currentTotalItems + additionalItems;
 
@@ -10514,23 +10430,18 @@ async function closeDay(branchId, branchName) {
             return;
         }
 
-        // ============================================================
-        // STEP 5A: RECALCULATE FOR REOPENED BRANCH
-        // ============================================================
-        
         try {
             const daysInMonth = getDaysInMonth(today);
             const branchAvgPrice = newTotalItems > 0 ? newTotalSales / newTotalItems : 0;
 
             // Calculate branch-level credits
-            const revenueFactor = Math.min(newTotalSales / MAX_REVENUE, 1);
-            const volumeFactor = Math.min(newTotalItems / MAX_ITEMS, 1);
-            const priceFactor = Math.min(branchAvgPrice / MAX_PRICE, 1);
-            const rawScore = revenueFactor * volumeFactor * priceFactor;
-            const totalCredits = newTotalSales * rawScore * 5;
-            const budget = newTotalSales * 0.02;
-            const scalingFactor = totalCredits > 0 ? Math.min(budget / totalCredits, 1) : 0;
-            const cappedCredits = totalCredits * scalingFactor;
+            const branchCredits = calculateWorkerCredits(
+                newTotalSales,
+                newTotalItems,
+                MAX_REVENUE,
+                MAX_ITEMS,
+                MAX_PRICE
+            );
 
             // Calculate worker efforts
             const workerEfforts = openLogs.map(log => {
@@ -10562,10 +10473,9 @@ async function closeDay(branchId, branchName) {
             
             const workerCredits = workerEfforts.map(w => ({
                 ...w,
-                credits: totalEffort > 0 ? (w.effort / totalEffort) * cappedCredits : cappedCredits / workerEfforts.length
+                credits: totalEffort > 0 ? (w.effort / totalEffort) * branchCredits : branchCredits / workerEfforts.length
             }));
 
-            // ✅ UPDATE EACH WORKER - NO STRESS TEST
             let successCount = 0;
             let results = [];
 
@@ -10574,7 +10484,6 @@ async function closeDay(branchId, branchName) {
                 const credits = w.credits;
                 const workerEffort = workerEfforts.find(we => we.log.worker_id === log.worker_id);
                 
-                // Always full daily pay
                 const dailyRate = 10000;
                 const dailyPay = dailyRate;
                 const dailyCost = dailyRate + (log.workers?.monthly_base_salary || 250000) / daysInMonth;
@@ -10590,11 +10499,10 @@ async function closeDay(branchId, branchName) {
                         daily_bpi: dailyBPI,
                         daily_pay: dailyPay,
                         price_factor: workerEffort?.effort || 0,
-                        revenue_factor: revenueFactor,
-                        volume_factor: volumeFactor,
+                        revenue_factor: Math.min(newTotalSales / MAX_REVENUE, 1),
+                        volume_factor: Math.min(newTotalItems / MAX_ITEMS, 1),
                         is_closed: true,
                         check_out_time: new Date().toISOString(),
-                        // ✅ STRESS TEST FIELDS: PRESERVED, NOT CHANGED
                         is_reopened: false,
                         reopened_closed_at: new Date().toISOString()
                     })
@@ -10620,7 +10528,6 @@ async function closeDay(branchId, branchName) {
                 `✅ NO stress test was assigned\n` +
                 `✅ Credits INCREASED based on new total`);
 
-            // Refresh
             loadTodayActivity();
             loadCheckinBranches();
             loadStats();
@@ -10636,10 +10543,9 @@ async function closeDay(branchId, branchName) {
     }
 
     // ============================================================
-    // STEP 4B: NORMAL CLOSING (NOT REOPENED)
+    // NORMAL CLOSING (NOT REOPENED)
     // ============================================================
     
-    // Get total sales
     const salesInput = prompt(`📊 Enter TOTAL SALES for ${branchName} today:\n\n` +
         `(Enter amount in UGX, numbers only)`, "0");
     if (salesInput === null) {
@@ -10652,7 +10558,6 @@ async function closeDay(branchId, branchName) {
         return;
     }
 
-    // Get total items
     const itemsInput = prompt(`📦 Enter TOTAL ITEMS SOLD at ${branchName} today:\n\n` +
         `(Enter number of items sold)`, "0");
     if (itemsInput === null) {
@@ -10667,7 +10572,6 @@ async function closeDay(branchId, branchName) {
 
     const branchAvgPrice = totalBranchItems > 0 ? totalBranchSales / totalBranchItems : 0;
 
-    // Final confirmation
     const confirmFinal = `📊 Confirm closing ${branchName}:\n\n` +
         `💰 Total Sales: UGX ${totalBranchSales.toLocaleString()}\n` +
         `📦 Total Items: ${totalBranchItems}\n` +
@@ -10681,7 +10585,6 @@ async function closeDay(branchId, branchName) {
         return;
     }
 
-    // Double check
     const { data: recheckClosed } = await _supabase
         .from('daily_logs')
         .select('id')
@@ -10697,18 +10600,12 @@ async function closeDay(branchId, branchName) {
         return;
     }
 
-    // ============================================================
-    // STEP 5: ASSIGN STRESS TEST TO EVERYONE (NORMAL CLOSING ONLY)
-    // ============================================================
-    
+    // Assign stress test to everyone
     console.log(`🧪 Assigning stress test to ALL workers at ${branchName}...`);
     const assignedCount = await assignStressTestToEveryone(branchId, today);
     console.log(`   ✅ ${assignedCount} worker(s) assigned stress tests`);
 
-    // ============================================================
-    // STEP 6: REFRESH LOGS
-    // ============================================================
-    
+    // Refresh logs
     const { data: refreshedLogs, error: refreshError } = await _supabase
         .from('daily_logs')
         .select(`
@@ -10725,24 +10622,19 @@ async function closeDay(branchId, branchName) {
         return;
     }
 
-    // ============================================================
-    // STEP 7: CALCULATE CREDITS FOR EACH WORKER (NORMAL)
-    // ============================================================
-    
     try {
         const daysInMonth = getDaysInMonth(today);
         let results = [];
         let totalJackpotWinners = 0;
 
-        // Calculate branch-level credits
-        const revenueFactor = Math.min(totalBranchSales / MAX_REVENUE, 1);
-        const volumeFactor = Math.min(totalBranchItems / MAX_ITEMS, 1);
-        const priceFactor = Math.min(branchAvgPrice / MAX_PRICE, 1);
-        const rawScore = revenueFactor * volumeFactor * priceFactor;
-        const totalCredits = totalBranchSales * rawScore * 5;
-        const budget = totalBranchSales * 0.02;
-        const scalingFactor = totalCredits > 0 ? Math.min(budget / totalCredits, 1) : 0;
-        const cappedCredits = totalCredits * scalingFactor;
+        // Calculate branch-level credits using the FIXED function
+        const cappedCredits = calculateWorkerCredits(
+            totalBranchSales,
+            totalBranchItems,
+            MAX_REVENUE,
+            MAX_ITEMS,
+            MAX_PRICE
+        );
 
         // Calculate worker efforts
         const workerEfforts = refreshedLogs.map(log => {
@@ -10850,10 +10742,6 @@ async function closeDay(branchId, branchName) {
         // Update jackpot jar
         await updateJackpotJar(totalBranchSales);
 
-        // ============================================================
-        // STEP 8: UPDATE EACH WORKER'S LOG
-        // ============================================================
-        
         let closedCount = 0;
 
         for (const worker of workersForBonus) {
@@ -10874,7 +10762,6 @@ async function closeDay(branchId, branchName) {
             const tier3BeatPct = workerBonus?.tier3BeatPct || 0;
             const tier3Streak = workerBonus?.tier3Streak || 0;
             
-            // Always full daily pay
             const dailyRate = 10000;
             const dailyPay = dailyRate;
             const dailyCost = dailyRate + (worker.worker?.monthly_base_salary || 250000) / daysInMonth;
@@ -10943,8 +10830,8 @@ async function closeDay(branchId, branchName) {
                     daily_bpi: dailyBPI,
                     daily_pay: dailyPay,
                     price_factor: workerEffort?.effort || 0,
-                    revenue_factor: revenueFactor,
-                    volume_factor: volumeFactor,
+                    revenue_factor: Math.min(totalBranchSales / MAX_REVENUE, 1),
+                    volume_factor: Math.min(totalBranchItems / MAX_ITEMS, 1),
                     is_closed: true,
                     check_out_time: new Date().toISOString(),
                     closed_by: closedById,
@@ -11080,10 +10967,7 @@ async function closeDay(branchId, branchName) {
         results.sort((a, b) => b.totalBonus - a.totalBonus);
         results.forEach((r, index) => r.rank = index + 1);
 
-        // ============================================================
-        // STEP 9: SHOW RESULTS
-        // ============================================================
-        
+        // Show results
         let resultMsg = `✅ Branch ${branchName} CLOSED!\n\n`;
         
         const t1Winner = results.find(r => r.isTier1Winner);
@@ -11119,10 +11003,7 @@ async function closeDay(branchId, branchName) {
         }
         alert(resultMsg);
 
-        // ============================================================
-        // STEP 10: SHOW NOTIFICATION
-        // ============================================================
-        
+        // Show notification
         if (results && results.length > 0) {
             try {
                 const t1WinnerNotif = results.find(r => r.isTier1Winner);
@@ -11157,10 +11038,7 @@ async function closeDay(branchId, branchName) {
             }
         }
 
-        // ============================================================
-        // STEP 11: REFRESH DATA
-        // ============================================================
-        
+        // Refresh data
         loadTodayActivity();
         loadCheckinBranches();
         loadStats();
