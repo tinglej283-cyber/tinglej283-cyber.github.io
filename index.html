@@ -17053,7 +17053,7 @@ function renderBranchSalesHistory(branchStats) {
 }
 
 // ============================================================
-// ✅ FIXED: SUMMARY ANSWERS - SHOWS TOTAL SALES
+// ✅ FIXED: SUMMARY ANSWERS - WAITS FOR REQUIRED DAYS
 // ============================================================
 
 function renderSummaryAnswers(processedData, branchStats, workerImpact, teamStats, consistency) {
@@ -17073,23 +17073,51 @@ function renderSummaryAnswers(processedData, branchStats, workerImpact, teamStat
     
     const teamDiffPct = teamStats.diffPct;
     
-    // Branch averages - NOW USING TOTAL SALES!
+    // ============================================================
+    // ✅ FIXED: Branch averages - SHOWS ONLY WHEN ENOUGH DATA
+    // ============================================================
     let branchAvgHtml = '';
     for (const [branch, stats] of Object.entries(branchStats)) {
-        const totalAvg = stats.avg_daily_sales;      // ← TOTAL daily average
-        const total7Day = stats.avg_7_days;           // ← TOTAL 7-day average
-        const total31Day = stats.avg_31_days;         // ← TOTAL 31-day average
-        const totalMax = stats.max_sales;             // ← TOTAL highest
-        const totalMin = stats.min_sales;             // ← TOTAL lowest
+        const totalDays = stats.daily_totals.length;
+        
+        // DAILY AVG - ALWAYS shows
+        const totalAvg = stats.avg_daily_sales;
+        const totalMax = stats.max_sales;
+        const totalMin = stats.min_sales;
+        
+        // 7-DAY AVG - ONLY after 7 days
+        let sevenDayDisplay = '⏳ Waiting...';
+        let sevenDayColor = '#d4a574';
+        if (totalDays >= 7) {
+            const last7 = stats.daily_totals.slice(-7);
+            const sevenAvg = last7.reduce((a, b) => a + b, 0) / 7;
+            sevenDayDisplay = 'UGX ' + sevenAvg.toLocaleString();
+            sevenDayColor = '#7bcfa6';
+        } else {
+            sevenDayDisplay = `⏳ Need ${7 - totalDays} more day${7 - totalDays > 1 ? 's' : ''}`;
+        }
+        
+        // 31-DAY AVG - ONLY after 31 days
+        let thirtyOneDayDisplay = '⏳ Waiting...';
+        let thirtyOneDayColor = '#d4a574';
+        if (totalDays >= 31) {
+            const last31 = stats.daily_totals.slice(-31);
+            const thirtyOneAvg = last31.reduce((a, b) => a + b, 0) / 31;
+            thirtyOneDayDisplay = 'UGX ' + thirtyOneAvg.toLocaleString();
+            thirtyOneDayColor = '#7bcfa6';
+        } else {
+            thirtyOneDayDisplay = `⏳ Need ${31 - totalDays} more day${31 - totalDays > 1 ? 's' : ''}`;
+        }
         
         branchAvgHtml += `
             <div style="font-size:11px;color:rgba(255,255,255,0.4);padding:4px 0;border-bottom:1px solid rgba(255,255,255,0.02);">
                 📍 ${branch}:
                 <span style="color:#ffd700;">Daily TOTAL: UGX ${totalAvg.toLocaleString()}</span>
-                | 7-Day: UGX ${total7Day.toLocaleString()}
-                | 31-Day: UGX ${total31Day.toLocaleString()}
-                | 📈 High: UGX ${totalMax.toLocaleString()}
-                | 📉 Low: UGX ${totalMin.toLocaleString()}
+                <span style="color:${sevenDayColor};"> | 7-Day: ${sevenDayDisplay}</span>
+                <span style="color:${thirtyOneDayColor};"> | 31-Day: ${thirtyOneDayDisplay}</span>
+                <span style="color:#7bcfa6;"> | 📈 High: UGX ${totalMax.toLocaleString()}</span>
+                <span style="color:#e94560;"> | 📉 Low: UGX ${totalMin.toLocaleString()}</span>
+                <span style="color:rgba(255,255,255,0.15);font-size:9px;"> (${totalDays} days)</span>
             </div>
         `;
     }
@@ -17105,11 +17133,13 @@ function renderSummaryAnswers(processedData, branchStats, workerImpact, teamStat
             
             <div style="background:rgba(255,255,255,0.02);border-radius:8px;padding:14px;border:1px solid rgba(255,255,255,0.04);">
                 
+                <!-- Q1: Branch Average Sales -->
                 <div style="margin-bottom:8px;padding-bottom:8px;border-bottom:1px solid rgba(255,255,255,0.03);">
                     <div style="font-weight:600;color:#d4a574;font-size:12px;">✅ Q1: What are the average sales of this branch? (TOTAL sales)</div>
                     ${branchAvgHtml}
                 </div>
                 
+                <!-- Q2: Worker increases sales when early -->
                 <div style="margin-bottom:8px;padding-bottom:8px;border-bottom:1px solid rgba(255,255,255,0.03);">
                     <div style="font-weight:600;color:#d4a574;font-size:12px;">✅ Q2: Does this worker increase sales when early?</div>
                     <div style="font-size:11px;color:rgba(255,255,255,0.4);">
@@ -17119,6 +17149,7 @@ function renderSummaryAnswers(processedData, branchStats, workerImpact, teamStat
                     </div>
                 </div>
                 
+                <!-- Q3: Worker reduces sales when late -->
                 <div style="margin-bottom:8px;padding-bottom:8px;border-bottom:1px solid rgba(255,255,255,0.03);">
                     <div style="font-weight:600;color:#d4a574;font-size:12px;">✅ Q3: Does this worker reduce sales when late?</div>
                     <div style="font-size:11px;color:rgba(255,255,255,0.4);">
@@ -17128,6 +17159,7 @@ function renderSummaryAnswers(processedData, branchStats, workerImpact, teamStat
                     </div>
                 </div>
                 
+                <!-- Q4: Hours vs Sales -->
                 <div style="margin-bottom:8px;padding-bottom:8px;border-bottom:1px solid rgba(255,255,255,0.03);">
                     <div style="font-weight:600;color:#d4a574;font-size:12px;">✅ Q4: Do total hours worked affect sales?</div>
                     <div style="font-size:11px;color:rgba(255,255,255,0.4);">
@@ -17139,6 +17171,7 @@ function renderSummaryAnswers(processedData, branchStats, workerImpact, teamStat
                     </div>
                 </div>
                 
+                <!-- Q5: Early birds increase team sales -->
                 <div style="margin-bottom:8px;padding-bottom:8px;border-bottom:1px solid rgba(255,255,255,0.03);">
                     <div style="font-weight:600;color:#d4a574;font-size:12px;">✅ Q5: Do more early birds increase team sales?</div>
                     <div style="font-size:11px;color:${teamDiffPct > 0 ? '#7bcfa6' : '#e94560'};">
@@ -17150,6 +17183,7 @@ function renderSummaryAnswers(processedData, branchStats, workerImpact, teamStat
                     </div>
                 </div>
                 
+                <!-- Q6: Consistent early birds and late comers -->
                 <div style="margin-bottom:8px;padding-bottom:8px;border-bottom:1px solid rgba(255,255,255,0.03);">
                     <div style="font-weight:600;color:#d4a574;font-size:12px;">✅ Q6: Who are the consistent early birds and late comers?</div>
                     <div style="font-size:11px;color:rgba(255,255,255,0.4);">
@@ -17160,6 +17194,7 @@ function renderSummaryAnswers(processedData, branchStats, workerImpact, teamStat
                     </div>
                 </div>
                 
+                <!-- Overall -->
                 <div style="margin-top:8px;padding:8px 12px;background:rgba(212,165,116,0.05);border-radius:6px;border:1px solid rgba(212,165,116,0.08);font-size:10px;color:rgba(255,255,255,0.3);text-align:center;">
                     📊 Overall: ${earlyPct.toFixed(0)}% early birds | ${workerImpact.length} workers analyzed | ${Object.keys(branchStats).length} branches
                     <br>
