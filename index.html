@@ -1705,8 +1705,9 @@ table td strong { color: #f0ebe6; font-weight: 500; }
     visibility: visible !important;
     opacity: 1 !important;
 }
+
 /* ============================================================
-   📱 PAYMENT STATUS - FIXED FOR PHONES
+   📱 PAYMENT STATUS - SIMPLIFIED (TOTAL PAID + REMAINING ONLY)
    ============================================================ */
 
 /* Container */
@@ -1728,10 +1729,10 @@ table td strong { color: #f0ebe6; font-weight: 500; }
     margin-bottom: 12px;
 }
 
-/* 3-Column Grid */
+/* 2-Column Grid (instead of 3) */
 .payment-status-grid {
     display: grid;
-    grid-template-columns: 1fr 1fr 1fr;
+    grid-template-columns: 1fr 1fr;
     gap: 12px;
     margin-bottom: 16px;
 }
@@ -1747,19 +1748,16 @@ table td strong { color: #f0ebe6; font-weight: 500; }
     word-wrap: break-word;
 }
 
+/* Paid Card */
 .payment-status-card.paid {
     border: 2px solid rgba(123,207,166,0.2);
     background: rgba(123,207,166,0.05);
 }
 
+/* Remaining Card */
 .payment-status-card.remaining {
     border: 2px solid rgba(255,215,0,0.2);
     background: rgba(255,215,0,0.05);
-}
-
-.payment-status-card.status {
-    border: 2px solid rgba(212,165,116,0.2);
-    background: rgba(212,165,116,0.05);
 }
 
 .payment-status-card .label {
@@ -1786,27 +1784,13 @@ table td strong { color: #f0ebe6; font-weight: 500; }
     color: #ffd700;
 }
 
-/* ✅ THIS IS THE ONE THAT CONTROLS THE STATUS TEXT */
-.payment-status-card .value.status-value {
-    font-size: 8px;
-    color: #d4a574;
-    word-break: break-word;
-    line-height: 1.2;
-    white-space: normal;
-}
-
 .payment-status-card .sub {
     font-size: 9px;
     color: rgba(255,255,255,0.2);
     margin-top: 4px;
 }
 
-/* Status colors */
-.status-fully-paid { color: #7bcfa6; }
-.status-partially-paid { color: #ffd700; }
-.status-pending { color: #e94560; }
-.status-no-bonus { color: rgba(255,255,255,0.3); }
-
+/* Last Payment row */
 .payment-last {
     padding: 8px 12px;
     background: rgba(255,255,255,0.02);
@@ -1819,6 +1803,7 @@ table td strong { color: #f0ebe6; font-weight: 500; }
     word-break: break-word;
 }
 
+/* Progress bar */
 .payment-progress {
     margin-top: 10px;
 }
@@ -1850,7 +1835,7 @@ table td strong { color: #f0ebe6; font-weight: 500; }
 .payment-progress-fill.none { background: #e94560; }
 
 /* ============================================================
-   📱 PHONE RESPONSIVENESS - STATUS TEXT SIZES
+   📱 PHONE RESPONSIVENESS
    ============================================================ */
 
 @media (max-width: 768px) {
@@ -1868,11 +1853,6 @@ table td strong { color: #f0ebe6; font-weight: 500; }
     
     .payment-status-card .value {
         font-size: 18px;
-    }
-    
-    /* Tablet status text */
-    .payment-status-card .value.status-value {
-        font-size: 14px;
     }
     
     .payment-status-card .label {
@@ -1908,12 +1888,6 @@ table td strong { color: #f0ebe6; font-weight: 500; }
         font-size: 14px;
     }
     
-    /* ✅ PHONE status text - MUCH SMALLER to fit */
-    .payment-status-card .value.status-value {
-        font-size: 5px;
-        line-height: 1.1;
-    }
-    
     .payment-status-card .label {
         font-size: 7px;
         letter-spacing: 0.3px;
@@ -1934,32 +1908,6 @@ table td strong { color: #f0ebe6; font-weight: 500; }
     
     .payment-progress-track {
         height: 4px;
-    }
-}
-
-/* Extra small phones (under 380px) */
-@media (max-width: 380px) {
-    .payment-status-card .value {
-        font-size: 12px;
-    }
-    
-    /* ✅ VERY SMALL PHONES - even smaller */
-    .payment-status-card .value.status-value {
-        font-size: 9px;
-    }
-    
-    .payment-status-card .label {
-        font-size: 6px;
-    }
-    
-    .payment-status-card {
-        padding: 8px 3px;
-    }
-}
-@media (max-width: 480px) {
-    .payment-status-card .value.status-value {
-        font-size: 9px !important;  /* ← Added !important */
-        line-height: 1.1;
     }
 }
 </style>
