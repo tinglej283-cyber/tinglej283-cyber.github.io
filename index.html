@@ -4011,41 +4011,73 @@ async function getTeamAverageCredits(branchId, date, excludeWorkerId = null) {
         return 0;
     }
 }
+// ============================================================
+// ✅ FIXED: calculateStressTarget() - No missing functions
+// ============================================================
 async function calculateStressTarget(workerId, branchId, date) {
     try {
-        // 1️⃣ Average Credits (All-time)
-        const avgCredits = await getWorkerAverageCredits(workerId);
-        
-        // 2️⃣ Latest Credits (Last single day)
-        const latestCredits = await getWorkerLatestCredits(workerId);
-        
-        // 3️⃣ 🆕 Team Average (Historical - EXACT team)
+        // 1️⃣ Get worker's average from ALL closed logs
+        const { data: allLogs, error: logsError } = await _supabase
+            .from('daily_logs')
+            .select('worker_credit, log_date')
+            .eq('worker_id', workerId)
+            .eq('is_closed', true)
+            .order('log_date', { ascending: false });
+
+        let avgCredits = 0;
+        let latestCredits = 0;
+
+        if (logsError) {
+            console.error('Error fetching worker logs:', logsError);
+        } else if (allLogs && allLogs.length > 0) {
+            const total = allLogs.reduce((sum, log) => sum + (log.worker_credit || 0), 0);
+            avgCredits = total / allLogs.length;
+            latestCredits = allLogs[0]?.worker_credit || 0;
+        }
+
+        // 2️⃣ Get branch average (this month)
+        const monthStart = date.slice(0, 7) + '-01';
+        const { data: branchLogs, error: branchError } = await _supabase
+            .from('daily_logs')
+            .select('worker_credit')
+            .eq('branch_id', branchId)
+            .gte('log_date', monthStart)
+            .lte('log_date', date)
+            .eq('is_closed', true);
+
+        let branchAvg = 0;
+        if (branchError) {
+            console.error('Error fetching branch logs:', branchError);
+        } else if (branchLogs && branchLogs.length > 0) {
+            const total = branchLogs.reduce((sum, log) => sum + (log.worker_credit || 0), 0);
+            branchAvg = total / branchLogs.length;
+        }
+
+        // 3️⃣ Get team average (Historical - EXACT team)
+        // Get ALL workers at this branch today
         const { data: todayWorkers } = await _supabase
             .from('daily_logs')
             .select('worker_id')
             .eq('branch_id', branchId)
             .eq('log_date', date)
             .eq('is_closed', false);
-        
+
         let teamAvg = 0;
         let daysTogether = 0;
         let historyExists = false;
-        
+
         if (todayWorkers && todayWorkers.length > 0) {
             const workerIds = todayWorkers.map(w => w.worker_id);
             const teamResult = await calculateTeamAverageHistorical(branchId, date, workerIds);
-            teamAvg = teamResult.teamAverage;
-            daysTogether = teamResult.daysTogether;
-            historyExists = teamResult.historyExists;
+            teamAvg = teamResult.teamAverage || 0;
+            daysTogether = teamResult.daysTogether || 0;
+            historyExists = teamResult.historyExists || false;
         }
-        
-        // 4️⃣ Branch Average (All workers this month)
-        const branchAvg = await getBranchAverageCredits(branchId, date);
-        
+
+        // 4️⃣ Calculate target
         let target = 0;
         let usedValues = 0;
-        
-        // Add all 4 components
+
         if (avgCredits > 0) {
             target += avgCredits;
             usedValues++;
@@ -4062,17 +4094,16 @@ async function calculateStressTarget(workerId, branchId, date) {
             target += branchAvg;
             usedValues++;
         }
-        
-        // If no data at all, use minimum
+
         if (usedValues === 0) {
             target = 1000;
         } else {
             target = target / usedValues;
         }
-        
+
         // Minimum: 1,000
         target = Math.max(target, 1000);
-        
+
         return {
             target: target,
             targetDisplay: Math.round(target).toLocaleString(),
@@ -4085,6 +4116,7 @@ async function calculateStressTarget(workerId, branchId, date) {
             usedValues: usedValues,
             threshold: 1000
         };
+
     } catch (error) {
         console.error('Error calculating stress target:', error);
         return {
@@ -5369,9 +5401,8 @@ function updateTargetProgress(currentCredits, targetCredits) {
 }
 // ============================================================
 // ============================================================
-// ✅ UPDATED: refreshStressTestDisplay - Updates ALL Displays
+// ✅ FIXED: refreshStressTestDisplay() - Progress Bar Update
 // ============================================================
-
 async function refreshStressTestDisplay() {
     if (!currentUser || currentUser.role !== 'worker') return;
     
@@ -5395,10 +5426,12 @@ async function refreshStressTestDisplay() {
         const credits = todayLog.worker_credit || 0;
         const target = todayLog.stress_target || 1000;
         
-        // ✅ 1. Update progress bar and labels (Check-In tab)
+        console.log(`📊 Credits: ${credits}, Target: ${target}`);
+        
+        // ✅ UPDATE PROGRESS BAR
         updateTargetProgress(credits, target);
         
-        // ✅ 2. Update the main target numbers
+        // ✅ UPDATE MAIN TARGET NUMBERS
         const targetEl = document.getElementById('todayTargetCredits');
         const targetEl2 = document.getElementById('todayTargetCredits2');
         const targetEl3 = document.getElementById('todayTargetCredits3');
@@ -5407,29 +5440,21 @@ async function refreshStressTestDisplay() {
         if (targetEl2) targetEl2.textContent = Math.round(target).toLocaleString();
         if (targetEl3) targetEl3.textContent = Math.round(target).toLocaleString() + ' Credits';
         
-        // ✅ 3. Update the "0 Credits" display (the big number at the top)
-        const creditDisplays = document.querySelectorAll('#todayGoalSection [style*="font-size:20px"], #todayGoalSection .number, #todayGoalSection > div:first-child > div:first-child > div:first-child');
-        creditDisplays.forEach(el => {
-            if (el.textContent && el.textContent.includes('Credits') && !el.textContent.includes('Target')) {
-                el.textContent = Math.round(credits).toLocaleString() + ' Credits';
-            }
-        });
-        
-        // ✅ 4. Update the specific "0 Credits" text
-        const zeroCreditElement = document.querySelector('#todayGoalSection > div:first-child > div:first-child > div');
-        if (zeroCreditElement && zeroCreditElement.textContent && zeroCreditElement.textContent.includes('Credits')) {
-            zeroCreditElement.textContent = Math.round(credits).toLocaleString() + ' Credits';
-        }
-        
-        // ✅ 5. Update status in the header (if you have one)
+        // ✅ UPDATE STATUS
         const statusEl = document.getElementById('todayGoalStatus');
         if (statusEl) {
             const progress = (credits / target) * 100;
-            if (progress >= 100) {
+            if (todayLog.is_closed) {
+                statusEl.textContent = '✅ Day Closed';
+                statusEl.style.color = '#7bcfa6';
+            } else if (progress >= 100) {
                 statusEl.textContent = '✅ TARGET ACHIEVED! 🎉';
                 statusEl.style.color = '#7bcfa6';
             } else if (progress >= 80) {
                 statusEl.textContent = '📈 Getting Close!';
+                statusEl.style.color = '#d4a574';
+            } else if (credits > 0) {
+                statusEl.textContent = '📊 In Progress';
                 statusEl.style.color = '#d4a574';
             } else {
                 statusEl.textContent = '🎯 Target Set';
@@ -5437,41 +5462,66 @@ async function refreshStressTestDisplay() {
             }
         }
         
-        // ✅ 6. Update the details section (how target was calculated)
-        if (todayLog.stress_avg_credits !== undefined) {
-            const avgEl = document.getElementById('calcIndividual');
-            if (avgEl) {
-                avgEl.textContent = Math.round(todayLog.stress_avg_credits || 0).toLocaleString() + ' credits (Your Average)';
+        // ✅ UPDATE CREDITS DISPLAY
+        const creditDisplays = document.querySelectorAll('#todayGoalSection [style*="font-size:20px"], #todayGoalSection .number');
+        creditDisplays.forEach(el => {
+            if (el.textContent && el.textContent.includes('Credits') && !el.textContent.includes('Target')) {
+                el.textContent = Math.round(credits).toLocaleString() + ' Credits';
             }
-            const latestEl = document.getElementById('calcLatestCredits');
-            if (latestEl) {
-                latestEl.textContent = Math.round(todayLog.stress_latest_credits || 0).toLocaleString() + ' credits (Your Latest)';
-            }
-            const branchEl = document.getElementById('calcBranchMonthly');
-            if (branchEl) {
-                branchEl.textContent = Math.round(todayLog.stress_branch_avg || 0).toLocaleString() + ' credits (Branch Avg)';
-            }
-            const teamEl = document.getElementById('calcTeamHistorical');
-            if (teamEl) {
-                teamEl.textContent = Math.round(todayLog.stress_team_avg || 0).toLocaleString() + ' credits (Team Avg)';
-            }
-            const targetFinalEl = document.getElementById('calcTargetFinal');
-            if (targetFinalEl) {
-                targetFinalEl.textContent = Math.round(target).toLocaleString() + ' credits';
-            }
+        });
+        
+        // ✅ UPDATE COMPONENT VALUES
+        const individualEl = document.getElementById('calcIndividual');
+        if (individualEl && todayLog.stress_avg_credits !== undefined) {
+            individualEl.textContent = Math.round(todayLog.stress_avg_credits || 0).toLocaleString() + ' credits (Your Average)';
         }
         
-        // ✅ 7. Update progress label
-        const progressLabel = document.getElementById('targetProgressLabel');
-        if (progressLabel) {
-            const progress = Math.min((credits / target) * 100, 100);
-            if (progress >= 100) {
-                progressLabel.textContent = `✅ Target Achieved! (${Math.round(credits).toLocaleString()}/${Math.round(target).toLocaleString()})`;
-                progressLabel.style.color = '#7bcfa6';
-            } else {
-                progressLabel.textContent = `${Math.round(progress)}% Complete (${Math.round(credits).toLocaleString()}/${Math.round(target).toLocaleString()})`;
-                progressLabel.style.color = progress >= 80 ? '#d4a574' : 'rgba(255,255,255,0.3)';
+        const latestEl = document.getElementById('calcLatestCredits');
+        if (latestEl && todayLog.stress_latest_credits !== undefined) {
+            latestEl.textContent = Math.round(todayLog.stress_latest_credits || 0).toLocaleString() + ' credits (Your Latest)';
+        }
+        
+        const branchEl = document.getElementById('calcBranchMonthly');
+        if (branchEl && todayLog.stress_branch_avg !== undefined) {
+            branchEl.textContent = Math.round(todayLog.stress_branch_avg || 0).toLocaleString() + ' credits (Branch Avg)';
+        }
+        
+        const teamEl = document.getElementById('calcTeamHistorical');
+        if (teamEl && todayLog.stress_team_avg !== undefined) {
+            teamEl.textContent = Math.round(todayLog.stress_team_avg || 0).toLocaleString() + ' credits (Team Avg)';
+        }
+        
+        const targetFinalEl = document.getElementById('calcTargetFinal');
+        if (targetFinalEl) {
+            targetFinalEl.textContent = Math.round(target).toLocaleString() + ' credits';
+        }
+        
+        // ✅ UPDATE FORMULA DISPLAY
+        let formulaEl = document.getElementById('calcTargetFormula');
+        if (!formulaEl) {
+            const parent = document.getElementById('calcTargetFinal')?.parentElement;
+            if (parent) {
+                formulaEl = document.createElement('div');
+                formulaEl.id = 'calcTargetFormula';
+                formulaEl.style.marginTop = '4px';
+                formulaEl.style.fontSize = '10px';
+                formulaEl.style.color = 'rgba(255,255,255,0.3)';
+                parent.appendChild(formulaEl);
             }
+        }
+        if (formulaEl) {
+            const avg = todayLog.stress_avg_credits || 0;
+            const latest = todayLog.stress_latest_credits || 0;
+            const team = todayLog.stress_team_avg || 0;
+            const branch = todayLog.stress_branch_avg || 0;
+            let usedValues = 0;
+            let sum = 0;
+            if (avg > 0) { sum += avg; usedValues++; }
+            if (latest > 0) { sum += latest; usedValues++; }
+            if (team > 0) { sum += team; usedValues++; }
+            if (branch > 0) { sum += branch; usedValues++; }
+            const avgCalc = usedValues > 0 ? sum / usedValues : 1000;
+            formulaEl.textContent = `📊 Formula: (${Math.round(avg)} + ${Math.round(latest)} + ${Math.round(team)} + ${Math.round(branch)}) ÷ ${usedValues || 1} = ${Math.round(avgCalc)} credits → Target: ${Math.round(target)} credits`;
         }
         
         console.log(`✅ Stress test display updated: ${Math.round(credits)}/${Math.round(target)} credits`);
@@ -8427,10 +8477,6 @@ async function loadCheckinBranches() {
         `;
     }).join('');
 }
-// ============================================================
-// ✅ UPDATED: checkInToBranch - WITH REFRESH AT END
-// ============================================================
-
 async function checkInToBranch(branchId, branchName) {
     if (currentUser.role !== 'worker') {
         alert('Only workers can check in.');
@@ -8518,7 +8564,6 @@ async function checkInToBranch(branchId, branchName) {
                 alert(`✅ Already checked in at ${branchName}`);
                 await loadTodayStressTarget();
                 
-                // ✅ Refresh stress display
                 if (currentUser && currentUser.role === 'worker') {
                     setTimeout(function() {
                         if (typeof refreshStressTestDisplay === 'function') {
@@ -8560,6 +8605,14 @@ async function checkInToBranch(branchId, branchName) {
             
             await assignStressTestAtCheckIn(currentUser.id, branchId);
             
+            // 🆕🆕🆕 ADD THIS: RECALCULATE STRESS TARGETS FOR ALL WORKERS AT THIS BRANCH
+            try {
+                await recalculateStressTargets(branchId);
+                console.log(`🔄 Stress targets recalculated for ${branchName} after branch switch!`);
+            } catch (err) {
+                console.error('Error recalculating stress targets:', err);
+            }
+            
             if (currentUser.role === 'worker') {
                 setTimeout(async () => {
                     await loadTodayStressTarget();
@@ -8572,7 +8625,6 @@ async function checkInToBranch(branchId, branchName) {
             loadStats();
             await loadTodayStressTarget();
             
-            // ✅ Refresh stress display
             if (currentUser && currentUser.role === 'worker') {
                 setTimeout(function() {
                     if (typeof refreshStressTestDisplay === 'function') {
@@ -8621,6 +8673,14 @@ async function checkInToBranch(branchId, branchName) {
         
         await assignStressTestAtCheckIn(currentUser.id, branchId);
         
+        // 🆕🆕🆕 ADD THIS: RECALCULATE STRESS TARGETS FOR ALL WORKERS AT THIS BRANCH
+        try {
+            await recalculateStressTargets(branchId);
+            console.log(`🔄 Stress targets recalculated for ${branchName} after check-in!`);
+        } catch (err) {
+            console.error('Error recalculating stress targets:', err);
+        }
+        
         if (currentUser.role === 'worker') {
             setTimeout(async () => {
                 await loadTodayStressTarget();
@@ -8633,7 +8693,6 @@ async function checkInToBranch(branchId, branchName) {
         loadStats();
         await loadTodayStressTarget();
         
-        // ✅ Refresh stress display
         if (currentUser && currentUser.role === 'worker') {
             setTimeout(function() {
                 if (typeof refreshStressTestDisplay === 'function') {
@@ -8742,163 +8801,38 @@ async function calculateTeamAverageHistorical(branchId, date, workerIds) {
         return { teamAverage: 0, daysTogether: 0, historyExists: false };
     }
 }
+// ============================================================
+// ✅ FIXED: assignStressTestAtCheckIn() - No stress_updated_at
+// ============================================================
 async function assignStressTestAtCheckIn(workerId, branchId) {
     const today = new Date().toISOString().split('T')[0];
     
     try {
-        // ============================================================
-        // STEP 1: Load ALL historical data for this worker
-        // ============================================================
+        // Calculate the stress target
+        const stressTarget = await calculateStressTarget(workerId, branchId, today);
         
-        // 1a: Worker's Average Credits
-        const { data: allLogs } = await _supabase
-            .from('daily_logs')
-            .select('worker_credit')
-            .eq('worker_id', workerId)
-            .eq('is_closed', true);
-
-        let avgCredits = 0;
-        if (allLogs && allLogs.length > 0) {
-            const total = allLogs.reduce((sum, log) => sum + (log.worker_credit || 0), 0);
-            avgCredits = total / allLogs.length;
-        }
-
-        // 1b: Worker's Latest Credits
-        let latestCredits = 0;
-        if (allLogs && allLogs.length > 0) {
-            const { data: latestLog } = await _supabase
-                .from('daily_logs')
-                .select('worker_credit')
-                .eq('worker_id', workerId)
-                .eq('is_closed', true)
-                .order('log_date', { ascending: false })
-                .limit(1)
-                .maybeSingle();
-            latestCredits = latestLog?.worker_credit || 0;
-        }
-
-        // 1c: Branch Average
-        let branchAvg = 0;
-        if (branchId) {
-            const monthStart = today.slice(0, 7) + '-01';
-            const { data: branchLogs } = await _supabase
-                .from('daily_logs')
-                .select('worker_credit')
-                .eq('branch_id', branchId)
-                .gte('log_date', monthStart)
-                .lte('log_date', today)
-                .eq('is_closed', true);
-
-            if (branchLogs && branchLogs.length > 0) {
-                const total = branchLogs.reduce((sum, log) => sum + (log.worker_credit || 0), 0);
-                branchAvg = total / branchLogs.length;
-            }
-        }
-
-        // ============================================================
-        // 🆕 STEP 2: Calculate HISTORICAL TEAM AVERAGE
-        // ============================================================
-        
-        // Get ALL workers at this branch today
-        const { data: todayWorkers } = await _supabase
-            .from('daily_logs')
-            .select('worker_id')
-            .eq('branch_id', branchId)
-            .eq('log_date', today)
-            .eq('is_closed', false);
-        
-        let teamAvg = 0;
-        let teamHistoryExists = false;
-        let daysTogether = 0;
-        
-        if (todayWorkers && todayWorkers.length > 0) {
-            // Get all worker IDs
-            const workerIds = todayWorkers.map(w => w.worker_id);
-            
-            // Calculate historical team average
-            const teamResult = await calculateTeamAverageHistorical(branchId, today, workerIds);
-            teamAvg = teamResult.teamAverage;
-            teamHistoryExists = teamResult.historyExists;
-            daysTogether = teamResult.daysTogether;
-            
-            console.log(`👥 TEAM AVERAGE (Historical):`);
-            console.log(`   👥 Team members: ${todayWorkers.length}`);
-            console.log(`   📊 Days together: ${daysTogether}`);
-            console.log(`   🎯 Team Average: ${teamAvg.toLocaleString()}`);
-            console.log(`   📋 History exists: ${teamHistoryExists ? '✅ YES' : '❌ NO'}`);
-        }
-
-        // ============================================================
-        // STEP 3: CALCULATE THE TARGET
-        // ============================================================
-        
-        let target = 0;
-        let usedValues = 0;
-        let usedComponents = [];
-
-        if (avgCredits > 0) { 
-            target += avgCredits; 
-            usedValues++; 
-            usedComponents.push(`Your Avg: ${avgCredits}`);
-        }
-        if (latestCredits > 0) { 
-            target += latestCredits; 
-            usedValues++; 
-            usedComponents.push(`Your Latest: ${latestCredits}`);
-        }
-        if (teamAvg > 0) { 
-            target += teamAvg; 
-            usedValues++; 
-            usedComponents.push(`Team Avg: ${teamAvg}`);
-        }
-        if (branchAvg > 0) { 
-            target += branchAvg; 
-            usedValues++; 
-            usedComponents.push(`Branch Avg: ${branchAvg}`);
-        }
-
-        if (usedValues === 0) {
-            target = 1000; // Minimum
-        } else {
-            target = target / usedValues;
-        }
-
-        // Apply minimum
-        const MIN_TARGET = 1000;
-        target = Math.max(target, MIN_TARGET);
-
-        console.log(`🎯 TARGET CALCULATION:`);
-        console.log(`   📊 Components: ${usedComponents.join(' + ')}`);
-        console.log(`   📊 Count: ${usedValues}`);
-        console.log(`   🎯 Target: ${target.toLocaleString()}`);
-
-        // ============================================================
-        // STEP 4: CHECK IF WORKER SHOULD BE TESTED
-        // ============================================================
-        
+        // Check if worker should be tested
         const shouldTest = await checkIfShouldStressTest(workerId, branchId);
         
         if (!shouldTest) {
-            console.log(`   ℹ️ Worker not selected for stress test today`);
+            console.log(`   ℹ️ Worker ${workerId} not selected for stress test today`);
             return;
         }
 
-        // ============================================================
-        // STEP 5: SAVE THE CORRECT TARGET
-        // ============================================================
-        
+        // Update the log
         const { error } = await _supabase
             .from('daily_logs')
             .update({
                 is_stress_test: true,
-                stress_target: target,
+                stress_target: stressTarget.target,
                 stress_assigned_at: new Date().toISOString(),
-                stress_avg_credits: avgCredits,
-                stress_latest_credits: latestCredits,
-                stress_team_avg: teamAvg,          // ← HISTORICAL team average
-                stress_team_days: daysTogether,    // ← NEW: days together
-                stress_team_exists: teamHistoryExists, // ← NEW: history exists
-                stress_branch_avg: branchAvg
+                stress_avg_credits: stressTarget.avgCredits,
+                stress_latest_credits: stressTarget.latestCredits,
+                stress_team_avg: stressTarget.teamAvg,
+                stress_team_days: stressTarget.teamDays,
+                stress_team_exists: stressTarget.teamHistoryExists,
+                stress_branch_avg: stressTarget.branchAvg
+                // ✅ REMOVED: stress_updated_at
             })
             .eq('worker_id', workerId)
             .eq('log_date', today)
@@ -8907,11 +8841,10 @@ async function assignStressTestAtCheckIn(workerId, branchId) {
         if (error) {
             console.error('❌ Error assigning stress test:', error);
         } else {
-            console.log(`🧪 STRESS TEST ASSIGNED with HISTORICAL team average!`);
-            console.log(`   🎯 Target: ${Math.round(target).toLocaleString()} credits`);
-            console.log(`   👥 Team Avg (historical): ${teamAvg.toLocaleString()}`);
-            console.log(`   📊 Days together: ${daysTogether}`);
-            console.log(`   📋 History exists: ${teamHistoryExists ? '✅ YES' : '❌ NO'}`);
+            console.log(`🧪 STRESS TEST ASSIGNED!`);
+            console.log(`   🎯 Target: ${Math.round(stressTarget.target).toLocaleString()} credits`);
+            console.log(`   📊 Avg: ${stressTarget.avgCredits}, Latest: ${stressTarget.latestCredits}`);
+            console.log(`   👥 Team Avg: ${stressTarget.teamAvg}, Branch Avg: ${stressTarget.branchAvg}`);
         }
 
     } catch (error) {
@@ -10122,9 +10055,9 @@ function calculateWorkerCredits(totalSales, totalItems, maxRevenue, maxItems, ma
     return Math.round(credits);
 }
 // ============================================================
-// 📋 closeDayByWorker() - WORKER VERSION (FULLY UPDATED)
 // ============================================================
-
+// 📋 FIXED: closeDayByWorker() - Worker Version
+// ============================================================
 async function closeDayByWorker(branchId, branchName) {
     if (!currentUser || currentUser.role !== 'worker') {
         alert('Only workers can close their own day.');
@@ -10293,6 +10226,13 @@ async function closeDayByWorker(branchId, branchName) {
             `✅ NO stress test was assigned\n` +
             `✅ Credits INCREASED based on new total`);
 
+        // ✅ REFRESH PROGRESS BAR
+        setTimeout(async () => {
+            await loadTodayStressTarget();
+            await refreshStressTestDisplay();
+            console.log('🔄 Progress bar refreshed!');
+        }, 500);
+
         loadTodayActivity();
         loadCheckinBranches();
         loadStats();
@@ -10303,8 +10243,7 @@ async function closeDayByWorker(branchId, branchName) {
         return;
     }
 
-    // Normal closing
-    // Get all open logs at this branch
+    // Normal closing - Get all open logs at this branch
     const { data: openLogs, error: fetchError } = await _supabase
         .from('daily_logs')
         .select(`*, workers:worker_id (id, full_name, daily_rate, monthly_base_salary, jc_id)`)
@@ -10415,7 +10354,6 @@ async function closeDayByWorker(branchId, branchName) {
         let results = [];
         let totalJackpotWinners = 0;
 
-        // ✅ Calculate branch-level credits using the FIXED function
         const cappedCredits = calculateWorkerCredits(
             totalBranchSales,
             totalBranchItems,
@@ -10424,10 +10362,8 @@ async function closeDayByWorker(branchId, branchName) {
             MAX_PRICE
         );
 
-        // ✅ SHARE EQUALLY among workers
         const creditsPerWorker = Math.round(cappedCredits / refreshedLogs.length);
 
-        // Calculate branch factors
         const branchRevenueFactor = Math.min(totalBranchSales / MAX_REVENUE, 1);
         const branchVolumeFactor = Math.min(totalBranchItems / MAX_ITEMS, 1);
         const branchPriceFactor = Math.min(branchAvgPrice / MAX_PRICE, 1);
@@ -10730,7 +10666,7 @@ async function closeDayByWorker(branchId, branchName) {
         results.sort((a, b) => b.totalBonus - a.totalBonus);
         results.forEach((r, index) => r.rank = index + 1);
 
-        // Show results
+        // ✅ SHOW ALERT WITH RESULTS
         let resultMsg = `✅ Branch ${branchName} CLOSED!\n\n`;
         
         const t1Winner = results.find(r => r.isTier1Winner);
@@ -10768,12 +10704,15 @@ async function closeDayByWorker(branchId, branchName) {
         }
         alert(resultMsg);
 
-        // Show notification
+        // ✅ CREATE BROADCAST
         if (results && results.length > 0) {
             try {
                 const t1WinnerNotif = results.find(r => r.isTier1Winner);
                 const t2WinnerNotif = results.find(r => r.isTier2Winner);
                 const t3WinnersNotif = results.filter(r => r.tier3Amount > 0);
+                
+                await createBranchBroadcast(branchId, branchName, results);
+                console.log(`📢 Broadcast created for ${branchName}`);
                 
                 showBranchNotification({
                     branch_name: branchName,
@@ -10801,6 +10740,23 @@ async function closeDayByWorker(branchId, branchName) {
             } catch (notifError) {
                 console.error('Error showing notification:', notifError);
             }
+        }
+
+        // ✅ RECALCULATE STRESS TARGETS FOR TODAY
+        try {
+            await recalculateStressTargets(branchId);
+            console.log(`🔄 Stress targets recalculated for ${branchName}`);
+        } catch (err) {
+            console.error('Error recalculating stress targets:', err);
+        }
+
+        // ✅ REFRESH PROGRESS BAR
+        if (currentUser && currentUser.role === 'worker') {
+            setTimeout(async () => {
+                await loadTodayStressTarget();
+                await refreshStressTestDisplay();
+                console.log('🔄 Progress bar refreshed for worker!');
+            }, 500);
         }
 
         // Refresh data
@@ -10833,9 +10789,8 @@ async function closeDayByWorker(branchId, branchName) {
 }
 // ============================================================
 // ============================================================
-// 📋 closeDay() - MANAGER VERSION (FULLY UPDATED)
+// 📋 FIXED: closeDay() - Manager Version
 // ============================================================
-
 async function closeDay(branchId, branchName) {
     if (!currentUser || currentUser.role !== 'manager') {
         alert('Only managers can close workers\' days.');
@@ -10960,7 +10915,6 @@ async function closeDay(branchId, branchName) {
         try {
             const daysInMonth = getDaysInMonth(today);
 
-            // ✅ Calculate branch-level credits using the FIXED function
             const branchCredits = calculateWorkerCredits(
                 newTotalSales,
                 newTotalItems,
@@ -10969,7 +10923,6 @@ async function closeDay(branchId, branchName) {
                 MAX_PRICE
             );
 
-            // ✅ SHARE EQUALLY among workers
             const creditsPerWorker = Math.round(branchCredits / openLogs.length);
 
             let successCount = 0;
@@ -11004,22 +10957,54 @@ async function closeDay(branchId, branchName) {
                 if (!updateError) {
                     successCount++;
                     results.push({
+                        workerId: log.worker_id,
                         name: log.workers?.full_name || 'Unknown',
                         jc_id: log.workers?.jc_id || 'N/A',
                         credits: creditsPerWorker,
-                        dailyPay: dailyPay
+                        dailyPay: dailyPay,
+                        totalBonus: 0,
+                        rank: results.length + 1
                     });
                 }
             }
 
-            alert(`✅ Branch ${branchName} CLOSED (Reopened)!\n\n` +
-                `📊 ${successCount} worker(s) closed\n` +
-                `💰 Total Sales: UGX ${newTotalSales.toLocaleString()}\n` +
-                `📦 Total Items: ${newTotalItems}\n` +
-                `💳 Each Worker: ${creditsPerWorker.toLocaleString()} credits\n\n` +
-                `✅ Existing data was PRESERVED\n` +
-                `✅ NO stress test was assigned\n` +
-                `✅ Credits INCREASED based on new total`);
+            // ✅ SHOW ALERT WITH RESULTS
+            let resultMsg = `✅ Branch ${branchName} CLOSED (Reopened)!\n\n`;
+            resultMsg += `📊 ${successCount} worker(s) closed\n`;
+            resultMsg += `💰 Total Sales: UGX ${newTotalSales.toLocaleString()}\n`;
+            resultMsg += `📦 Total Items: ${newTotalItems}\n`;
+            resultMsg += `💳 Each Worker: ${creditsPerWorker.toLocaleString()} credits\n\n`;
+            resultMsg += `✅ Existing data was PRESERVED\n`;
+            resultMsg += `✅ NO stress test was assigned\n`;
+            resultMsg += `✅ Credits INCREASED based on new total`;
+            alert(resultMsg);
+
+            // ✅ CREATE BROADCAST
+            if (results && results.length > 0) {
+                try {
+                    await createBranchBroadcast(branchId, branchName, results);
+                    console.log(`📢 Broadcast created for ${branchName}`);
+                } catch (err) {
+                    console.error('Error creating broadcast:', err);
+                }
+            }
+
+            // ✅ UPDATE STRESS TARGETS
+            try {
+                await recalculateStressTargets(branchId);
+                console.log(`🔄 Stress targets recalculated for ${branchName}`);
+            } catch (err) {
+                console.error('Error recalculating stress targets:', err);
+            }
+
+            // ✅ REFRESH PROGRESS BAR
+            if (currentUser && currentUser.role === 'worker') {
+                setTimeout(async () => {
+                    await loadTodayStressTarget();
+                    await refreshStressTestDisplay();
+                    console.log('🔄 Progress bar refreshed!');
+                }, 500);
+            }
 
             loadTodayActivity();
             loadCheckinBranches();
@@ -11120,7 +11105,6 @@ async function closeDay(branchId, branchName) {
         let results = [];
         let totalJackpotWinners = 0;
 
-        // ✅ Calculate branch-level credits using the FIXED function
         const cappedCredits = calculateWorkerCredits(
             totalBranchSales,
             totalBranchItems,
@@ -11129,10 +11113,8 @@ async function closeDay(branchId, branchName) {
             MAX_PRICE
         );
 
-        // ✅ SHARE EQUALLY among workers
         const creditsPerWorker = Math.round(cappedCredits / refreshedLogs.length);
 
-        // Calculate branch factors
         const branchRevenueFactor = Math.min(totalBranchSales / MAX_REVENUE, 1);
         const branchVolumeFactor = Math.min(totalBranchItems / MAX_ITEMS, 1);
         const branchPriceFactor = Math.min(branchAvgPrice / MAX_PRICE, 1);
@@ -11434,7 +11416,7 @@ async function closeDay(branchId, branchName) {
         results.sort((a, b) => b.totalBonus - a.totalBonus);
         results.forEach((r, index) => r.rank = index + 1);
 
-        // Show results
+        // ✅ SHOW ALERT WITH RESULTS
         let resultMsg = `✅ Branch ${branchName} CLOSED!\n\n`;
         
         const t1Winner = results.find(r => r.isTier1Winner);
@@ -11470,12 +11452,15 @@ async function closeDay(branchId, branchName) {
         }
         alert(resultMsg);
 
-        // Show notification
+        // ✅ CREATE BROADCAST
         if (results && results.length > 0) {
             try {
                 const t1WinnerNotif = results.find(r => r.isTier1Winner);
                 const t2WinnerNotif = results.find(r => r.isTier2Winner);
                 const t3WinnersNotif = results.filter(r => r.tier3Amount > 0);
+                
+                await createBranchBroadcast(branchId, branchName, results);
+                console.log(`📢 Broadcast created for ${branchName}`);
                 
                 showBranchNotification({
                     branch_name: branchName,
@@ -11503,6 +11488,23 @@ async function closeDay(branchId, branchName) {
             } catch (notifError) {
                 console.error('Error showing notification:', notifError);
             }
+        }
+
+        // ✅ RECALCULATE STRESS TARGETS FOR TODAY
+        try {
+            await recalculateStressTargets(branchId);
+            console.log(`🔄 Stress targets recalculated for ${branchName}`);
+        } catch (err) {
+            console.error('Error recalculating stress targets:', err);
+        }
+
+        // ✅ REFRESH PROGRESS BAR FOR ALL WORKERS
+        if (currentUser && currentUser.role === 'worker') {
+            setTimeout(async () => {
+                await loadTodayStressTarget();
+                await refreshStressTestDisplay();
+                console.log('🔄 Progress bar refreshed for worker!');
+            }, 500);
         }
 
         // Refresh data
@@ -15859,11 +15861,13 @@ document.addEventListener('keydown', function(e) {
 });
 
 // ============================================================
-// CREATE BROADCAST WHEN BRANCH CLOSES
 // ============================================================
-
+// 📢 FIXED: createBranchBroadcast() - Saves to Database
+// ============================================================
 async function createBranchBroadcast(branchId, branchName, results) {
     const today = new Date().toISOString().split('T')[0];
+    
+    console.log(`📢 Creating broadcast for ${branchName} with ${results.length} results`);
     
     // Find winner (Rank #1)
     const winner = results.find(r => r.rank === 1);
@@ -15877,28 +15881,35 @@ async function createBranchBroadcast(branchId, branchName, results) {
         snatch_winner_id: winner?.workerId || null,
         snatch_winner_name: winner?.name || null,
         snatch_winner_jc_id: winner?.jc_id || null,
-        snatch_amount: winner?.snatchShare || 0,
+        snatch_amount: winner?.totalBonus || 0,
         snatch_credits: winner?.credits || 0,
         snatch_rank: winner?.rank || 0,
-        snatch_reason: winner?.reason || '🏆 Snatch Winner!',
+        snatch_reason: '🏆 Snatch Winner!',
         snatch_results: results.map(r => ({
             rank: r.rank,
             name: r.name,
             jc_id: r.jc_id,
             credits: r.credits,
-            bonus: r.snatchShare
+            bonus: r.totalBonus,
+            tier1: r.tier1Amount || 0,
+            tier2: r.tier2Amount || 0,
+            tier3: r.tier3Amount || 0,
+            stressPassed: r.stressPassed || false,
+            stressPenalty: r.stressPenalty || 0
         })),
         stress_winners: results
-            .filter(r => r.stressBonus > 0)
+            .filter(r => r.tier3Amount > 0)
             .map(r => ({
                 name: r.name + ' (' + r.jc_id + ')',
-                bonus: r.stressBonus
+                bonus: r.tier3Amount
             })),
         total_workers: results.length,
         total_credits: results.reduce((sum, r) => sum + r.credits, 0),
         total_bonuses: results.reduce((sum, r) => sum + r.totalBonus, 0),
         is_read: false
     };
+    
+    console.log('📊 Broadcast Data:', broadcastData);
     
     // Save to database
     const { data, error } = await _supabase
@@ -15909,23 +15920,30 @@ async function createBranchBroadcast(branchId, branchName, results) {
     
     if (error) {
         console.error('❌ Error saving broadcast:', error);
+        console.error('Error details:', error.message);
         return null;
     }
     
-    // Show notification immediately
-    showBranchNotification({
-        branch_name: broadcastData.branch_name,
-        snatch_winner_name: broadcastData.snatch_winner_name,
-        snatch_winner_jc_id: broadcastData.snatch_winner_jc_id,
-        snatch_amount: broadcastData.snatch_amount,
-        snatch_credits: broadcastData.snatch_credits,
-        snatch_reason: broadcastData.snatch_reason,
-        snatch_detail: winner?.detail || '',
-        results: broadcastData.snatch_results,
-        stress_winners: broadcastData.stress_winners,
-        total_workers: broadcastData.total_workers,
-        closed_at: new Date().toLocaleTimeString()
-    });
+    console.log(`✅ Broadcast saved! ID: ${data.id}`);
+    
+    // ✅ Show notification immediately
+    try {
+        showBranchNotification({
+            branch_name: broadcastData.branch_name,
+            tier1_winner_name: broadcastData.snatch_winner_name,
+            tier1_amount: broadcastData.snatch_amount,
+            tier2_winner_name: results.find(r => r.isTier2Winner)?.name || 'No Winner',
+            tier2_amount: results.find(r => r.isTier2Winner)?.tier2Amount || 0,
+            tier2_time: results.find(r => r.isTier2Winner)?.checkInTime || 'N/A',
+            tier3_winners: broadcastData.stress_winners,
+            results: broadcastData.snatch_results,
+            total_workers: broadcastData.total_workers,
+            closed_at: new Date().toLocaleTimeString()
+        });
+        console.log('✅ Notification shown!');
+    } catch (notifError) {
+        console.error('❌ Error showing notification:', notifError);
+    }
     
     return data;
 }
@@ -19168,7 +19186,85 @@ document.addEventListener('visibilitychange', function() {
         checkAndHidePopup();
     }
 });
+// ============================================================
+// ✅ FIXED: recalculateStressTargets() - No stress_updated_at
+// ============================================================
+async function recalculateStressTargets(branchId) {
+    const today = new Date().toISOString().split('T')[0];
+    
+    console.log(`🔄 Recalculating stress targets for branch ${branchId}`);
+    
+    // Get all workers at this branch today
+    const { data: logs, error: logsError } = await _supabase
+        .from('daily_logs')
+        .select('id, worker_id, branch_id')
+        .eq('branch_id', branchId)
+        .eq('log_date', today)
+        .eq('is_closed', false);
+    
+    if (logsError || !logs || logs.length === 0) {
+        console.log('❌ No workers found at this branch');
+        return;
+    }
+    
+    console.log(`👥 Found ${logs.length} workers at this branch`);
+    
+    const workerIds = logs.map(l => l.worker_id);
+    
+    // Calculate team average for this EXACT team
+    const teamResult = await calculateTeamAverageHistorical(branchId, today, workerIds);
+    console.log(`📊 Team Average: ${teamResult.teamAverage}, Days Together: ${teamResult.daysTogether}`);
+    
+    let updatedCount = 0;
+    
+    // Recalculate target for EACH worker
+    for (const log of logs) {
+        try {
+            const stressTarget = await calculateStressTarget(log.worker_id, branchId, today);
+            
+            // Update the log with new values
+            const { error: updateError } = await _supabase
+                .from('daily_logs')
+                .update({
+                    stress_target: stressTarget.target || 1000,
+                    stress_avg_credits: stressTarget.avgCredits || 0,
+                    stress_latest_credits: stressTarget.latestCredits || 0,
+                    stress_team_avg: teamResult.teamAverage || 0,
+                    stress_branch_avg: stressTarget.branchAvg || 0,
+                    stress_team_days: teamResult.daysTogether || 0,
+                    stress_team_exists: teamResult.historyExists || false
+                    // ✅ REMOVED: stress_updated_at
+                })
+                .eq('id', log.id);
+            
+            if (updateError) {
+                console.error(`❌ Error updating target for worker ${log.worker_id}:`, updateError);
+            } else {
+                updatedCount++;
+                console.log(`✅ Updated target for worker ${log.worker_id}: ${stressTarget.target}`);
+            }
+        } catch (err) {
+            console.error(`❌ Error calculating target for worker ${log.worker_id}:`, err);
+        }
+    }
+    
+    console.log(`✅ Recalculated stress targets for ${updatedCount}/${logs.length} workers at branch ${branchId}`);
+    
+    // Refresh the progress bar for the current user
+    if (currentUser && currentUser.role === 'worker') {
+        try {
+            await loadTodayStressTarget();
+            await refreshStressTestDisplay();
+            console.log(`🔄 Progress bar refreshed for ${currentUser.name}`);
+        } catch (refreshError) {
+            console.error('Error refreshing progress bar:', refreshError);
+        }
+    }
+    
+    return updatedCount;
+}
 </script>
+
 </script>
 </body>
 </html>
