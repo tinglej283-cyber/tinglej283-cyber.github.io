@@ -3606,7 +3606,7 @@ function getTier1Winner(workers) {
 }
 
 // ============================================================
-// ✅ UPDATED: Get Tier 2 Winner - Earliest Check-In
+// ✅ UPDATED: getTier2Winner() - Microsecond precision (NO 1-minute tie)
 // ============================================================
 function getTier2Winner(workers, checkInTimes) {
     // Filter workers with check-in time
@@ -3623,8 +3623,7 @@ function getTier2Winner(workers, checkInTimes) {
     const earliest = sorted[0];
     const earliestTime = new Date(checkInTimes[earliest.id]);
     
-    // ✅ FIXED: Only treat as tie if EXACT same millisecond
-    // The first person to check in WINS, even if by 1 second!
+    // Check for EXACT tie only (microsecond precision)
     const tied = sorted.filter(w => {
         const diff = Math.abs(new Date(checkInTimes[w.id]).getTime() - earliestTime.getTime());
         return diff === 0; // EXACT same time only
@@ -3632,7 +3631,7 @@ function getTier2Winner(workers, checkInTimes) {
     
     // If more than 1 worker has EXACT same time, no one gets Tier 2
     if (tied.length > 1) {
-        console.log(`⏰ Tier 2: EXACT TIE detected - No one gets Tier 2 (10% vanishes)`);
+        console.log(`⏰ Tier 2: EXACT TIE detected - No one gets Tier 2`);
         return null;
     }
     
@@ -3642,7 +3641,7 @@ function getTier2Winner(workers, checkInTimes) {
     const isBefore7AM = hour < 7 || (hour === 7 && minutes === 0);
     
     // Before 7AM = 10%, After 7AM = 5%
-    const share = isBefore7AM ? TIER2_FRACTION : TIER2_FRACTION * 0.5;
+    const share = isBefore7AM ? 0.10 : 0.05;
     
     console.log(`⏰ Tier 2 Winner: ${earliest.name} at ${earliestTime.toLocaleTimeString()} (${isBefore7AM ? 'Before 7AM' : 'After 7AM'}) - ${share*100}%`);
     
@@ -3690,28 +3689,22 @@ function calculateTier3Scores(workers, stressResults) {
     }));
 }
 // ============================================================
-// 🎯 UNIFIED BONUS SYSTEM - CORE CALCULATION
+// ✅ UPDATED: calculateUnifiedBonuses() - Uses correct per-worker credits
 // ============================================================
-
 function calculateUnifiedBonuses(workers, checkInTimes, stressResults, dailySales) {
     // STEP 1: Calculate Total Bonus Pool (2% of sales)
     const totalPool = dailySales * 0.02;
-    console.log(`💰 Total Bonus Pool: UGX ${totalPool.toFixed(2)} (2% of UGX ${dailySales.toFixed(2)})`);
     
     // STEP 2: Calculate Tier Pools
     let tier1Pool = totalPool * 0.30; // 30%
     let tier2Pool = totalPool * 0.10; // 10%
     let tier3Pool = totalPool * 0.60; // 60%
     
-    let tier1Winner = null;
-    let tier2Winner = null;
-    let tier1Tied = false;
-    let tier2Tied = false;
-    
-    // ============================================================
-    // STEP 3: TIER 1 - Highest Credits (30%)
-    // ============================================================
+    // STEP 3: Tier 1 - Highest Credits (30%)
     const sortedByCredits = [...workers].sort((a, b) => (b.credits || 0) - (a.credits || 0));
+    let tier1Winner = null;
+    let tier1Tied = false;
+    
     if (sortedByCredits.length > 0) {
         const topCredits = sortedByCredits[0].credits || 0;
         const tiedForFirst = sortedByCredits.filter(w => (w.credits || 0) === topCredits);
@@ -3728,10 +3721,11 @@ function calculateUnifiedBonuses(workers, checkInTimes, stressResults, dailySale
         }
     }
     
-    // ============================================================
-    // STEP 4: TIER 2 - Earliest Check-In (10%)
-    // ============================================================
+    // STEP 4: Tier 2 - Earliest Check-In (10%)
+    let tier2Winner = null;
+    let tier2Tied = false;
     const workersWithTime = workers.filter(w => checkInTimes[w.id]);
+    
     if (workersWithTime.length > 0) {
         const sortedByTime = [...workersWithTime].sort((a, b) => {
             return new Date(checkInTimes[a.id]) - new Date(checkInTimes[b.id]);
@@ -3739,10 +3733,10 @@ function calculateUnifiedBonuses(workers, checkInTimes, stressResults, dailySale
         const earliest = sortedByTime[0];
         const earliestTime = new Date(checkInTimes[earliest.id]);
         
-        // Check for ties (within 1 minute)
+        // EXACT tie only (microsecond precision)
         const tiedForEarliest = sortedByTime.filter(w => {
             const diff = Math.abs(new Date(checkInTimes[w.id]) - earliestTime);
-            return diff < 60000; // Within 1 minute
+            return diff < 1000; // 1 SECOND tie window
         });
         
         if (tiedForEarliest.length === 1) {
@@ -3766,10 +3760,7 @@ function calculateUnifiedBonuses(workers, checkInTimes, stressResults, dailySale
         }
     }
     
-    // ============================================================
-    // STEP 5: TIER 3 - Stress Champions (60%)
-    // ============================================================
-    // ONLY workers who PASSED the stress test qualify
+    // STEP 5: Tier 3 - Stress Champions (60%)
     const passingWorkers = workers.filter(w => {
         const stress = stressResults[w.id];
         if (!stress) return false;
@@ -3782,7 +3773,6 @@ function calculateUnifiedBonuses(workers, checkInTimes, stressResults, dailySale
         console.log(`🧪 Tier 3: No workers passed → ${tier3Pool.toFixed(2)} VANISHED`);
         tier3Pool = 0;
     } else {
-        // Calculate scores for passing workers
         let totalScore = 0;
         const scoredWorkers = passingWorkers.map(w => {
             const stress = stressResults[w.id];
@@ -3800,9 +3790,7 @@ function calculateUnifiedBonuses(workers, checkInTimes, stressResults, dailySale
         
         console.log(`🧪 Tier 3: ${passingWorkers.length} worker(s) passed, Total Score: ${totalScore}`);
         
-        // Distribute Tier 3
         if (totalScore === 0) {
-            // All scores are 0 → distribute equally
             const equalShare = tier3Pool / passingWorkers.length;
             tier3Results = workers.map(w => {
                 const isPassing = passingWorkers.some(p => p.id === w.id);
@@ -3816,7 +3804,6 @@ function calculateUnifiedBonuses(workers, checkInTimes, stressResults, dailySale
             });
             console.log(`🧪 Tier 3: All scores 0 → Equal split: UGX ${equalShare.toFixed(2)} each`);
         } else {
-            // Proportional distribution
             tier3Results = workers.map(w => {
                 const scoreData = scoredWorkers.find(s => s.worker.id === w.id);
                 if (!scoreData) {
@@ -3835,9 +3822,7 @@ function calculateUnifiedBonuses(workers, checkInTimes, stressResults, dailySale
         }
     }
     
-    // ============================================================
-    // STEP 6: BUILD RESULTS FOR EACH WORKER
-    // ============================================================
+    // STEP 6: Build results for each worker
     const results = workers.map(w => {
         let tier1 = 0;
         let tier2 = 0;
@@ -3848,19 +3833,16 @@ function calculateUnifiedBonuses(workers, checkInTimes, stressResults, dailySale
         let tier3BeatPct = 0;
         let tier3Streak = 0;
         
-        // Tier 1
         if (tier1Winner && tier1Winner.id === w.id) {
             tier1 = tier1Pool;
             isTier1Winner = true;
         }
         
-        // Tier 2
         if (tier2Winner && tier2Winner.id === w.id) {
             tier2 = tier2Pool;
             isTier2Winner = true;
         }
         
-        // Tier 3
         const t3 = tier3Results.find(r => r.worker.id === w.id);
         if (t3) {
             tier3 = t3.share || 0;
@@ -3888,9 +3870,7 @@ function calculateUnifiedBonuses(workers, checkInTimes, stressResults, dailySale
         };
     });
     
-    // ============================================================
-    // STEP 7: SUMMARY
-    // ============================================================
+    // STEP 7: Summary
     const totalDistributed = results.reduce((sum, r) => sum + r.total, 0);
     const unclaimed = totalPool - totalDistributed;
     
@@ -10019,9 +9999,8 @@ async function saveWorkerPay() {
     }
 }
 // ============================================================
-// 🛠️ FIXED: calculateWorkerCredits - BRANCH LEVEL ONLY
+// ✅ FIXED: calculateWorkerCredits() - Uses TOTAL sales
 // ============================================================
-
 function calculateWorkerCredits(totalSales, totalItems, maxRevenue, maxItems, maxPrice) {
     // If no sales, credits = 0
     if (!totalSales || totalSales <= 0) return 0;
@@ -10030,7 +10009,7 @@ function calculateWorkerCredits(totalSales, totalItems, maxRevenue, maxItems, ma
     const safeItems = Math.max(totalItems || 0, 1);
     const avgPrice = totalSales / safeItems;
     
-    // Calculate branch-level factors
+    // Calculate factors (using TOTAL sales)
     let revenueFactor = Math.min(totalSales / maxRevenue, 1);
     let volumeFactor = Math.min(safeItems / maxItems, 1);
     let priceFactor = Math.min(avgPrice / maxPrice, 1);
@@ -10042,7 +10021,11 @@ function calculateWorkerCredits(totalSales, totalItems, maxRevenue, maxItems, ma
     
     // Calculate raw score
     const rawScore = revenueFactor * volumeFactor * priceFactor;
+    
+    // Calculate raw credits (using TOTAL sales)
     const totalCreditsRaw = totalSales * rawScore * 5;
+    
+    // Apply budget constraint (2% of sales)
     const budget = totalSales * 0.02;
     const scalingFactor = totalCreditsRaw > 0 ? Math.min(budget / totalCreditsRaw, 1) : 1;
     let credits = totalCreditsRaw * scalingFactor;
@@ -10052,11 +10035,11 @@ function calculateWorkerCredits(totalSales, totalItems, maxRevenue, maxItems, ma
         credits = Math.max(totalSales / 1000, 10);
     }
     
-    return Math.round(credits);
+    // ✅ FIX: Return raw credits (don't round here - let caller divide first)
+    return credits;
 }
 // ============================================================
-// ============================================================
-// 📋 FIXED: closeDayByWorker() - Worker Version
+// ✅ COMPLETE UPDATED: closeDayByWorker() - Worker Version
 // ============================================================
 async function closeDayByWorker(branchId, branchName) {
     if (!currentUser || currentUser.role !== 'worker') {
@@ -10186,7 +10169,8 @@ async function closeDayByWorker(branchId, branchName) {
             return;
         }
 
-        const newCredits = calculateWorkerCredits(
+        // ✅ Calculate TOTAL credits using the FIXED function
+        const totalBranchCredits = calculateWorkerCredits(
             newTotalSales,
             newTotalItems,
             MAX_REVENUE,
@@ -10194,12 +10178,15 @@ async function closeDayByWorker(branchId, branchName) {
             MAX_PRICE
         );
 
+        // Since only one worker is closing their own day, they get all credits
+        const credits = Math.round(totalBranchCredits);
+
         const { error: updateError } = await _supabase
             .from('daily_logs')
             .update({
                 daily_sales: newTotalSales,
                 items_sold: newTotalItems,
-                worker_credit: newCredits,
+                worker_credit: credits,
                 is_closed: true,
                 check_out_time: new Date().toISOString(),
                 check_out_lat: location ? location.lat : null,
@@ -10213,7 +10200,7 @@ async function closeDayByWorker(branchId, branchName) {
 
         if (updateError) {
             console.error('Error closing reopened branch:', updateError);
-            alert('Error: ' + updateError.message);
+            alert('Error: ' + error.message);
             return;
         }
 
@@ -10221,12 +10208,11 @@ async function closeDayByWorker(branchId, branchName) {
             `📊 Updated totals:\n` +
             `   💰 Total Sales: UGX ${newTotalSales.toLocaleString()}\n` +
             `   📦 Total Items: ${newTotalItems}\n` +
-            `   💳 Credits: ${Math.round(newCredits).toLocaleString()}\n\n` +
+            `   💳 Credits: ${Math.round(credits).toLocaleString()}\n\n` +
             `✅ Existing data was PRESERVED\n` +
             `✅ NO stress test was assigned\n` +
             `✅ Credits INCREASED based on new total`);
 
-        // ✅ REFRESH PROGRESS BAR
         setTimeout(async () => {
             await loadTodayStressTarget();
             await refreshStressTestDisplay();
@@ -10288,7 +10274,7 @@ async function closeDayByWorker(branchId, branchName) {
     }
 
     const itemsInput = prompt(`📦 Enter TOTAL ITEMS SOLD at ${branchName} today:\n\n` +
-        `(Enter number of items sold)`, "0");
+        `(Enter number of items sold - MUST BE AT LEAST 1)`, "1");
     if (itemsInput === null) {
         alert('❌ Day closing cancelled.');
         return;
@@ -10354,7 +10340,8 @@ async function closeDayByWorker(branchId, branchName) {
         let results = [];
         let totalJackpotWinners = 0;
 
-        const cappedCredits = calculateWorkerCredits(
+        // ✅ STEP 1: Calculate TOTAL branch credits using TOTAL sales
+        const totalBranchCredits = calculateWorkerCredits(
             totalBranchSales,
             totalBranchItems,
             MAX_REVENUE,
@@ -10362,8 +10349,20 @@ async function closeDayByWorker(branchId, branchName) {
             MAX_PRICE
         );
 
-        const creditsPerWorker = Math.round(cappedCredits / refreshedLogs.length);
+        // ✅ STEP 2: Calculate per worker values (SHARE EVENLY)
+        const creditsPerWorker = Math.round(totalBranchCredits / refreshedLogs.length);
+        const salesPerWorker = totalBranchSales / refreshedLogs.length;
+        const itemsPerWorker = Math.round(totalBranchItems / refreshedLogs.length);
 
+        console.log(`📊 Branch Totals:`);
+        console.log(`   💰 Total Sales: UGX ${totalBranchSales.toLocaleString()}`);
+        console.log(`   📦 Total Items: ${totalBranchItems}`);
+        console.log(`   💳 Total Credits: ${totalBranchCredits.toFixed(2)}`);
+        console.log(`   👥 Workers: ${refreshedLogs.length}`);
+        console.log(`   💳 Per Worker Credits: ${creditsPerWorker}`);
+
+        // Calculate branch factors (using TOTAL sales)
+        const branchAvgPrice = totalBranchItems > 0 ? totalBranchSales / totalBranchItems : 0;
         const branchRevenueFactor = Math.min(totalBranchSales / MAX_REVENUE, 1);
         const branchVolumeFactor = Math.min(totalBranchItems / MAX_ITEMS, 1);
         const branchPriceFactor = Math.min(branchAvgPrice / MAX_PRICE, 1);
@@ -10372,7 +10371,7 @@ async function closeDayByWorker(branchId, branchName) {
         const workersForBonus = refreshedLogs.map(log => ({
             id: log.worker_id,
             name: log.workers?.full_name || 'Unknown',
-            credits: creditsPerWorker,
+            credits: creditsPerWorker,  // ← SAME for all workers!
             jc_id: log.workers?.jc_id || 'N/A',
             log: log,
             worker: log.workers
@@ -10443,9 +10442,10 @@ async function closeDayByWorker(branchId, branchName) {
 
         let closedCount = 0;
 
+        // ✅ STEP 3: Update EACH worker's log with their share
         for (const worker of workersForBonus) {
             const log = worker.log;
-            let credits = creditsPerWorker;
+            let credits = creditsPerWorker;  // ← Use the same credits for all
             
             const workerBonus = bonusResult.results.find(r => r.worker.id === worker.id);
             
@@ -10519,8 +10519,8 @@ async function closeDayByWorker(branchId, branchName) {
             const { error: updateError } = await _supabase
                 .from('daily_logs')
                 .update({
-                    daily_sales: totalBranchSales / refreshedLogs.length,
-                    items_sold: Math.round(totalBranchItems / refreshedLogs.length),
+                    daily_sales: salesPerWorker,
+                    items_sold: itemsPerWorker,
                     worker_credit: credits,
                     daily_cost: dailyCost,
                     daily_bpi: dailyBPI,
@@ -10788,8 +10788,7 @@ async function closeDayByWorker(branchId, branchName) {
     }
 }
 // ============================================================
-// ============================================================
-// 📋 FIXED: closeDay() - Manager Version
+// ✅ COMPLETE UPDATED: closeDay() - Manager Version
 // ============================================================
 async function closeDay(branchId, branchName) {
     if (!currentUser || currentUser.role !== 'manager') {
@@ -10915,7 +10914,8 @@ async function closeDay(branchId, branchName) {
         try {
             const daysInMonth = getDaysInMonth(today);
 
-            const branchCredits = calculateWorkerCredits(
+            // ✅ Calculate TOTAL branch credits using the FIXED function
+            const totalBranchCredits = calculateWorkerCredits(
                 newTotalSales,
                 newTotalItems,
                 MAX_REVENUE,
@@ -10923,7 +10923,9 @@ async function closeDay(branchId, branchName) {
                 MAX_PRICE
             );
 
-            const creditsPerWorker = Math.round(branchCredits / openLogs.length);
+            const creditsPerWorker = Math.round(totalBranchCredits / openLogs.length);
+            const salesPerWorker = newTotalSales / openLogs.length;
+            const itemsPerWorker = Math.round(newTotalItems / openLogs.length);
 
             let successCount = 0;
             let results = [];
@@ -10937,8 +10939,8 @@ async function closeDay(branchId, branchName) {
                 const { error: updateError } = await _supabase
                     .from('daily_logs')
                     .update({
-                        daily_sales: newTotalSales / openLogs.length,
-                        items_sold: Math.round(newTotalItems / openLogs.length),
+                        daily_sales: salesPerWorker,
+                        items_sold: itemsPerWorker,
                         worker_credit: creditsPerWorker,
                         daily_cost: dailyCost,
                         daily_bpi: dailyBPI,
@@ -10968,7 +10970,6 @@ async function closeDay(branchId, branchName) {
                 }
             }
 
-            // ✅ SHOW ALERT WITH RESULTS
             let resultMsg = `✅ Branch ${branchName} CLOSED (Reopened)!\n\n`;
             resultMsg += `📊 ${successCount} worker(s) closed\n`;
             resultMsg += `💰 Total Sales: UGX ${newTotalSales.toLocaleString()}\n`;
@@ -10989,7 +10990,7 @@ async function closeDay(branchId, branchName) {
                 }
             }
 
-            // ✅ UPDATE STRESS TARGETS
+            // ✅ RECALCULATE STRESS TARGETS
             try {
                 await recalculateStressTargets(branchId);
                 console.log(`🔄 Stress targets recalculated for ${branchName}`);
@@ -11037,7 +11038,7 @@ async function closeDay(branchId, branchName) {
     }
 
     const itemsInput = prompt(`📦 Enter TOTAL ITEMS SOLD at ${branchName} today:\n\n` +
-        `(Enter number of items sold)`, "0");
+        `(Enter number of items sold - MUST BE AT LEAST 1)`, "1");
     if (itemsInput === null) {
         alert('❌ Day closing cancelled.');
         return;
@@ -11105,7 +11106,8 @@ async function closeDay(branchId, branchName) {
         let results = [];
         let totalJackpotWinners = 0;
 
-        const cappedCredits = calculateWorkerCredits(
+        // ✅ STEP 1: Calculate TOTAL branch credits using TOTAL sales
+        const totalBranchCredits = calculateWorkerCredits(
             totalBranchSales,
             totalBranchItems,
             MAX_REVENUE,
@@ -11113,8 +11115,20 @@ async function closeDay(branchId, branchName) {
             MAX_PRICE
         );
 
-        const creditsPerWorker = Math.round(cappedCredits / refreshedLogs.length);
+        // ✅ STEP 2: Calculate per worker values (SHARE EVENLY)
+        const creditsPerWorker = Math.round(totalBranchCredits / refreshedLogs.length);
+        const salesPerWorker = totalBranchSales / refreshedLogs.length;
+        const itemsPerWorker = Math.round(totalBranchItems / refreshedLogs.length);
 
+        console.log(`📊 Branch Totals:`);
+        console.log(`   💰 Total Sales: UGX ${totalBranchSales.toLocaleString()}`);
+        console.log(`   📦 Total Items: ${totalBranchItems}`);
+        console.log(`   💳 Total Credits: ${totalBranchCredits.toFixed(2)}`);
+        console.log(`   👥 Workers: ${refreshedLogs.length}`);
+        console.log(`   💳 Per Worker Credits: ${creditsPerWorker}`);
+
+        // Calculate branch factors (using TOTAL sales)
+        const branchAvgPrice = totalBranchItems > 0 ? totalBranchSales / totalBranchItems : 0;
         const branchRevenueFactor = Math.min(totalBranchSales / MAX_REVENUE, 1);
         const branchVolumeFactor = Math.min(totalBranchItems / MAX_ITEMS, 1);
         const branchPriceFactor = Math.min(branchAvgPrice / MAX_PRICE, 1);
@@ -11123,7 +11137,7 @@ async function closeDay(branchId, branchName) {
         const workersForBonus = refreshedLogs.map(log => ({
             id: log.worker_id,
             name: log.workers?.full_name || 'Unknown',
-            credits: creditsPerWorker,
+            credits: creditsPerWorker,  // ← SAME for all workers!
             jc_id: log.workers?.jc_id || 'N/A',
             log: log,
             worker: log.workers
@@ -11194,9 +11208,10 @@ async function closeDay(branchId, branchName) {
 
         let closedCount = 0;
 
+        // ✅ STEP 3: Update EACH worker's log with their share
         for (const worker of workersForBonus) {
             const log = worker.log;
-            let credits = creditsPerWorker;
+            let credits = creditsPerWorker;  // ← Use the same credits for all
             
             const workerBonus = bonusResult.results.find(r => r.worker.id === worker.id);
             
@@ -11269,11 +11284,12 @@ async function closeDay(branchId, branchName) {
             
             const closedById = currentUser?.id || null;
             
+            // ✅ STEP 4: Update the log with the calculated values
             const { error: updateError } = await _supabase
                 .from('daily_logs')
                 .update({
-                    daily_sales: totalBranchSales / refreshedLogs.length,
-                    items_sold: Math.round(totalBranchItems / refreshedLogs.length),
+                    daily_sales: salesPerWorker,
+                    items_sold: itemsPerWorker,
                     worker_credit: credits,
                     daily_cost: dailyCost,
                     daily_bpi: dailyBPI,
@@ -13863,6 +13879,16 @@ async function reopenAllBranches() {
     }
 }
 
+// ============================================================
+// ✅ COMPLETE UPDATED: closeAllBranches() 
+// ============================================================
+// This version has:
+// 1. ✅ Notifications for EACH branch
+// 2. ✅ Progress bar updates for ALL workers
+// 3. ✅ Sound for each closing
+// 4. ✅ Broadcast creation for each branch
+// ============================================================
+
 async function closeAllBranches() {
     if (!currentUser || currentUser.role !== 'manager') {
         alert('Only managers can close all branches.');
@@ -13992,57 +14018,32 @@ async function closeAllBranches() {
             
             const branchAvgPrice = totalBranchItems > 0 ? totalBranchSales / totalBranchItems : 0;
 
-            // Calculate branch-level credits
-            const revenueFactor = Math.min(totalBranchSales / MAX_REVENUE, 1);
-            const volumeFactor = Math.min(totalBranchItems / MAX_ITEMS, 1);
-            const priceFactor = Math.min(branchAvgPrice / MAX_PRICE, 1);
-            const rawScore = revenueFactor * volumeFactor * priceFactor;
-            const totalCredits = totalBranchSales * rawScore * 5;
-            const budget = totalBranchSales * 0.02;
-            const scalingFactor = totalCredits > 0 ? Math.min(budget / totalCredits, 1) : 0;
-            const cappedCredits = totalCredits * scalingFactor;
+            // ✅ Calculate TOTAL branch credits using the FIXED function
+            const totalBranchCredits = calculateWorkerCredits(
+                totalBranchSales,
+                totalBranchItems,
+                MAX_REVENUE,
+                MAX_ITEMS,
+                MAX_PRICE
+            );
 
-            // Calculate worker efforts
-            const workerEfforts = branchWorkers.map(log => {
-                let workerSales = log.daily_sales || 0;
-                let workerItems = log.items_sold || 0;
-                
-                if (workerSales === 0 && totalBranchSales > 0) {
-                    workerSales = totalBranchSales / branchWorkers.length;
-                    workerItems = Math.round(totalBranchItems / branchWorkers.length);
-                }
-                
-                const avgPrice = workerItems > 0 ? workerSales / workerItems : 0;
-                const wRevenueFactor = Math.min(workerSales / MAX_REVENUE, 1);
-                const wVolumeFactor = Math.min(workerItems / MAX_ITEMS, 1);
-                const wPriceFactor = Math.min(avgPrice / MAX_PRICE, 1);
-                return {
-                    log: log,
-                    effort: wRevenueFactor * wVolumeFactor * wPriceFactor,
-                    sales: workerSales,
-                    items: workerItems,
-                    avgPrice: avgPrice,
-                    name: log.workers?.full_name || 'Unknown',
-                    jc_id: log.workers?.jc_id || 'N/A',
-                    worker: log.workers
-                };
-            });
+            const creditsPerWorker = Math.round(totalBranchCredits / branchWorkers.length);
+            const salesPerWorker = totalBranchSales / branchWorkers.length;
+            const itemsPerWorker = Math.round(totalBranchItems / branchWorkers.length);
 
-            const totalEffort = workerEfforts.reduce((sum, w) => sum + w.effort, 0);
-            
-            const workerCredits = workerEfforts.map(w => ({
-                ...w,
-                credits: totalEffort > 0 ? (w.effort / totalEffort) * cappedCredits : cappedCredits / workerEfforts.length
-            }));
+            // Calculate branch factors
+            const branchRevenueFactor = Math.min(totalBranchSales / MAX_REVENUE, 1);
+            const branchVolumeFactor = Math.min(totalBranchItems / MAX_ITEMS, 1);
+            const branchPriceFactor = Math.min(branchAvgPrice / MAX_PRICE, 1);
 
             // Build data for unified bonus
-            const workersForBonus = workerCredits.map(w => ({
-                id: w.log.worker_id,
-                name: w.name,
-                credits: w.credits,
-                jc_id: w.jc_id,
-                log: w.log,
-                worker: w.worker
+            const workersForBonus = branchWorkers.map(log => ({
+                id: log.worker_id,
+                name: log.workers?.full_name || 'Unknown',
+                credits: creditsPerWorker,
+                jc_id: log.workers?.jc_id || 'N/A',
+                log: log,
+                worker: log.workers
             }));
 
             // Get check-in times for Tier 2
@@ -14108,11 +14109,11 @@ async function closeAllBranches() {
             // Update jackpot jar
             await updateJackpotJar(totalBranchSales);
 
-            // Update each worker's log
+            let branchResults = [];
+
             for (const worker of workersForBonus) {
                 const log = worker.log;
-                let credits = worker.credits;
-                const workerEffort = workerEfforts.find(w => w.log.worker_id === worker.id);
+                let credits = creditsPerWorker;
                 
                 const workerBonus = bonusResult.results.find(r => r.worker.id === worker.id);
                 
@@ -14127,7 +14128,6 @@ async function closeAllBranches() {
                 const tier3BeatPct = workerBonus?.tier3BeatPct || 0;
                 const tier3Streak = workerBonus?.tier3Streak || 0;
                 
-                // Always full daily pay
                 const dailyRate = 10000;
                 const dailyPay = dailyRate;
                 const dailyCost = dailyRate + (worker.worker?.monthly_base_salary || 250000) / daysInMonth;
@@ -14140,18 +14140,35 @@ async function closeAllBranches() {
                 let stressShortfallPercent = 0;
                 let stressPassed = null;
                 let stressTarget = null;
+                let penaltyResult = null;
                 
                 if (log.is_stress_test) {
                     stressTarget = log.stress_target || 1000;
                     stressPassed = credits >= stressTarget;
                     
                     if (!stressPassed) {
-                        const penaltyResult = calculateStressPenalty(credits, stressTarget);
+                        penaltyResult = await calculateStressPenalty(
+                            log.worker_id,
+                            credits,
+                            stressTarget,
+                            null
+                        );
+                        
                         stressPenalty = penaltyResult.penalty;
                         stressPenaltyLevelName = penaltyResult.levelName;
                         stressShortfall = penaltyResult.shortfall;
                         stressShortfallPercent = penaltyResult.shortfallPercent;
-                        credits = Math.max(0, credits - stressPenalty);
+                        credits = penaltyResult.newActualCredits;
+                        
+                        await _supabase
+                            .from('workers')
+                            .update({ 
+                                total_credits: penaltyResult.newLifetimeCredits,
+                                last_stress_penalty: penaltyResult.penalty,
+                                last_stress_penalty_date: new Date().toISOString(),
+                                updated_at: new Date().toISOString()
+                            })
+                            .eq('id', log.worker_id);
                     }
                 }
                 
@@ -14167,24 +14184,23 @@ async function closeAllBranches() {
                     }
                 }
                 
-                // ⚠️⚠️⚠️ FIX: Use null if currentUser.id doesn't exist in workers table ⚠️⚠️⚠️
                 const closedById = currentUser?.id || null;
                 
                 const { error: updateError } = await _supabase
                     .from('daily_logs')
                     .update({
-                        daily_sales: workerEffort?.sales || 0,
-                        items_sold: workerEffort?.items || 0,
+                        daily_sales: salesPerWorker,
+                        items_sold: itemsPerWorker,
                         worker_credit: credits,
                         daily_cost: dailyCost,
                         daily_bpi: dailyBPI,
                         daily_pay: dailyPay,
-                        price_factor: workerEffort?.effort || 0,
-                        revenue_factor: revenueFactor,
-                        volume_factor: volumeFactor,
+                        revenue_factor: branchRevenueFactor,
+                        volume_factor: branchVolumeFactor,
+                        price_factor: branchPriceFactor,
                         is_closed: true,
                         check_out_time: new Date().toISOString(),
-                        closed_by: closedById,  // ✅ FIXED: Use null instead of hardcoded ID
+                        closed_by: closedById,
                         
                         tier1_amount: tier1Amount,
                         tier2_amount: tier2Amount,
@@ -14285,16 +14301,12 @@ async function closeAllBranches() {
                             .eq('id', log.id);
 
                         totalClosed++;
-                        allResults.push({
-                            branch: branchName,
+                        branchResults.push({
+                            workerId: log.worker_id,
                             name: worker.name,
                             jc_id: worker.jc_id,
-                            sales: workerEffort?.sales || 0,
-                            items: workerEffort?.items || 0,
                             credits: credits,
                             dailyPay: dailyPay,
-                            payLevel: 1,
-                            payStatus: '✅ FULL PAY',
                             tier1Amount: tier1Amount,
                             tier2Amount: tier2Amount,
                             tier3Amount: tier3Amount,
@@ -14307,9 +14319,10 @@ async function closeAllBranches() {
                             stressPenaltyLevelName: stressPenaltyLevelName,
                             stressShortfall: stressShortfall,
                             stressShortfallPercent: stressShortfallPercent,
-                            jackpotShare: jackpotShare,
                             jackpotWon: jackpotWon,
-                            rank: allResults.length + 1
+                            jackpotShare: jackpotShare,
+                            rank: branchResults.length + 1,
+                            checkInTime: log.check_in_time || 'N/A'
                         });
 
                     } catch (accrualError) {
@@ -14317,9 +14330,77 @@ async function closeAllBranches() {
                     }
                 }
             }
+
+            // Sort branch results
+            branchResults.sort((a, b) => b.totalBonus - a.totalBonus);
+            branchResults.forEach((r, index) => r.rank = index + 1);
+            allResults.push(...branchResults);
+
+            // ============================================================
+            // 🆕 CREATE BROADCAST FOR THIS BRANCH
+            // ============================================================
+            if (branchResults && branchResults.length > 0) {
+                try {
+                    const t1WinnerNotif = branchResults.find(r => r.isTier1Winner);
+                    const t2WinnerNotif = branchResults.find(r => r.isTier2Winner);
+                    const t3WinnersNotif = branchResults.filter(r => r.tier3Amount > 0);
+                    
+                    await createBranchBroadcast(branchId, branchName, branchResults);
+                    console.log(`📢 Broadcast created for ${branchName}`);
+                    
+                    showBranchNotification({
+                        branch_name: branchName,
+                        tier1_winner_name: t1WinnerNotif?.name || 'No Winner',
+                        tier1_amount: t1WinnerNotif?.tier1Amount || 0,
+                        tier2_winner_name: t2WinnerNotif?.name || 'No Winner',
+                        tier2_amount: t2WinnerNotif?.tier2Amount || 0,
+                        tier2_time: t2WinnerNotif?.checkInTime || 'N/A',
+                        tier3_winners: t3WinnersNotif.map(w => ({
+                            name: w.name,
+                            bonus: w.tier3Amount
+                        })),
+                        results: branchResults.map(r => ({
+                            rank: r.rank,
+                            name: r.name,
+                            credits: r.credits,
+                            bonus: r.totalBonus
+                        })),
+                        total_workers: branchResults.length,
+                        closed_at: new Date().toLocaleTimeString()
+                    });
+                    
+                    playBranchClosingSound();
+                    
+                } catch (notifError) {
+                    console.error('Error showing notification for', branchName, ':', notifError);
+                }
+            }
+
+            // ============================================================
+            // 🆕 RECALCULATE STRESS TARGETS FOR THIS BRANCH
+            // ============================================================
+            try {
+                await recalculateStressTargets(branchId);
+                console.log(`🔄 Stress targets recalculated for ${branchName}`);
+            } catch (err) {
+                console.error('Error recalculating stress targets for', branchName, ':', err);
+            }
+
+            // ============================================================
+            // 🆕 REFRESH PROGRESS BARS FOR THIS BRANCH
+            // ============================================================
+            if (currentUser && currentUser.role === 'worker') {
+                setTimeout(async () => {
+                    await loadTodayStressTarget();
+                    await refreshStressTestDisplay();
+                    console.log(`🔄 Progress bar refreshed for ${branchName}`);
+                }, 500);
+            }
+
+            console.log(`✅ Closed ${branchName}: ${branchResults.length} worker(s)`);
         }
 
-        // Sort results
+        // Sort all results
         allResults.sort((a, b) => b.totalBonus - a.totalBonus);
         allResults.forEach((r, index) => r.rank = index + 1);
 
@@ -14328,10 +14409,13 @@ async function closeAllBranches() {
         
         const resultsByBranch = {};
         for (const r of allResults) {
-            if (!resultsByBranch[r.branch]) {
-                resultsByBranch[r.branch] = [];
+            const branchName = Object.keys(branchData).find(b => 
+                branchData[b].workers.some(w => w.worker_id === r.workerId)
+            ) || 'Unknown';
+            if (!resultsByBranch[branchName]) {
+                resultsByBranch[branchName] = [];
             }
-            resultsByBranch[r.branch].push(r);
+            resultsByBranch[branchName].push(r);
         }
 
         for (const [branchName, results] of Object.entries(resultsByBranch)) {
@@ -14339,7 +14423,7 @@ async function closeAllBranches() {
             for (const r of results) {
                 const tier1Badge = r.isTier1Winner ? '🥇 ' : '';
                 const tier2Badge = r.isTier2Winner ? '⏰ ' : '';
-                resultMsg += `   ${r.jackpotWon ? '🎉' : ''} ${tier1Badge}${tier2Badge}${r.name} (${r.jc_id}) (Rank #${r.rank}): UGX ${r.totalBonus.toFixed(2)} (${r.payStatus})\n`;
+                resultMsg += `   ${r.jackpotWon ? '🎉' : ''} ${tier1Badge}${tier2Badge}${r.name} (${r.jc_id}) (Rank #${r.rank}): UGX ${r.totalBonus.toFixed(2)} (${r.payStatus || '✅ FULL PAY'})\n`;
                 if (r.stressPenalty > 0) {
                     resultMsg += `      📉 Penalty: -${r.stressPenalty} credits (${r.stressPenaltyLevelName})\n`;
                 }
@@ -14349,12 +14433,34 @@ async function closeAllBranches() {
         
         alert(resultMsg);
 
+        // ============================================================
+        // 🆕 REFRESH ALL WORKERS' PROGRESS BARS
+        // ============================================================
+        if (currentUser && currentUser.role === 'worker') {
+            setTimeout(async () => {
+                await loadTodayStressTarget();
+                await refreshStressTestDisplay();
+                console.log('🔄 Progress bar refreshed for all workers!');
+            }, 500);
+        }
+
         // Refresh data
         loadTodayActivity();
         loadCheckinBranches();
         loadStats();
         loadLocationMonitoring();
         loadWorkers();
+        
+        if (currentUser && currentUser.role === 'worker') {
+            setTimeout(function() {
+                if (typeof refreshStressTestDisplay === 'function') {
+                    refreshStressTestDisplay();
+                }
+                if (typeof loadTodayStressTarget === 'function') {
+                    loadTodayStressTarget();
+                }
+            }, 300);
+        }
 
     } catch (error) {
         console.error('Error closing all branches:', error);
