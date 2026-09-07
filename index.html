@@ -4404,17 +4404,19 @@ async function chooseWhoToTestFair(branchId, date) {
     }
 }
 // ============================================================
-// ✅ PERMANENT FIX: checkIfShouldStressTest - GUARANTEES AT LEAST ONE TEST PER DAY
+// ✅ FIXED: checkIfShouldStressTest() - TESTS EVERYONE
 // ============================================================
 
 async function checkIfShouldStressTest(workerId, branchId) {
+    // ✅ ALWAYS TEST EVERY WORKER - NO PRIORITY SYSTEM!
+    // Every worker who checks in gets a stress test.
+    // This ensures fairness and tests everyone daily.
+    
     try {
-        const today = new Date().toISOString().split('T')[0];
-        
-        // Get worker's stress test history
+        // Only verify the worker is active
         const { data: worker, error } = await _supabase
             .from('workers')
-            .select('last_stress_test_date, stress_test_count, is_active, full_name')
+            .select('is_active')
             .eq('id', workerId)
             .single();
         
@@ -4423,131 +4425,13 @@ async function checkIfShouldStressTest(workerId, branchId) {
             return false;
         }
         
-        // Get all workers at this branch today
-        const { data: branchWorkers } = await _supabase
-            .from('daily_logs')
-            .select('worker_id')
-            .eq('branch_id', branchId)
-            .eq('log_date', today)
-            .eq('is_closed', false);
-        
-        if (!branchWorkers || branchWorkers.length === 0) {
-            return false;
-        }
-        
-        const workerIds = branchWorkers.map(l => l.worker_id);
-        
-        // Get all workers with their stress test history
-        const { data: allWorkers } = await _supabase
-            .from('workers')
-            .select('id, full_name, last_stress_test_date, stress_test_count')
-            .in('id', workerIds);
-        
-        if (!allWorkers || allWorkers.length === 0) {
-            return false;
-        }
-        
-        // ============================================================
-        // STEP 1: Check if anyone has been tested today
-        // ============================================================
-        
-        const { data: todaysStressTests } = await _supabase
-            .from('daily_logs')
-            .select('worker_id')
-            .eq('log_date', today)
-            .eq('is_stress_test', true);
-        
-        const todaysTestedIds = todaysStressTests?.map(t => t.worker_id) || [];
-        const alreadyTestedToday = todaysTestedIds.includes(workerId);
-        
-        // If this worker already has a test today, skip
-        if (alreadyTestedToday) {
-            console.log(`   ℹ️ ${worker.full_name} already tested today`);
-            return false;
-        }
-        
-        // ============================================================
-        // STEP 2: GUARANTEE - If no one has been tested today, select the highest priority worker
-        // ============================================================
-        
-        if (todaysTestedIds.length === 0) {
-            // No one tested today - ALWAYS select the highest priority worker!
-            const sorted = allWorkers.sort((a, b) => {
-                // Priority 1: Never tested
-                if (!a.last_stress_test_date && b.last_stress_test_date) return -1;
-                if (a.last_stress_test_date && !b.last_stress_test_date) return 1;
-                
-                // Priority 2: Tested longest ago
-                if (a.last_stress_test_date && b.last_stress_test_date) {
-                    return new Date(a.last_stress_test_date) - new Date(b.last_stress_test_date);
-                }
-                
-                // Priority 3: Fewest tests
-                return (a.stress_test_count || 0) - (b.stress_test_count || 0);
-            });
-            
-            // Select the highest priority worker (index 0)
-            const selectedId = sorted[0]?.id;
-            const isSelected = selectedId === workerId;
-            
-            if (isSelected) {
-                console.log(`🧪 ${worker.full_name} SELECTED - FIRST STRESS TEST TODAY!`);
-                console.log(`   📊 Priority: #1 of ${sorted.length} workers`);
-                console.log(`   📅 Last Test: ${worker.last_stress_test_date || 'Never'}`);
-                console.log(`   📊 Test Count: ${worker.stress_test_count || 0}`);
-                return true;
-            }
-            
-            console.log(`   ℹ️ ${worker.full_name} not selected for today's required test`);
-            console.log(`   ✅ ${sorted[0]?.full_name} will be tested (first test today)`);
-            return false;
-        }
-        
-        // ============================================================
-        // STEP 3: NORMAL SELECTION - At least one person already tested today
-        // ============================================================
-        
-        // Sort workers by priority
-        const sorted = allWorkers.sort((a, b) => {
-            // Priority 1: Never tested
-            if (!a.last_stress_test_date && b.last_stress_test_date) return -1;
-            if (a.last_stress_test_date && !b.last_stress_test_date) return 1;
-            
-            // Priority 2: Tested longest ago
-            if (a.last_stress_test_date && b.last_stress_test_date) {
-                return new Date(a.last_stress_test_date) - new Date(b.last_stress_test_date);
-            }
-            
-            // Priority 3: Fewest tests
-            return (a.stress_test_count || 0) - (b.stress_test_count || 0);
-        });
-        
-        // Select 1-2 workers from the top
-        let testCount = Math.min(
-            Math.floor(Math.random() * 2) + 1,
-            sorted.length
-        );
-        
-        // Ensure at least 1 person is selected
-        if (todaysTestedIds.length > 0) {
-            testCount = Math.max(testCount, 1);
-        }
-        
-        const selectedIds = sorted.slice(0, testCount).map(w => w.id);
-        const isSelected = selectedIds.includes(workerId);
-        
-        if (isSelected) {
-            console.log(`🧪 ${worker.full_name} SELECTED for stress test`);
-            console.log(`   📊 Priority rank: ${sorted.findIndex(w => w.id === workerId) + 1}/${sorted.length}`);
-            console.log(`   📅 Last Test: ${worker.last_stress_test_date || 'Never'}`);
-            console.log(`   📊 Test Count: ${worker.stress_test_count || 0}`);
-        }
-        
-        return isSelected;
+        // ✅ EVERY ACTIVE WORKER GETS TESTED!
+        console.log(`   ✅ ${workerId} selected for stress test (EVERYONE gets tested)`);
+        return true;
         
     } catch (error) {
         console.error('Error in checkIfShouldStressTest:', error);
-        // On error, return false (don't stress test)
+        // On error, default to false (don't stress test)
         return false;
     }
 }
