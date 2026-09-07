@@ -16738,7 +16738,7 @@ function calculateWorkerImpact(processedData) {
                 impactPct: diffPct,
                 hoursDiff: earlyHours - lateHours,
                 correlation: correlation,
-                status: diff > 0 ? '✅ IMPROVES WHEN EARLY' : diff < 0 ? '🔴 WORSE WHEN EARLY' : '➡️ NO CHANGE',
+                status: diff > 0 ? '✅ IMPROVES WHEN EARLY' : diff < 0 ? '🟡 Building Early Momentum' : '➡️ NO CHANGE',
                 statusColor: diff > 0 ? '🟢' : diff < 0 ? '🔴' : '🟡',
                 earlyPct: w.total_count > 0 ? (w.early_count / w.total_count * 100) : 0,
                 latePct: w.total_count > 0 ? (w.late_count / w.total_count * 100) : 0
@@ -17493,7 +17493,7 @@ function renderTimeChartsNew(processedData) {
         }
     }
     
-    // Check-In Distribution with Sales overlay
+    // ─── CHART 1: CHECK-IN DISTRIBUTION ──────────────────────────────
     const checkInCtx = document.getElementById('tpCheckInChart');
     if (checkInCtx) {
         const timeSlots = [
@@ -17584,7 +17584,7 @@ function renderTimeChartsNew(processedData) {
         });
     }
     
-    // Scatter Chart - Hours vs Sales
+    // ─── CHART 2: SCATTER CHART ──────────────────────────────────────
     const scatterCtx = document.getElementById('tpScatterChart');
     if (scatterCtx) {
         const ctx = scatterCtx.getContext('2d');
@@ -17635,6 +17635,275 @@ function renderTimeChartsNew(processedData) {
                             callback: function(value) { return (value/1000000).toFixed(1) + 'M'; }
                         },
                         grid: { color: 'rgba(255,255,255,0.05)' }
+                    }
+                }
+            }
+        });
+    }
+    
+    // ─── CHART 3: WEEKLY PERFORMANCE TREND ───────────────────────────
+    const weeklyCtx = document.getElementById('tpWeeklyChart');
+    if (weeklyCtx) {
+        const ctx = weeklyCtx.getContext('2d');
+        
+        // Helper: Get week number
+        function getWeekNumber(d) {
+            d = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+            d.setUTCDate(d.getUTCDate() + 4 - (d.getUTCDay() || 7));
+            const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+            const weekNo = Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
+            return weekNo;
+        }
+        
+        // Group by week
+        const weekGroups = {};
+        processedData.forEach(r => {
+            const date = new Date(r.log_date);
+            const weekNum = getWeekNumber(date);
+            const year = date.getFullYear();
+            const key = `${year}-W${String(weekNum).padStart(2, '0')}`;
+            
+            if (!weekGroups[key]) {
+                weekGroups[key] = { 
+                    sales: 0, 
+                    credits: 0, 
+                    count: 0,
+                    early: 0,
+                    late: 0
+                };
+            }
+            weekGroups[key].sales += r.daily_sales || 0;
+            weekGroups[key].credits += r.worker_credit || 0;
+            weekGroups[key].count++;
+            if (r.is_on_time) weekGroups[key].early++;
+            else weekGroups[key].late++;
+        });
+        
+        const weekKeys = Object.keys(weekGroups).sort();
+        const weekLabels = weekKeys;
+        const salesData = weekKeys.map(k => weekGroups[k].sales || 0);
+        const creditData = weekKeys.map(k => weekGroups[k].count > 0 ? (weekGroups[k].credits / weekGroups[k].count) : 0);
+        
+        tpChartInstances.weekly = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: weekLabels,
+                datasets: [
+                    {
+                        label: '📈 Total Sales (UGX)',
+                        data: salesData,
+                        borderColor: '#ffd700',
+                        backgroundColor: 'rgba(255,215,0,0.1)',
+                        borderWidth: 3,
+                        pointBackgroundColor: '#ffd700',
+                        pointRadius: 5,
+                        tension: 0.3,
+                        fill: true,
+                        yAxisID: 'y1'
+                    },
+                    {
+                        label: '💳 Avg Credits',
+                        data: creditData,
+                        borderColor: '#4BC0C0',
+                        backgroundColor: 'rgba(75,192,192,0.1)',
+                        borderWidth: 2,
+                        pointBackgroundColor: '#4BC0C0',
+                        pointRadius: 4,
+                        tension: 0.3,
+                        fill: false,
+                        yAxisID: 'y'
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { 
+                        labels: { 
+                            color: 'rgba(255,255,255,0.5)', 
+                            font: { size: 9 },
+                            boxWidth: 12
+                        } 
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                if (context.datasetIndex === 0) {
+                                    return 'Sales: UGX ' + context.parsed.y.toLocaleString();
+                                }
+                                return 'Avg Credits: ' + context.parsed.y.toFixed(0);
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        position: 'left',
+                        ticks: { 
+                            color: 'rgba(75,192,192,0.3)', 
+                            font: { size: 8 },
+                            callback: function(value) { return value.toFixed(0); }
+                        },
+                        grid: { color: 'rgba(255,255,255,0.05)' },
+                        title: { display: true, text: 'Credits', color: 'rgba(255,255,255,0.2)', font: { size: 8 } }
+                    },
+                    y1: {
+                        beginAtZero: true,
+                        position: 'right',
+                        ticks: { 
+                            color: 'rgba(255,215,0,0.3)', 
+                            font: { size: 8 },
+                            callback: function(value) { return (value/1000000).toFixed(1) + 'M'; }
+                        },
+                        grid: { display: false },
+                        title: { display: true, text: 'Sales (UGX)', color: 'rgba(255,255,255,0.2)', font: { size: 8 } }
+                    },
+                    x: {
+                        ticks: { 
+                            color: 'rgba(255,255,255,0.3)', 
+                            font: { size: 8 },
+                            maxRotation: 45
+                        },
+                        grid: { display: false }
+                    }
+                }
+            }
+        });
+    }
+    
+    // ─── CHART 4: DAILY HOURS PATTERN ───────────────────────────────
+    const dailyCtx = document.getElementById('tpDailyPatternsChart');
+    if (dailyCtx) {
+        const ctx = dailyCtx.getContext('2d');
+        
+        // Group by day of week
+        const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+        const dayData = {};
+        
+        processedData.forEach(r => {
+            const date = new Date(r.log_date);
+            const day = date.getDay();
+            const dayName = dayNames[day];
+            
+            if (!dayData[dayName]) {
+                dayData[dayName] = { 
+                    hours: [], 
+                    sales: [], 
+                    count: 0,
+                    early: 0,
+                    late: 0
+                };
+            }
+            dayData[dayName].hours.push(r.hours_worked || 0);
+            dayData[dayName].sales.push(r.daily_sales || 0);
+            dayData[dayName].count++;
+            if (r.is_on_time) dayData[dayName].early++;
+            else dayData[dayName].late++;
+        });
+        
+        // Order: Monday to Sunday
+        const orderedDays = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+        const dayLabels = [];
+        const hoursData = [];
+        const salesData = [];
+        
+        orderedDays.forEach(day => {
+            if (dayData[day]) {
+                dayLabels.push(day);
+                const avgHours = dayData[day].hours.reduce((a, b) => a + b, 0) / dayData[day].hours.length;
+                const avgSales = dayData[day].sales.reduce((a, b) => a + b, 0) / dayData[day].sales.length;
+                hoursData.push(avgHours);
+                salesData.push(avgSales);
+            } else {
+                dayLabels.push(day);
+                hoursData.push(0);
+                salesData.push(0);
+            }
+        });
+        
+        tpChartInstances.daily = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: dayLabels,
+                datasets: [
+                    {
+                        label: '⏰ Avg Hours',
+                        data: hoursData,
+                        backgroundColor: 'rgba(212,165,116,0.6)',
+                        borderColor: '#d4a574',
+                        borderWidth: 2,
+                        borderRadius: 4,
+                        yAxisID: 'y'
+                    },
+                    {
+                        label: '📊 Avg Sales (UGX)',
+                        data: salesData,
+                        type: 'line',
+                        borderColor: '#ffd700',
+                        backgroundColor: 'rgba(255,215,0,0.1)',
+                        borderWidth: 2,
+                        pointBackgroundColor: '#ffd700',
+                        pointRadius: 4,
+                        tension: 0.3,
+                        yAxisID: 'y1',
+                        fill: true
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { 
+                        labels: { 
+                            color: 'rgba(255,255,255,0.5)', 
+                            font: { size: 9 },
+                            boxWidth: 12
+                        } 
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                if (context.datasetIndex === 0) {
+                                    return context.parsed.y.toFixed(1) + ' hours';
+                                }
+                                return 'UGX ' + context.parsed.y.toLocaleString();
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        position: 'left',
+                        max: 12,
+                        ticks: { 
+                            color: 'rgba(212,165,116,0.3)', 
+                            font: { size: 8 },
+                            callback: function(value) { return value + 'h'; }
+                        },
+                        grid: { color: 'rgba(255,255,255,0.05)' },
+                        title: { display: true, text: 'Hours', color: 'rgba(255,255,255,0.2)', font: { size: 8 } }
+                    },
+                    y1: {
+                        beginAtZero: true,
+                        position: 'right',
+                        ticks: { 
+                            color: 'rgba(255,215,0,0.3)', 
+                            font: { size: 8 },
+                            callback: function(value) { return (value/1000000).toFixed(1) + 'M'; }
+                        },
+                        grid: { display: false },
+                        title: { display: true, text: 'Sales (UGX)', color: 'rgba(255,255,255,0.2)', font: { size: 8 } }
+                    },
+                    x: {
+                        ticks: { 
+                            color: 'rgba(255,255,255,0.3)', 
+                            font: { size: 9 }
+                        },
+                        grid: { display: false }
                     }
                 }
             }
