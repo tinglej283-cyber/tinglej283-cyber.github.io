@@ -3689,7 +3689,8 @@ function calculateTier3Scores(workers, stressResults) {
     }));
 }
 // ============================================================
-// ✅ UPDATED: calculateUnifiedBonuses() - Uses correct per-worker credits
+// ============================================================
+// ✅ UPDATED: calculateUnifiedBonuses() - NO HOURS FACTOR
 // ============================================================
 function calculateUnifiedBonuses(workers, checkInTimes, stressResults, dailySales) {
     // STEP 1: Calculate Total Bonus Pool (2% of sales)
@@ -3714,10 +3715,11 @@ function calculateUnifiedBonuses(workers, checkInTimes, stressResults, dailySale
             console.log(`🏆 Tier 1 Winner: ${tier1Winner.name} with ${topCredits} credits → UGX ${tier1Pool.toFixed(2)}`);
         } else {
             tier1Tied = true;
-            // Tier 1 rolls to Tier 3
-            tier3Pool += tier1Pool;
+            // ✅ FIXED: Tier 1 rolls to Tier 3
+            const tier1Amount = tier1Pool;
+            tier3Pool += tier1Amount;
             tier1Pool = 0;
-            console.log(`🔄 Tier 1: TIE detected! ${tier1Pool.toFixed(2)} rolled to Tier 3 (Total Tier 3: ${tier3Pool.toFixed(2)})`);
+            console.log(`🔄 Tier 1: TIE detected! ${tier1Amount.toFixed(2)} rolled to Tier 3 (Total Tier 3: ${tier3Pool.toFixed(2)})`);
         }
     }
     
@@ -3864,7 +3866,6 @@ function calculateUnifiedBonuses(workers, checkInTimes, stressResults, dailySale
             tier3Score,
             tier3BeatPct,
             tier3Streak,
-            // For backward compatibility
             snatch: tier1 + tier2,
             performance: tier3
         };
@@ -8231,8 +8232,7 @@ async function captureBranchLocation() {
 }
 
 // ============================================================
-// ============================================================
-// ✅ UPDATED: LOAD SETTINGS - WITH JACKPOT
+// ✅ UPDATED: loadSettings() - NO HOURS FACTOR
 // ============================================================
 
 async function loadSettings() {
@@ -8254,7 +8254,7 @@ async function loadSettings() {
             document.getElementById('settingMaxPrice').value = data.max_price || 500000;
             document.getElementById('settingMaxRevenue').value = data.max_revenue || 10000000;
             document.getElementById('settingMaxItems').value = data.max_items || 200;
-            document.getElementById('settingBonus').value = data.bonus_percentage || 2.0; // Changed to 2%
+            document.getElementById('settingBonus').value = data.bonus_percentage || 2.0;
             document.getElementById('settingBufferRadius').value = data.buffer_radius || 150;
             
             MAX_PRICE = data.max_price || 500000;
@@ -8262,12 +8262,9 @@ async function loadSettings() {
             MAX_ITEMS = data.max_items || 200;
             LOCATION_BUFFER = data.buffer_radius || 150;
             
-            // 🆕 Display jackpot info
-            const jackpotAmount = data.jackpot_amount || 0;
-            const jackpotDisplay = document.getElementById('jackpotDisplay');
-            if (jackpotDisplay) {
-                jackpotDisplay.textContent = `🎰 Jackpot Jar: UGX ${jackpotAmount.toLocaleString()} / UGX ${JACKPOT_MAX.toLocaleString()}`;
-            }
+            // ✅ REMOVE: target_hours and sunday_hours_factor from display
+            // document.getElementById('settingTargetHours').value = data.target_hours || 8;
+            // document.getElementById('settingSundayHoursFactor').value = data.sunday_hours_factor || 1.0;
         }
     } catch (err) {
         console.error('Error in loadSettings:', err);
@@ -15340,26 +15337,7 @@ async function autoCloseDay() {
 
             const forcedCheckoutTime = new Date(today + 'T15:00:00').toISOString();
             
-            const hoursMap = {};
-            let totalHours = 0;
-            let maxHours = 0;
-            
-            for (const log of logs) {
-                let hours = 0;
-                if (log.check_in_time) {
-                    const checkIn = new Date(log.check_in_time);
-                    const forcedCheckout = new Date(forcedCheckoutTime);
-                    hours = (forcedCheckout - checkIn) / (1000 * 60 * 60);
-                    hours = Math.max(0, Math.min(hours, 17));
-                }
-                hoursMap[log.worker_id] = hours;
-                totalHours += hours;
-                if (hours > maxHours) maxHours = hours;
-            }
-            
-            const avgHours = logs.length > 0 ? totalHours / logs.length : 8;
-            if (maxHours === 0) maxHours = 8;
-            if (avgHours === 0) maxHours = 8;
+           
 
             const monthStart = today.slice(0, 7) + '-01';
             const { data: monthLogs } = await _supabase
@@ -15389,7 +15367,7 @@ async function autoCloseDay() {
                 if (!worker) continue;
 
                 const hoursWorked = hoursMap[log.worker_id] || 0;
-                const hoursFactor = calculateHoursFactor(hoursWorked, maxHours, avgHours);
+                
                 const consistency = consistencyMap[log.worker_id] || 0;
 
                 const tempProportion = 1 / logs.length;
@@ -15405,7 +15383,7 @@ async function autoCloseDay() {
                     revenueFactor,
                     volumeFactor,
                     priceFactor,
-                    hoursFactor,
+            
                     consistency
                 );
 
@@ -15415,7 +15393,7 @@ async function autoCloseDay() {
                     revenueFactor: revenueFactor,
                     volumeFactor: volumeFactor,
                     priceFactor: priceFactor,
-                    hoursFactor: hoursFactor,
+                    
                     consistency: consistency,
                     hoursWorked: hoursWorked
                 };
@@ -15444,7 +15422,7 @@ async function autoCloseDay() {
                     revenueFactor,
                     volumeFactor,
                     priceFactor,
-                    data.hoursFactor,
+                    
                     data.consistency
                 );
 
@@ -15468,7 +15446,7 @@ async function autoCloseDay() {
                     revenueFactor: revenueFactor,
                     volumeFactor: volumeFactor,
                     priceFactor: priceFactor,
-                    hoursFactor: data.hoursFactor,
+                    
                     consistency: data.consistency,
                     finalWeightedScore: finalWeightedScore
                 });
@@ -15488,7 +15466,7 @@ async function autoCloseDay() {
                         price_factor: update.priceFactor,
                         revenue_factor: update.revenueFactor,
                         volume_factor: update.volumeFactor,
-                        hours_factor: update.hoursFactor,
+                        
                         consistency_factor: update.consistency,
                         is_closed: true,
                         check_out_time: update.forced_checkout,
@@ -19638,6 +19616,419 @@ async function recalculateStressTargets(branchId) {
     
     return updatedCount;
 }
+// ============================================================
+// 🗑️ PERMANENT AUTO-DELETE - STRESS TESTS OLDER THAN 7 DAYS
+// ============================================================
+
+// ============================================================
+// FUNCTION 1: DELETE OLD STRESS TESTS
+// ============================================================
+async function deleteOldStressTests() {
+    try {
+        // Calculate cutoff date (7 days ago)
+        const today = new Date();
+        const cutoffDate = new Date(today);
+        cutoffDate.setDate(cutoffDate.getDate() - 7);
+        const cutoffStr = cutoffDate.toISOString().split('T')[0];
+        
+        console.log(`🗑️ Auto-deleting stress tests before ${cutoffStr}...`);
+        
+        // Find old stress tests
+        const { data: oldTests, error: findError } = await _supabase
+            .from('daily_logs')
+            .select('id, log_date, worker_id')
+            .eq('is_stress_test', true)
+            .lt('log_date', cutoffStr);
+        
+        if (findError) {
+            console.error('❌ Error finding old stress tests:', findError);
+            return 0;
+        }
+        
+        if (!oldTests || oldTests.length === 0) {
+            console.log('✅ No old stress tests to delete');
+            return 0;
+        }
+        
+        console.log(`   Found ${oldTests.length} old stress test(s) to delete`);
+        
+        // Delete them one by one (or in batches)
+        let deletedCount = 0;
+        for (const test of oldTests) {
+            const { error: deleteError } = await _supabase
+                .from('daily_logs')
+                .update({
+                    is_stress_test: false,
+                    stress_target: null,
+                    stress_penalty: null,
+                    stress_shortfall: null,
+                    stress_shortfall_percent: null,
+                    stress_penalty_level_name: null,
+                    stress_avg_credits: null,
+                    stress_latest_credits: null,
+                    stress_team_avg: null,
+                    stress_branch_avg: null,
+                    stress_team_days: null,
+                    stress_team_exists: null,
+                    stress_assigned_at: null
+                })
+                .eq('id', test.id);
+            
+            if (!deleteError) {
+                deletedCount++;
+                console.log(`   🗑️ Deleted stress test from ${test.log_date}`);
+            }
+        }
+        
+        console.log(`✅ Deleted ${deletedCount} old stress test(s)`);
+        return deletedCount;
+        
+    } catch (error) {
+        console.error('❌ Error in deleteOldStressTests:', error);
+        return 0;
+    }
+}
+
+// ============================================================
+// FUNCTION 2: SCHEDULE AUTO-DELETE (Runs every hour)
+// ============================================================
+function scheduleAutoDeleteStressTests() {
+    // Clear any existing interval
+    if (window.stressTestDeleteInterval) {
+        clearInterval(window.stressTestDeleteInterval);
+    }
+    
+    // Run immediately on page load
+    setTimeout(() => {
+        deleteOldStressTests();
+    }, 2000);
+    
+    // Then run every hour (3600000 ms)
+    window.stressTestDeleteInterval = setInterval(() => {
+        deleteOldStressTests();
+    }, 3600000); // 1 hour
+    
+    console.log('⏰ Auto-delete scheduled (runs every hour)');
+}
+
+// ============================================================
+// FUNCTION 3: DELETE ON DEMAND (Manual trigger)
+// ============================================================
+function manualDeleteOldStressTests() {
+    deleteOldStressTests().then(count => {
+        if (count > 0) {
+            alert(`✅ Deleted ${count} old stress test(s) older than 7 days!`);
+        } else {
+            alert('✅ No old stress tests found (all data is within 7 days)');
+        }
+        // Refresh the stress test display
+        if (typeof loadStressTestDashboard === 'function') {
+            loadStressTestDashboard();
+        }
+    });
+}
+
+// ============================================================
+// FUNCTION 4: MODIFY loadStressTestDashboard to only show 7 days
+// ============================================================
+// We need to modify the existing loadStressTestDashboard function
+// to only show data from the last 7 days
+
+// Save the original function if it exists
+const originalLoadStressTestDashboard = window.loadStressTestDashboard || 
+    (typeof loadStressTestDashboard !== 'undefined' ? loadStressTestDashboard : null);
+
+// Override the function to filter by date
+window.loadStressTestDashboard = async function() {
+    let container = document.getElementById('stressTestDashboard');
+    if (!container) {
+        const checkinTab = document.getElementById('tabCheckin');
+        if (checkinTab) {
+            const newContainer = document.createElement('div');
+            newContainer.id = 'stressTestDashboard';
+            newContainer.innerHTML = '<div class="loading">Loading stress test results...</div>';
+            checkinTab.appendChild(newContainer);
+            container = newContainer;
+        } else {
+            return;
+        }
+    }
+    
+    try {
+        const isWorker = currentUser?.role === 'worker';
+        
+        // Calculate 7 days ago
+        const today = new Date();
+        const sevenDaysAgo = new Date(today);
+        sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+        const sevenDaysAgoStr = sevenDaysAgo.toISOString().split('T')[0];
+        
+        let query = _supabase
+            .from('daily_logs')
+            .select(`
+                *,
+                workers:worker_id (full_name, jc_id)
+            `)
+            .eq('is_stress_test', true)
+            .eq('is_closed', true)
+            .gte('log_date', sevenDaysAgoStr)  // ✅ ONLY LAST 7 DAYS!
+            .order('log_date', { ascending: false });
+        
+        if (isWorker) {
+            query = query.eq('worker_id', currentUser.id);
+            query = query.limit(10);
+        }
+        
+        const { data: results, error } = await query;
+        
+        if (error) {
+            console.error('❌ Database error:', error);
+            container.innerHTML = `<p style="color:#e94560;font-size:13px;">❌ Error: ${error.message}</p>`;
+            return;
+        }
+        
+        let html = `
+            <div style="background:rgba(255,215,0,0.05);border:1px solid rgba(255,215,0,0.15);border-radius:12px;padding:16px;margin-top:16px;">
+                <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:8px;">
+                    <h4 style="color:#ffd700;font-weight:400;font-family:'Playfair Display',serif;font-size:16px;letter-spacing:0.5px;margin:0;">
+                        🧪 ${isWorker ? 'Your Stress Test Results' : 'Today\'s Stress Tests'}
+                    </h4>
+                    <span style="font-size:10px;color:rgba(255,255,255,0.2);">
+                        📅 Last 7 Days Only
+                    </span>
+                </div>
+        `;
+        
+        if (!results || results.length === 0) {
+            html += `
+                <div style="padding:12px;background:rgba(255,255,255,0.03);border-radius:8px;border:1px solid rgba(255,255,255,0.06);">
+                    <p style="color:rgba(255,255,255,0.4);font-size:13px;margin:0;">
+                        📭 ${isWorker ? 'You have no stress test results in the last 7 days.' : 'No stress tests in the last 7 days.'}
+                    </p>
+                </div>
+            `;
+        } else {
+            html += `
+                <div style="overflow-x:auto;">
+                    <table style="width:100%;font-size:12px;">
+                        <thead>
+                            <tr style="background:rgba(255,255,255,0.03);">
+                                <th style="padding:8px 12px;text-align:left;color:rgba(255,255,255,0.4);">Date</th>
+                                ${!isWorker ? '<th style="padding:8px 12px;text-align:left;color:rgba(255,255,255,0.4);">Worker</th>' : ''}
+                                <th style="padding:8px 12px;text-align:left;color:rgba(255,255,255,0.4);">Target</th>
+                                <th style="padding:8px 12px;text-align:left;color:rgba(255,255,255,0.4);">Earned</th>
+                                <th style="padding:8px 12px;text-align:left;color:rgba(255,255,255,0.4);">Result</th>
+                                <th style="padding:8px 12px;text-align:left;color:rgba(255,255,255,0.4);">Penalty</th>
+                                <th style="padding:8px 12px;text-align:left;color:rgba(255,255,255,0.4);">Final</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+            `;
+            
+            for (const result of results) {
+                const dateDisplay = result.log_date ? new Date(result.log_date).toLocaleDateString() : 'Unknown';
+                const workerName = result.workers?.full_name || 'Unknown';
+                const credits = result.worker_credit || 0;
+                const stressTarget = result.stress_target || 5000;
+                const passed = credits >= stressTarget;
+                const statusColor = passed ? '#7bcfa6' : '#e94560';
+                const statusText = passed ? '✅ PASS' : '❌ FAIL';
+                
+                const penalty = result.stress_penalty || 0;
+                const penaltyDisplay = penalty > 0 ? `-${penalty}` : '✅';
+                const penaltyColor = penalty > 0 ? '#e94560' : '#7bcfa6';
+                
+                html += `
+                    <tr style="border-bottom:1px solid rgba(255,255,255,0.03);${!passed ? 'background:rgba(233,69,96,0.03);' : ''}">
+                        <td style="padding:6px 12px;color:rgba(255,255,255,0.4);font-size:10px;">${dateDisplay}</td>
+                        ${!isWorker ? `<td style="padding:6px 12px;color:#f0ebe6;font-size:11px;">${workerName}</td>` : ''}
+                        <td style="padding:6px 12px;color:rgba(255,255,255,0.6);font-size:11px;">${Math.round(stressTarget).toLocaleString()}</td>
+                        <td style="padding:6px 12px;color:#ffd700;font-weight:600;font-size:11px;">${Math.round(credits).toLocaleString()}</td>
+                        <td style="padding:6px 12px;color:${statusColor};font-weight:600;font-size:11px;">${statusText}</td>
+                        <td style="padding:6px 12px;color:${penaltyColor};font-weight:600;font-size:11px;">${penaltyDisplay}</td>
+                        <td style="padding:6px 12px;font-size:11px;color:${statusColor};">${Math.round(credits).toLocaleString()}</td>
+                    </tr>
+                `;
+            }
+            
+            html += `
+                        </tbody>
+                    </table>
+                </div>
+                
+                <div style="margin-top:8px;display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px;font-size:10px;color:rgba(255,255,255,0.2);">
+                    <span>💡 Workers who PASS stress tests earn a BONUS! 🏆</span>
+                    <span>📊 ${results.length} test(s) shown (last 7 days)</span>
+                </div>
+            `;
+        }
+        
+        if (isWorker) {
+            html += `
+                <div style="margin-top:8px;padding:6px 12px;background:rgba(123,207,166,0.05);border-radius:6px;border:1px solid rgba(123,207,166,0.1);font-size:10px;color:rgba(255,255,255,0.3);">
+                    🔒 Only showing your personal stress test results from the last 7 days.
+                </div>
+            `;
+        }
+        
+        html += `</div>`;
+        container.innerHTML = html;
+        
+    } catch (error) {
+        console.error('❌ Error loading stress test dashboard:', error);
+        if (container) {
+            container.innerHTML = `<p style="color:#e94560;font-size:13px;">❌ Error: ${error.message}</p>`;
+        }
+    }
+};
+
+// ============================================================
+// FUNCTION 5: INITIALIZE AUTO-DELETE SYSTEM
+// ============================================================
+function initAutoDeleteSystem() {
+    console.log('🗑️ Initializing Auto-Delete System for Stress Tests (7-day retention)');
+    
+    // 1. Delete old stress tests immediately
+    setTimeout(() => {
+        deleteOldStressTests();
+    }, 1000);
+    
+    // 2. Schedule hourly auto-delete
+    scheduleAutoDeleteStressTests();
+    
+    // 3. Add a manual delete button to the UI
+    addDeleteButton();
+    
+    console.log('✅ Auto-Delete System initialized!');
+    console.log('   📅 Data older than 7 days will be automatically deleted');
+    console.log('   ⏰ Runs every hour');
+    console.log('   🔘 Manual delete button added to Stress Test dashboard');
+}
+
+// ============================================================
+// FUNCTION 6: ADD MANUAL DELETE BUTTON
+// ============================================================
+function addDeleteButton() {
+    // Wait for the stress test dashboard to load
+    const checkInterval = setInterval(() => {
+        const container = document.getElementById('stressTestDashboard');
+        if (container) {
+            // Check if button already exists
+            if (document.getElementById('manualDeleteBtn')) {
+                clearInterval(checkInterval);
+                return;
+            }
+            
+            // Create the button
+            const buttonDiv = document.createElement('div');
+            buttonDiv.style.marginTop = '8px';
+            buttonDiv.style.textAlign = 'right';
+            buttonDiv.innerHTML = `
+                <button id="manualDeleteBtn" 
+                        onclick="manualDeleteOldStressTests()" 
+                        style="background:rgba(233,69,96,0.12);color:#e94560;border:1px solid rgba(233,69,96,0.2);padding:4px 14px;border-radius:6px;cursor:pointer;font-size:10px;font-family:'Inter',sans-serif;transition:all 0.3s ease;"
+                        onmouseover="this.style.background='rgba(233,69,96,0.2)'" 
+                        onmouseout="this.style.background='rgba(233,69,96,0.12)'">
+                    🗑️ Delete Stress Tests > 7 Days
+                </button>
+            `;
+            container.appendChild(buttonDiv);
+            clearInterval(checkInterval);
+            console.log('✅ Manual delete button added to Stress Test dashboard');
+        }
+    }, 2000);
+}
+
+// ============================================================
+// STEP 7: MODIFY CLOSE DAY FUNCTIONS TO AUTO-DELETE
+// ============================================================
+// Wrap the original closeDay functions to run auto-delete after closing
+
+// Save original functions
+const originalCloseDay = window.closeDay || (typeof closeDay !== 'undefined' ? closeDay : null);
+const originalCloseDayByWorker = window.closeDayByWorker || (typeof closeDayByWorker !== 'undefined' ? closeDayByWorker : null);
+const originalCloseAllBranches = window.closeAllBranches || (typeof closeAllBranches !== 'undefined' ? closeAllBranches : null);
+
+// Override closeDay
+if (typeof closeDay !== 'undefined' || window.closeDay) {
+    window.closeDay = async function(branchId, branchName) {
+        // Call original function
+        if (originalCloseDay) {
+            await originalCloseDay.call(this, branchId, branchName);
+        }
+        // Then delete old stress tests
+        setTimeout(() => {
+            deleteOldStressTests();
+            // Refresh the stress test display
+            if (typeof loadStressTestDashboard === 'function') {
+                loadStressTestDashboard();
+            }
+        }, 1000);
+    };
+}
+
+// Override closeDayByWorker
+if (typeof closeDayByWorker !== 'undefined' || window.closeDayByWorker) {
+    window.closeDayByWorker = async function(branchId, branchName) {
+        if (originalCloseDayByWorker) {
+            await originalCloseDayByWorker.call(this, branchId, branchName);
+        }
+        setTimeout(() => {
+            deleteOldStressTests();
+            if (typeof loadStressTestDashboard === 'function') {
+                loadStressTestDashboard();
+            }
+        }, 1000);
+    };
+}
+
+// Override closeAllBranches
+if (typeof closeAllBranches !== 'undefined' || window.closeAllBranches) {
+    window.closeAllBranches = async function() {
+        if (originalCloseAllBranches) {
+            await originalCloseAllBranches.call(this);
+        }
+        setTimeout(() => {
+            deleteOldStressTests();
+            if (typeof loadStressTestDashboard === 'function') {
+                loadStressTestDashboard();
+            }
+        }, 1000);
+    };
+}
+
+// ============================================================
+// STEP 8: RUN ON PAGE LOAD
+// ============================================================
+// Initialize when DOM is ready
+document.addEventListener('DOMContentLoaded', function() {
+    // Wait a moment for everything to load
+    setTimeout(() => {
+        initAutoDeleteSystem();
+    }, 3000);
+});
+
+// Also run when the page is fully loaded
+window.addEventListener('load', function() {
+    setTimeout(() => {
+        initAutoDeleteSystem();
+    }, 1000);
+});
+
+// ============================================================
+// STEP 9: EXPOSE FUNCTIONS GLOBALLY
+// ============================================================
+window.deleteOldStressTests = deleteOldStressTests;
+window.scheduleAutoDeleteStressTests = scheduleAutoDeleteStressTests;
+window.manualDeleteOldStressTests = manualDeleteOldStressTests;
+window.initAutoDeleteSystem = initAutoDeleteSystem;
+window.loadStressTestDashboard = window.loadStressTestDashboard || loadStressTestDashboard;
+
+console.log('✅ Auto-Delete System fully loaded!');
+console.log('   📅 Stress tests older than 7 days will be auto-deleted');
+console.log('   ⏰ Runs every hour');
+console.log('   🔘 Click "Delete Stress Tests > 7 Days" button to manually delete');
+console.log('   🗑️ Also auto-deletes after closing days');
 </script>
 
 </script>
