@@ -9920,7 +9920,7 @@ function calculateWorkerCredits(totalSales, totalItems, maxRevenue, maxItems, ma
     return credits;
 }
 // ============================================================
-// ✅ COMPLETE UPDATED: closeDayByWorker() - Worker Version
+// 🔧 CLOSE DAY BY WORKER - Worker Version (FULLY FIXED)
 // ============================================================
 async function closeDayByWorker(branchId, branchName) {
     if (!currentUser || currentUser.role !== 'worker') {
@@ -10050,7 +10050,7 @@ async function closeDayByWorker(branchId, branchName) {
             return;
         }
 
-        // ✅ Calculate TOTAL credits using the FIXED function
+        // ✅ Calculate TOTAL credits
         const totalBranchCredits = calculateWorkerCredits(
             newTotalSales,
             newTotalItems,
@@ -10093,12 +10093,6 @@ async function closeDayByWorker(branchId, branchName) {
             `✅ Existing data was PRESERVED\n` +
             `✅ NO stress test was assigned\n` +
             `✅ Credits INCREASED based on new total`);
-
-        setTimeout(async () => {
-            await loadTodayStressTarget();
-            await refreshStressTestDisplay();
-            console.log('🔄 Progress bar refreshed!');
-        }, 500);
 
         loadTodayActivity();
         loadCheckinBranches();
@@ -10252,7 +10246,7 @@ async function closeDayByWorker(branchId, branchName) {
         const workersForBonus = refreshedLogs.map(log => ({
             id: log.worker_id,
             name: log.workers?.full_name || 'Unknown',
-            credits: creditsPerWorker,  // ← SAME for all workers!
+            credits: creditsPerWorker,
             jc_id: log.workers?.jc_id || 'N/A',
             log: log,
             worker: log.workers
@@ -10323,10 +10317,10 @@ async function closeDayByWorker(branchId, branchName) {
 
         let closedCount = 0;
 
-        // ✅ STEP 3: Update EACH worker's log with their share
+        // ✅ STEP 3: Update EACH worker's log with their share AND apply penalties
         for (const worker of workersForBonus) {
             const log = worker.log;
-            let credits = creditsPerWorker;  // ← Use the same credits for all
+            let credits = creditsPerWorker;
             
             const workerBonus = bonusResult.results.find(r => r.worker.id === worker.id);
             
@@ -10346,7 +10340,9 @@ async function closeDayByWorker(branchId, branchName) {
             const dailyCost = dailyRate + (worker.worker?.monthly_base_salary || 250000) / daysInMonth;
             const dailyBPI = dailyCost > 0 ? credits / dailyCost : 0;
             
-            // Stress penalty
+            // ============================================================
+            // ✅ STRESS PENALTY - NOW APPLIED TO worker_credit!
+            // ============================================================
             let stressPenalty = 0;
             let stressPenaltyLevelName = 'No penalty';
             let stressShortfall = 0;
@@ -10371,7 +10367,9 @@ async function closeDayByWorker(branchId, branchName) {
                     stressPenaltyLevelName = penaltyResult.levelName;
                     stressShortfall = penaltyResult.shortfall;
                     stressShortfallPercent = penaltyResult.shortfallPercent;
-                    credits = penaltyResult.newActualCredits;
+                    
+                    // ✅ ✅ ✅ FIX: Apply penalty to credits BEFORE saving!
+                    credits = penaltyResult.newActualCredits;  // ← This is the key fix!
                     
                     await _supabase
                         .from('workers')
@@ -10397,12 +10395,14 @@ async function closeDayByWorker(branchId, branchName) {
                 }
             }
             
+            // ✅ STEP 4: Update the log with the calculated values
+            // ✅ ✅ ✅ FIX: credits already has penalty applied!
             const { error: updateError } = await _supabase
                 .from('daily_logs')
                 .update({
                     daily_sales: salesPerWorker,
                     items_sold: itemsPerWorker,
-                    worker_credit: credits,
+                    worker_credit: credits,  // ← ALREADY HAS PENALTY APPLIED!
                     daily_cost: dailyCost,
                     daily_bpi: dailyBPI,
                     daily_pay: dailyPay,
@@ -10494,7 +10494,7 @@ async function closeDayByWorker(branchId, branchName) {
                             tier1: tier1Amount,
                             tier2: tier2Amount,
                             tier3: tier3Amount,
-                            credits: credits,
+                            credits: credits,  // ← Already has penalty applied!
                             tier1_winner: isTier1Winner,
                             tier2_winner: isTier2Winner,
                             tier3_score: tier3Score,
@@ -10516,7 +10516,7 @@ async function closeDayByWorker(branchId, branchName) {
                         workerId: log.worker_id,
                         name: worker.name,
                         jc_id: worker.jc_id,
-                        credits: credits,
+                        credits: credits,  // ← Already has penalty applied!
                         dailyPay: dailyPay,
                         tier1Amount: tier1Amount,
                         tier2Amount: tier2Amount,
@@ -10669,7 +10669,7 @@ async function closeDayByWorker(branchId, branchName) {
     }
 }
 // ============================================================
-// ✅ COMPLETE UPDATED: closeDay() - Manager Version
+// 🔧 CLOSE DAY - Manager Version (FULLY FIXED)
 // ============================================================
 async function closeDay(branchId, branchName) {
     if (!currentUser || currentUser.role !== 'manager') {
@@ -10795,7 +10795,7 @@ async function closeDay(branchId, branchName) {
         try {
             const daysInMonth = getDaysInMonth(today);
 
-            // ✅ Calculate TOTAL branch credits using the FIXED function
+            // ✅ Calculate TOTAL branch credits
             const totalBranchCredits = calculateWorkerCredits(
                 newTotalSales,
                 newTotalItems,
@@ -10804,6 +10804,7 @@ async function closeDay(branchId, branchName) {
                 MAX_PRICE
             );
 
+            // ✅ Calculate credits per worker
             const creditsPerWorker = Math.round(totalBranchCredits / openLogs.length);
             const salesPerWorker = newTotalSales / openLogs.length;
             const itemsPerWorker = Math.round(newTotalItems / openLogs.length);
@@ -10811,6 +10812,7 @@ async function closeDay(branchId, branchName) {
             let successCount = 0;
             let results = [];
 
+            // ✅ Loop through EACH worker and update them
             for (const log of openLogs) {
                 const dailyRate = 10000;
                 const dailyPay = dailyRate;
@@ -10860,33 +10862,6 @@ async function closeDay(branchId, branchName) {
             resultMsg += `✅ NO stress test was assigned\n`;
             resultMsg += `✅ Credits INCREASED based on new total`;
             alert(resultMsg);
-
-            // ✅ CREATE BROADCAST
-            if (results && results.length > 0) {
-                try {
-                    await createBranchBroadcast(branchId, branchName, results);
-                    console.log(`📢 Broadcast created for ${branchName}`);
-                } catch (err) {
-                    console.error('Error creating broadcast:', err);
-                }
-            }
-
-            // ✅ RECALCULATE STRESS TARGETS
-            try {
-                await recalculateStressTargets(branchId);
-                console.log(`🔄 Stress targets recalculated for ${branchName}`);
-            } catch (err) {
-                console.error('Error recalculating stress targets:', err);
-            }
-
-            // ✅ REFRESH PROGRESS BAR
-            if (currentUser && currentUser.role === 'worker') {
-                setTimeout(async () => {
-                    await loadTodayStressTarget();
-                    await refreshStressTestDisplay();
-                    console.log('🔄 Progress bar refreshed!');
-                }, 500);
-            }
 
             loadTodayActivity();
             loadCheckinBranches();
@@ -11018,7 +10993,7 @@ async function closeDay(branchId, branchName) {
         const workersForBonus = refreshedLogs.map(log => ({
             id: log.worker_id,
             name: log.workers?.full_name || 'Unknown',
-            credits: creditsPerWorker,  // ← SAME for all workers!
+            credits: creditsPerWorker,
             jc_id: log.workers?.jc_id || 'N/A',
             log: log,
             worker: log.workers
@@ -11089,10 +11064,10 @@ async function closeDay(branchId, branchName) {
 
         let closedCount = 0;
 
-        // ✅ STEP 3: Update EACH worker's log with their share
+        // ✅ STEP 3: Update EACH worker's log with their share AND apply penalties
         for (const worker of workersForBonus) {
             const log = worker.log;
-            let credits = creditsPerWorker;  // ← Use the same credits for all
+            let credits = creditsPerWorker;
             
             const workerBonus = bonusResult.results.find(r => r.worker.id === worker.id);
             
@@ -11112,7 +11087,9 @@ async function closeDay(branchId, branchName) {
             const dailyCost = dailyRate + (worker.worker?.monthly_base_salary || 250000) / daysInMonth;
             const dailyBPI = dailyCost > 0 ? credits / dailyCost : 0;
             
-            // Stress penalty
+            // ============================================================
+            // ✅ STRESS PENALTY - NOW APPLIED TO worker_credit!
+            // ============================================================
             let stressPenalty = 0;
             let stressPenaltyLevelName = 'No penalty';
             let stressShortfall = 0;
@@ -11137,7 +11114,9 @@ async function closeDay(branchId, branchName) {
                     stressPenaltyLevelName = penaltyResult.levelName;
                     stressShortfall = penaltyResult.shortfall;
                     stressShortfallPercent = penaltyResult.shortfallPercent;
-                    credits = penaltyResult.newActualCredits;
+                    
+                    // ✅ ✅ ✅ FIX: Apply penalty to credits BEFORE saving!
+                    credits = penaltyResult.newActualCredits;  // ← This is the key fix!
                     
                     await _supabase
                         .from('workers')
@@ -11166,12 +11145,13 @@ async function closeDay(branchId, branchName) {
             const closedById = currentUser?.id || null;
             
             // ✅ STEP 4: Update the log with the calculated values
+            // ✅ ✅ ✅ FIX: credits already has penalty applied!
             const { error: updateError } = await _supabase
                 .from('daily_logs')
                 .update({
                     daily_sales: salesPerWorker,
                     items_sold: itemsPerWorker,
-                    worker_credit: credits,
+                    worker_credit: credits,  // ← ALREADY HAS PENALTY APPLIED!
                     daily_cost: dailyCost,
                     daily_bpi: dailyBPI,
                     daily_pay: dailyPay,
@@ -11261,7 +11241,7 @@ async function closeDay(branchId, branchName) {
                             tier1: tier1Amount,
                             tier2: tier2Amount,
                             tier3: tier3Amount,
-                            credits: credits,
+                            credits: credits,  // ← Already has penalty applied!
                             tier1_winner: isTier1Winner,
                             tier2_winner: isTier2Winner,
                             tier3_score: tier3Score,
@@ -11283,7 +11263,7 @@ async function closeDay(branchId, branchName) {
                         workerId: log.worker_id,
                         name: worker.name,
                         jc_id: worker.jc_id,
-                        credits: credits,
+                        credits: credits,  // ← Already has penalty applied!
                         dailyPay: dailyPay,
                         tier1Amount: tier1Amount,
                         tier2Amount: tier2Amount,
@@ -11395,32 +11375,12 @@ async function closeDay(branchId, branchName) {
             console.error('Error recalculating stress targets:', err);
         }
 
-        // ✅ REFRESH PROGRESS BAR FOR ALL WORKERS
-        if (currentUser && currentUser.role === 'worker') {
-            setTimeout(async () => {
-                await loadTodayStressTarget();
-                await refreshStressTestDisplay();
-                console.log('🔄 Progress bar refreshed for worker!');
-            }, 500);
-        }
-
         // Refresh data
         loadTodayActivity();
         loadCheckinBranches();
         loadStats();
         loadLocationMonitoring();
         loadWorkers();
-        
-        if (currentUser && currentUser.role === 'worker') {
-            setTimeout(function() {
-                if (typeof refreshStressTestDisplay === 'function') {
-                    refreshStressTestDisplay();
-                }
-                if (typeof loadTodayStressTarget === 'function') {
-                    loadTodayStressTarget();
-                }
-            }, 300);
-        }
 
     } catch (error) {
         console.error('Error closing day:', error);
@@ -13759,17 +13719,9 @@ async function reopenAllBranches() {
         alert('Error reopening all branches: ' + error.message);
     }
 }
-
 // ============================================================
-// ✅ COMPLETE UPDATED: closeAllBranches() 
+// 🔧 CLOSE ALL BRANCHES - FULLY UPDATED WITH PENALTY APPLICATION
 // ============================================================
-// This version has:
-// 1. ✅ Notifications for EACH branch
-// 2. ✅ Progress bar updates for ALL workers
-// 3. ✅ Sound for each closing
-// 4. ✅ Broadcast creation for each branch
-// ============================================================
-
 async function closeAllBranches() {
     if (!currentUser || currentUser.role !== 'manager') {
         alert('Only managers can close all branches.');
@@ -13778,11 +13730,14 @@ async function closeAllBranches() {
 
     const today = new Date().toISOString().split('T')[0];
 
+    // ============================================================
+    // STEP 1: GET ALL OPEN LOGS
+    // ============================================================
     const { data: openLogs, error: fetchError } = await _supabase
         .from('daily_logs')
         .select(`
             *,
-            workers:worker_id (id, full_name, daily_rate, monthly_base_salary, jc_id),
+            workers:worker_id (id, full_name, daily_rate, monthly_base_salary, jc_id, total_credits),
             branches:branch_id (name)
         `)
         .eq('log_date', today)
@@ -13799,7 +13754,9 @@ async function closeAllBranches() {
         return;
     }
 
-    // Group by branch
+    // ============================================================
+    // STEP 2: GROUP BY BRANCH
+    // ============================================================
     const branchGroups = {};
     for (const log of openLogs) {
         const branchName = log.branches?.name || 'Unknown';
@@ -13826,6 +13783,9 @@ async function closeAllBranches() {
 
     alert(summaryMsg);
 
+    // ============================================================
+    // STEP 3: COLLECT DATA FOR EACH BRANCH
+    // ============================================================
     const branchData = {};
     let allValid = true;
 
@@ -13874,6 +13834,9 @@ async function closeAllBranches() {
         return;
     }
 
+    // ============================================================
+    // STEP 4: CONFIRM CLOSING ALL BRANCHES
+    // ============================================================
     let confirmMsg = `📊 Confirm closing ALL branches:\n\n`;
     for (const [branchName, data] of Object.entries(branchData)) {
         confirmMsg += `📍 ${branchName}:\n`;
@@ -13888,6 +13851,9 @@ async function closeAllBranches() {
         return;
     }
 
+    // ============================================================
+    // STEP 5: PROCESS EACH BRANCH
+    // ============================================================
     try {
         const daysInMonth = getDaysInMonth(today);
         let totalClosed = 0;
@@ -13899,7 +13865,7 @@ async function closeAllBranches() {
             
             const branchAvgPrice = totalBranchItems > 0 ? totalBranchSales / totalBranchItems : 0;
 
-            // ✅ Calculate TOTAL branch credits using the FIXED function
+            // ✅ STEP 5A: Calculate TOTAL branch credits
             const totalBranchCredits = calculateWorkerCredits(
                 totalBranchSales,
                 totalBranchItems,
@@ -13908,6 +13874,7 @@ async function closeAllBranches() {
                 MAX_PRICE
             );
 
+            // ✅ STEP 5B: Calculate credits per worker (EQUAL SHARE)
             const creditsPerWorker = Math.round(totalBranchCredits / branchWorkers.length);
             const salesPerWorker = totalBranchSales / branchWorkers.length;
             const itemsPerWorker = Math.round(totalBranchItems / branchWorkers.length);
@@ -13979,7 +13946,7 @@ async function closeAllBranches() {
                 }
             }
 
-            // Calculate unified bonuses
+            // ✅ STEP 5C: Calculate unified bonuses
             const bonusResult = calculateUnifiedBonuses(
                 workersForBonus,
                 checkInTimes,
@@ -13992,6 +13959,7 @@ async function closeAllBranches() {
 
             let branchResults = [];
 
+            // ✅ STEP 5D: Process EACH worker
             for (const worker of workersForBonus) {
                 const log = worker.log;
                 let credits = creditsPerWorker;
@@ -14014,7 +13982,7 @@ async function closeAllBranches() {
                 const dailyCost = dailyRate + (worker.worker?.monthly_base_salary || 250000) / daysInMonth;
                 const dailyBPI = dailyCost > 0 ? credits / dailyCost : 0;
                 
-                // Stress penalty
+                // ✅ STEP 5E: CALCULATE STRESS PENALTY
                 let stressPenalty = 0;
                 let stressPenaltyLevelName = 'No penalty';
                 let stressShortfall = 0;
@@ -14023,34 +13991,37 @@ async function closeAllBranches() {
                 let stressTarget = null;
                 let penaltyResult = null;
                 
-                if (log.is_stress_test) {
-                    stressTarget = log.stress_target || 1000;
-                    stressPassed = credits >= stressTarget;
+                // ✅ CRITICAL FIX: Get the stress target from the log
+                stressTarget = log.stress_target || 1000;
+                
+                // Check if worker passed the stress test
+                stressPassed = credits >= stressTarget;
+                
+                // ✅ IF FAILED, calculate penalty
+                if (!stressPassed && log.is_stress_test) {
+                    penaltyResult = await calculateStressPenalty(
+                        log.worker_id,
+                        credits,
+                        stressTarget,
+                        worker.worker?.total_credits || 0
+                    );
                     
-                    if (!stressPassed) {
-                        penaltyResult = await calculateStressPenalty(
-                            log.worker_id,
-                            credits,
-                            stressTarget,
-                            null
-                        );
-                        
-                        stressPenalty = penaltyResult.penalty;
-                        stressPenaltyLevelName = penaltyResult.levelName;
-                        stressShortfall = penaltyResult.shortfall;
-                        stressShortfallPercent = penaltyResult.shortfallPercent;
-                        credits = penaltyResult.newActualCredits;
-                        
-                        await _supabase
-                            .from('workers')
-                            .update({ 
-                                total_credits: penaltyResult.newLifetimeCredits,
-                                last_stress_penalty: penaltyResult.penalty,
-                                last_stress_penalty_date: new Date().toISOString(),
-                                updated_at: new Date().toISOString()
-                            })
-                            .eq('id', log.worker_id);
-                    }
+                    stressPenalty = penaltyResult.penalty || 0;
+                    stressPenaltyLevelName = penaltyResult.levelName || 'No penalty';
+                    stressShortfall = penaltyResult.shortfall || 0;
+                    stressShortfallPercent = penaltyResult.shortfallPercent || 0;
+                    
+                    // ✅ CRITICAL FIX: APPLY PENALTY TO CREDITS!
+                    // This is where the penalty is actually applied
+                    credits = Math.max(0, credits - stressPenalty);
+                    
+                    // Update worker's total credits (lifetime)
+                    await _supabase
+                        .from('workers')
+                        .update({ 
+                            total_credits: Math.max(0, (worker.worker?.total_credits || 0) - Math.max(0, stressPenalty - (creditsPerWorker - credits)))
+                        })
+                        .eq('id', log.worker_id);
                 }
                 
                 // Check Jackpot
@@ -14067,12 +14038,13 @@ async function closeAllBranches() {
                 
                 const closedById = currentUser?.id || null;
                 
+                // ✅ STEP 5F: UPDATE THE LOG WITH ALL VALUES INCLUDING PENALTY
                 const { error: updateError } = await _supabase
                     .from('daily_logs')
                     .update({
                         daily_sales: salesPerWorker,
                         items_sold: itemsPerWorker,
-                        worker_credit: credits,
+                        worker_credit: credits,  // ← PENALTY APPLIED HERE!
                         daily_cost: dailyCost,
                         daily_bpi: dailyBPI,
                         daily_pay: dailyPay,
@@ -14100,10 +14072,13 @@ async function closeAllBranches() {
                         pay_level: 1,
                         pay_status: '✅ FULL PAY',
                         
+                        // ✅ PENALTY FIELDS
                         stress_penalty: stressPenalty,
                         stress_penalty_level_name: stressPenaltyLevelName,
                         stress_shortfall: stressShortfall,
                         stress_shortfall_percent: stressShortfallPercent,
+                        stress_passed: stressPassed,
+                        stress_target: stressTarget,
                         
                         jackpot_share: jackpotShare,
                         jackpot_won: jackpotWon
@@ -14217,9 +14192,7 @@ async function closeAllBranches() {
             branchResults.forEach((r, index) => r.rank = index + 1);
             allResults.push(...branchResults);
 
-            // ============================================================
-            // 🆕 CREATE BROADCAST FOR THIS BRANCH
-            // ============================================================
+            // ✅ CREATE BROADCAST FOR THIS BRANCH
             if (branchResults && branchResults.length > 0) {
                 try {
                     const t1WinnerNotif = branchResults.find(r => r.isTier1Winner);
@@ -14257,9 +14230,7 @@ async function closeAllBranches() {
                 }
             }
 
-            // ============================================================
-            // 🆕 RECALCULATE STRESS TARGETS FOR THIS BRANCH
-            // ============================================================
+            // ✅ RECALCULATE STRESS TARGETS FOR THIS BRANCH
             try {
                 await recalculateStressTargets(branchId);
                 console.log(`🔄 Stress targets recalculated for ${branchName}`);
@@ -14267,21 +14238,12 @@ async function closeAllBranches() {
                 console.error('Error recalculating stress targets for', branchName, ':', err);
             }
 
-            // ============================================================
-            // 🆕 REFRESH PROGRESS BARS FOR THIS BRANCH
-            // ============================================================
-            if (currentUser && currentUser.role === 'worker') {
-                setTimeout(async () => {
-                    await loadTodayStressTarget();
-                    await refreshStressTestDisplay();
-                    console.log(`🔄 Progress bar refreshed for ${branchName}`);
-                }, 500);
-            }
-
             console.log(`✅ Closed ${branchName}: ${branchResults.length} worker(s)`);
         }
 
-        // Sort all results
+        // ============================================================
+        // STEP 6: SORT AND SHOW RESULTS
+        // ============================================================
         allResults.sort((a, b) => b.totalBonus - a.totalBonus);
         allResults.forEach((r, index) => r.rank = index + 1);
 
@@ -14304,10 +14266,17 @@ async function closeAllBranches() {
             for (const r of results) {
                 const tier1Badge = r.isTier1Winner ? '🥇 ' : '';
                 const tier2Badge = r.isTier2Winner ? '⏰ ' : '';
-                resultMsg += `   ${r.jackpotWon ? '🎉' : ''} ${tier1Badge}${tier2Badge}${r.name} (${r.jc_id}) (Rank #${r.rank}): UGX ${r.totalBonus.toFixed(2)} (${r.payStatus || '✅ FULL PAY'})\n`;
+                const stressBadge = r.stressPassed !== null ? (r.stressPassed ? '✅' : '❌') : '—';
+                resultMsg += `   ${r.jackpotWon ? '🎉' : ''} ${tier1Badge}${tier2Badge}${r.name} (${r.jc_id}) (Rank #${r.rank}):\n`;
+                resultMsg += `      💳 Credits: ${Math.round(r.credits).toLocaleString()}\n`;
+                resultMsg += `      💰 Total Bonus: UGX ${r.totalBonus.toFixed(2)}\n`;
                 if (r.stressPenalty > 0) {
                     resultMsg += `      📉 Penalty: -${r.stressPenalty} credits (${r.stressPenaltyLevelName})\n`;
                 }
+                if (r.jackpotWon) {
+                    resultMsg += `      🎰 JACKPOT: UGX ${r.jackpotShare.toFixed(2)}\n`;
+                }
+                resultMsg += `      🧪 Stress: ${stressBadge}\n`;
             }
             resultMsg += `\n`;
         }
@@ -14315,33 +14284,13 @@ async function closeAllBranches() {
         alert(resultMsg);
 
         // ============================================================
-        // 🆕 REFRESH ALL WORKERS' PROGRESS BARS
+        // STEP 7: REFRESH DATA
         // ============================================================
-        if (currentUser && currentUser.role === 'worker') {
-            setTimeout(async () => {
-                await loadTodayStressTarget();
-                await refreshStressTestDisplay();
-                console.log('🔄 Progress bar refreshed for all workers!');
-            }, 500);
-        }
-
-        // Refresh data
         loadTodayActivity();
         loadCheckinBranches();
         loadStats();
         loadLocationMonitoring();
         loadWorkers();
-        
-        if (currentUser && currentUser.role === 'worker') {
-            setTimeout(function() {
-                if (typeof refreshStressTestDisplay === 'function') {
-                    refreshStressTestDisplay();
-                }
-                if (typeof loadTodayStressTarget === 'function') {
-                    loadTodayStressTarget();
-                }
-            }, 300);
-        }
 
     } catch (error) {
         console.error('Error closing all branches:', error);
@@ -19823,63 +19772,7 @@ function addDeleteButton() {
     }, 2000);
 }
 
-// ============================================================
-// STEP 7: MODIFY CLOSE DAY FUNCTIONS TO AUTO-DELETE
-// ============================================================
-// Wrap the original closeDay functions to run auto-delete after closing
 
-// Save original functions
-const originalCloseDay = window.closeDay || (typeof closeDay !== 'undefined' ? closeDay : null);
-const originalCloseDayByWorker = window.closeDayByWorker || (typeof closeDayByWorker !== 'undefined' ? closeDayByWorker : null);
-const originalCloseAllBranches = window.closeAllBranches || (typeof closeAllBranches !== 'undefined' ? closeAllBranches : null);
-
-// Override closeDay
-if (typeof closeDay !== 'undefined' || window.closeDay) {
-    window.closeDay = async function(branchId, branchName) {
-        // Call original function
-        if (originalCloseDay) {
-            await originalCloseDay.call(this, branchId, branchName);
-        }
-        // Then delete old stress tests
-        setTimeout(() => {
-            deleteOldStressTests();
-            // Refresh the stress test display
-            if (typeof loadStressTestDashboard === 'function') {
-                loadStressTestDashboard();
-            }
-        }, 1000);
-    };
-}
-
-// Override closeDayByWorker
-if (typeof closeDayByWorker !== 'undefined' || window.closeDayByWorker) {
-    window.closeDayByWorker = async function(branchId, branchName) {
-        if (originalCloseDayByWorker) {
-            await originalCloseDayByWorker.call(this, branchId, branchName);
-        }
-        setTimeout(() => {
-            deleteOldStressTests();
-            if (typeof loadStressTestDashboard === 'function') {
-                loadStressTestDashboard();
-            }
-        }, 1000);
-    };
-}
-
-// Override closeAllBranches
-if (typeof closeAllBranches !== 'undefined' || window.closeAllBranches) {
-    window.closeAllBranches = async function() {
-        if (originalCloseAllBranches) {
-            await originalCloseAllBranches.call(this);
-        }
-        setTimeout(() => {
-            deleteOldStressTests();
-            if (typeof loadStressTestDashboard === 'function') {
-                loadStressTestDashboard();
-            }
-        }, 1000);
-    };
-}
 
 // ============================================================
 // STEP 8: RUN ON PAGE LOAD
