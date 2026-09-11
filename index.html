@@ -728,6 +728,126 @@ table td strong { color: #f0ebe6; font-weight: 500; }
     line-height: 1.5;
     letter-spacing: 0.2px;
 }
+/* ============================================================
+   🔥 FORCE WIDE CHARTS ON PHONES
+   ============================================================ */
+@media (max-width: 768px) {
+    /* 1. Remove all side padding from the tab */
+    #tabTimePerformance,
+    #tabTimePerformance .tab-content {
+        padding-left: 0 !important;
+        padding-right: 0 !important;
+    }
+
+    /* 2. Kill the grid — stack charts full width */
+    #tabTimePerformance .chart-grid,
+    #tabTimePerformance [style*="grid-template-columns:1fr 1fr"] {
+        display: block !important;
+        grid-template-columns: none !important;
+        gap: 0 !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        width: 100% !important;
+    }
+
+    /* 3. Each chart box fills the whole screen */
+    #tabTimePerformance .chart-box {
+        width: 100% !important;
+        max-width: 100% !important;
+        margin: 0 0 14px 0 !important;
+        padding: 14px 8px !important;
+        border-radius: 0 !important;
+        border-left: none !important;
+        border-right: none !important;
+        min-height: 300px !important;
+    }
+
+    /* 4. Chart wrappers — force tall */
+    #tabTimePerformance .chart-box > div,
+    #tabTimePerformance [style*="height:200px"] {
+        width: 100% !important;
+        max-width: 100% !important;
+        height: 260px !important;
+        min-height: 260px !important;
+        position: relative !important;
+    }
+
+    /* 5. Canvases — force full width */
+    #tabTimePerformance .chart-box canvas {
+        width: 100% !important;
+        max-width: 100% !important;
+        height: 260px !important;
+        min-height: 260px !important;
+        max-height: 260px !important;
+        display: block !important;
+    }
+
+    /* 6. Chart titles — readable */
+    #tabTimePerformance .chart-box h4 {
+        font-size: 12px !important;
+        margin: 0 0 10px 0 !important;
+        padding: 0 6px !important;
+        line-height: 1.4 !important;
+    }
+
+    /* 7. Other panels — full width */
+    #tpImpactAnalysis,
+    #tpDailyDetails,
+    #tpSummaryTable {
+        width: 100% !important;
+        max-width: 100% !important;
+        margin-left: 0 !important;
+        margin-right: 0 !important;
+        border-radius: 0 !important;
+        padding: 14px 8px !important;
+    }
+
+    /* 8. Stat cards — spread evenly */
+    #tpStatsGrid {
+        width: 100% !important;
+        max-width: 100% !important;
+        margin: 0 0 14px 0 !important;
+        padding: 0 8px !important;
+        grid-template-columns: 1fr 1fr !important;
+        gap: 10px !important;
+    }
+
+    /* 9. Tables — more room */
+    #tpImpactAnalysis table th,
+    #tpImpactAnalysis table td,
+    #tpDailyDetailsContent table th,
+    #tpDailyDetailsContent table td,
+    #tpSummaryContent table th,
+    #tpSummaryContent table td {
+        padding: 8px 10px !important;
+        font-size: 10px !important;
+    }
+
+    /* 10. Filter row — no squeeze */
+    #tabTimePerformance > div[style*="display:flex"] {
+        padding: 0 10px !important;
+        margin-left: 0 !important;
+        margin-right: 0 !important;
+    }
+}
+
+/* Small phones (<480px) */
+@media (max-width: 480px) {
+    #tabTimePerformance .chart-box {
+        min-height: 260px !important;
+        padding: 12px 6px !important;
+    }
+    #tabTimePerformance .chart-box > div,
+    #tabTimePerformance [style*="height:200px"] {
+        height: 220px !important;
+        min-height: 220px !important;
+    }
+    #tabTimePerformance .chart-box canvas {
+        height: 220px !important;
+        min-height: 220px !important;
+        max-height: 220px !important;
+    }
+}
 </style>
 </head>
 <body>
