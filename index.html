@@ -1729,6 +1729,7 @@ class LocationTracker {
 }
 
 // ============================================================
+// ============================================================
 // CREDITS CALCULATOR (THE CORE FORMULA)
 // ============================================================
 function calculateWorkerCredits(totalSales, totalItems, maxRevenue, maxItems, maxPrice) {
@@ -1746,15 +1747,10 @@ function calculateWorkerCredits(totalSales, totalItems, maxRevenue, maxItems, ma
     if (priceFactor === 0 && avgPrice > 0) priceFactor = 0.01;
 
     const rawScore = revenueFactor * volumeFactor * priceFactor;
-    const totalCreditsRaw = totalSales * rawScore * 5;
+    const rawCredits = totalSales * rawScore * 5;
 
-    const budget = totalSales * 0.02;
-    const scalingFactor = totalCreditsRaw > 0 ? Math.min(budget / totalCreditsRaw, 1) : 1;
-    let credits = totalCreditsRaw * scalingFactor;
-
-    if (credits === 0 && totalSales > 0) {
-        credits = Math.max(totalSales / 1000, 10);
-    }
+    // 🔧 FIX: apply 2% to the RAW CREDITS (scaling), not as a ceiling on sales
+    const credits = rawCredits * 0.02;
 
     return credits;
 }
