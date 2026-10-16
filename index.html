@@ -4,10 +4,8 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>JEANS CLUB - Performance System</title>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.0/dist/umd/supabase.min.js">
-    </script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js">
-    </script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.0/dist/umd/supabase.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
    <style>
 * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -377,21 +375,6 @@ table td strong { color: #f0ebe6; font-weight: 500; }
 .branch-rank-card .branch-name { font-size: 14px; font-weight: 600; color: #f0ebe6; }
 .branch-rank-card .branch-score { font-size: 12px; color: #7bcfa6; }
 
-/* ─── TEAM PAIR CARD ─── */
-.team-pair-card {
-    background: rgba(255,255,255,0.04);
-    border-radius: 8px;
-    padding: 10px 12px;
-    margin-bottom: 6px;
-    border: 1px solid rgba(255,255,255,0.06);
-    transition: all 0.3s ease;
-}
-.team-pair-card:hover { background: rgba(255,255,255,0.08); }
-.team-pair-card.excellent { border-color: rgba(123,207,166,0.3); background: rgba(123,207,166,0.05); }
-.team-pair-card.good { border-color: rgba(123,207,166,0.15); }
-.team-pair-card.poor { border-color: rgba(233,69,96,0.15); background: rgba(233,69,96,0.05); }
-.team-pair-card.bad { border-color: rgba(233,69,96,0.3); background: rgba(233,69,96,0.08); }
-
 /* ─── MISC ─── */
 .loading { text-align: center; padding: 20px; color: rgba(255,255,255,0.3); font-weight: 300; font-size: 11px; }
 .hidden { display: none !important; }
@@ -468,8 +451,6 @@ table td strong { color: #f0ebe6; font-weight: 500; }
     .branch-rank-card { padding: 10px 12px; }
     .branch-rank-card .rank-number { font-size: 18px; }
     .branch-rank-card .branch-name { font-size: 12px; }
-
-    .team-pair-card { padding: 8px 10px; }
 
     .form-group input, .form-group select { font-size: 14px; padding: 8px 10px; }
     input, select, textarea { font-size: 14px !important; }
@@ -598,7 +579,6 @@ table td strong { color: #f0ebe6; font-weight: 500; }
     letter-spacing: 0.2px;
 }
 
-/* ─── MOBILE STAT CARDS ─── */
 @media (max-width: 768px) {
     #tpStatsGrid {
         grid-template-columns: 1fr 1fr !important;
@@ -641,7 +621,6 @@ table td strong { color: #f0ebe6; font-weight: 500; }
     .leaderboard-item .value { font-size: 10px; }
 }
 
-/* FULL SCREEN ON PHONES */
 @media (max-width: 768px) {
     .container, body {
         padding: 0 !important;
@@ -656,7 +635,6 @@ table td strong { color: #f0ebe6; font-weight: 500; }
         padding: 12px !important;
     }
 }
-/* ─── FORCE TIME & PERFORMANCE STAT CARD COLORS ─── */
 #tpStatsGrid .stat-card {
     color: #f0ebe6 !important;
 }
@@ -673,8 +651,6 @@ table td strong { color: #f0ebe6; font-weight: 500; }
 #tpStatsGrid .stat-card .sub * {
     color: inherit !important;
 }
-
-/* Also catch any orphaned .label / .sub inside stat-card WITHOUT the #tpStatsGrid prefix */
 .stat-card .label,
 .stat-card .sub {
     color: rgba(212, 165, 116, 0.95) !important;
@@ -682,7 +658,6 @@ table td strong { color: #f0ebe6; font-weight: 500; }
 .stat-card .sub {
     color: rgba(255, 255, 255, 0.55) !important;
 }
-/* ─── TIME & PERFORMANCE STAT CARDS — CLASSY NUMBERS ─── */
 #tpStatsGrid .stat-card {
     background: rgba(20, 20, 35, 0.65);
     backdrop-filter: blur(12px);
@@ -728,18 +703,12 @@ table td strong { color: #f0ebe6; font-weight: 500; }
     line-height: 1.5;
     letter-spacing: 0.2px;
 }
-/* ============================================================
-   🔥 FORCE WIDE CHARTS ON PHONES
-   ============================================================ */
 @media (max-width: 768px) {
-    /* 1. Remove all side padding from the tab */
     #tabTimePerformance,
     #tabTimePerformance .tab-content {
         padding-left: 0 !important;
         padding-right: 0 !important;
     }
-
-    /* 2. Kill the grid — stack charts full width */
     #tabTimePerformance .chart-grid,
     #tabTimePerformance [style*="grid-template-columns:1fr 1fr"] {
         display: block !important;
@@ -749,8 +718,6 @@ table td strong { color: #f0ebe6; font-weight: 500; }
         padding: 0 !important;
         width: 100% !important;
     }
-
-    /* 3. Each chart box fills the whole screen */
     #tabTimePerformance .chart-box {
         width: 100% !important;
         max-width: 100% !important;
@@ -761,8 +728,6 @@ table td strong { color: #f0ebe6; font-weight: 500; }
         border-right: none !important;
         min-height: 300px !important;
     }
-
-    /* 4. Chart wrappers — force tall */
     #tabTimePerformance .chart-box > div,
     #tabTimePerformance [style*="height:200px"] {
         width: 100% !important;
@@ -771,8 +736,6 @@ table td strong { color: #f0ebe6; font-weight: 500; }
         min-height: 260px !important;
         position: relative !important;
     }
-
-    /* 5. Canvases — force full width */
     #tabTimePerformance .chart-box canvas {
         width: 100% !important;
         max-width: 100% !important;
@@ -781,16 +744,12 @@ table td strong { color: #f0ebe6; font-weight: 500; }
         max-height: 260px !important;
         display: block !important;
     }
-
-    /* 6. Chart titles — readable */
     #tabTimePerformance .chart-box h4 {
         font-size: 12px !important;
         margin: 0 0 10px 0 !important;
         padding: 0 6px !important;
         line-height: 1.4 !important;
     }
-
-    /* 7. Other panels — full width */
     #tpImpactAnalysis,
     #tpDailyDetails,
     #tpSummaryTable {
@@ -801,8 +760,6 @@ table td strong { color: #f0ebe6; font-weight: 500; }
         border-radius: 0 !important;
         padding: 14px 8px !important;
     }
-
-    /* 8. Stat cards — spread evenly */
     #tpStatsGrid {
         width: 100% !important;
         max-width: 100% !important;
@@ -811,8 +768,6 @@ table td strong { color: #f0ebe6; font-weight: 500; }
         grid-template-columns: 1fr 1fr !important;
         gap: 10px !important;
     }
-
-    /* 9. Tables — more room */
     #tpImpactAnalysis table th,
     #tpImpactAnalysis table td,
     #tpDailyDetailsContent table th,
@@ -822,8 +777,6 @@ table td strong { color: #f0ebe6; font-weight: 500; }
         padding: 8px 10px !important;
         font-size: 10px !important;
     }
-
-    /* 10. Filter row — no squeeze */
     #tabTimePerformance > div[style*="display:flex"] {
         padding: 0 10px !important;
         margin-left: 0 !important;
@@ -831,7 +784,6 @@ table td strong { color: #f0ebe6; font-weight: 500; }
     }
 }
 
-/* Small phones (<480px) */
 @media (max-width: 480px) {
     #tabTimePerformance .chart-box {
         min-height: 260px !important;
@@ -959,21 +911,18 @@ table td strong { color: #f0ebe6; font-weight: 500; }
 
         <div id="sessionWarning" style="display:none;margin:10px 0;padding:10px;background:rgba(233,69,96,0.1);border:1px solid rgba(233,69,96,0.2);border-radius:8px;color:#e94560;text-align:center;font-size:13px;"></div>
 
-        <!-- TABS — MANAGER (7 tabs) -->
+        <!-- TABS — MANAGER (5 tabs) -->
         <div class="tabs" id="mainTabs" style="display:none;">
             <button class="active" data-tab="tabCheckin">📍 Check In</button>
             <button data-tab="tabWorkers">👥 Workers</button>
             <button data-tab="tabTimePerformance">⏱️ Time &amp; Performance</button>
             <button data-tab="tabLeaderboard">🏆 Leadership</button>
-            <button data-tab="tabBranchLeaderboard">🏪 Branch Rankings</button>
-            <button data-tab="tabTeamDynamics">🤝 Team Dynamics</button>
             <button data-tab="tabBranches">🏢 Branches 🔒</button>
         </div>
 
-        <!-- TABS — WORKER (2 tabs) -->
+        <!-- TABS — WORKER (1 tab) -->
         <div class="tabs" id="workerTabs" style="display:none;">
             <button class="active" data-tab="tabCheckin">📍 Check In</button>
-            <button data-tab="tabMyPerformance">📈 My Performance</button>
         </div>
 
 
@@ -982,6 +931,8 @@ table td strong { color: #f0ebe6; font-weight: 500; }
              ============================================================ -->
         <div id="tabCheckin" class="tab-content active">
             <h3>📍 Check In <small>— select your branch for today</small></h3>
+
+        
 
             <div id="locationStatus" style="margin-bottom:12px;padding:10px 16px;background:rgba(255,255,255,0.03);border-radius:10px;border:1px solid rgba(255,255,255,0.06);">
                 <div id="locationInfo" style="font-size:12px;color:rgba(255,255,255,0.5);">🔍 Detecting your location...</div>
@@ -1003,40 +954,10 @@ table td strong { color: #f0ebe6; font-weight: 500; }
 
 
         <!-- ============================================================
-             TAB: MY PERFORMANCE (WORKER ONLY)
-             ============================================================ -->
-        <div id="tabMyPerformance" class="tab-content">
-            <h3>📈 My Performance <small>— your personal metrics</small></h3>
-            <p style="color:rgba(255,255,255,0.3);font-size:11px;margin-bottom:16px;">🔒 This data is private and only visible to you</p>
-
-            <div class="worker-profile-section" id="workerProfileSection">
-                <div style="position:relative;">
-                    <img class="worker-avatar-large" id="workerAvatar" src="" alt="Profile" />
-                    <button class="avatar-upload-btn" onclick="document.getElementById('avatarInput').click()" style="position:absolute;bottom:-5px;right:-5px;background:rgba(212,165,116,0.2);color:#d4a574;border:1px solid rgba(212,165,116,0.2);padding:4px 10px;border-radius:8px;cursor:pointer;font-size:10px;font-family:'Inter',sans-serif;">📷</button>
-                    <input type="file" id="avatarInput" class="avatar-upload-input" accept="image/*" onchange="uploadAvatar(event)" style="display:none;" />
-                </div>
-                <div class="worker-profile-info">
-                    <h2 id="workerNameDisplay">Worker Name</h2>
-                    <div class="jc-id" id="workerJcIdDisplay">JC000000</div>
-                    <div class="pay-info">
-                        <div class="pay-item">💰 Monthly Salary: <strong id="workerSalaryDisplay">UGX 0</strong></div>
-                        <div class="pay-item">📅 Daily Rate: <strong id="workerDailyDisplay">UGX 0</strong></div>
-                    </div>
-                </div>
-            </div>
-
-            <div id="workerPayDashboard" style="margin-top:20px;"></div>
-
-            <div id="performanceFactorBreakdown" style="margin-top:20px;padding:0 20px;"></div>
-        </div>
-
-
-        <!-- ============================================================
              TAB: WORKERS (MANAGER)
              ============================================================ -->
         <div id="tabWorkers" class="tab-content">
             <h3>👥 Workers <small>— view and manage team</small></h3>
-            <p style="color:rgba(255,255,255,0.3);font-size:11px;margin-bottom:16px;">📊 Click on a worker's name to view their Performance Factor Analysis</p>
 
             <div style="display:flex;gap:10px;flex-wrap:wrap;margin:14px 0;">
                 <input type="text" id="workerSearch" placeholder="Search by name or JC ID..." oninput="loadWorkers()" style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.08);color:#f0ebe6;padding:8px 14px;border-radius:10px;font-family:'Inter',sans-serif;font-size:12px;flex:1;min-width:140px;" />
@@ -1074,18 +995,18 @@ table td strong { color: #f0ebe6; font-weight: 500; }
 
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;">
                 <div class="chart-box">
-                    <h4>📊 Check-In Distribution vs Sales <span style="font-size:10px;color:#ffd700;">🎯 7AM Target</span></h4>
+                    <h4>📊 Check-In Distribution <span style="font-size:10px;color:#ffd700;">🎯 7AM Target</span></h4>
                     <div style="height:200px;"><canvas id="tpCheckInChart"></canvas></div>
                 </div>
                 <div class="chart-box">
-                    <h4>📈 Hours Worked vs Sales Impact <span style="font-size:10px;color:#7bcfa6;">🟢 Early (≤7AM)</span> <span style="font-size:10px;color:#e94560;">🔴 Late (&gt;7AM)</span></h4>
+                    <h4>📈 Hours Worked vs. Early Arrival <span style="font-size:10px;color:#7bcfa6;">🟢 Early (≤7AM)</span> <span style="font-size:10px;color:#e94560;">🔴 Late (&gt;7AM)</span></h4>
                     <div style="height:200px;"><canvas id="tpScatterChart"></canvas></div>
                 </div>
             </div>
 
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;">
                 <div class="chart-box">
-                    <h4>📊 Weekly Performance Trend</h4>
+                    <h4>📊 Weekly Hours Trend</h4>
                     <div style="height:200px;"><canvas id="tpWeeklyChart"></canvas></div>
                 </div>
                 <div class="chart-box">
@@ -1130,52 +1051,6 @@ table td strong { color: #f0ebe6; font-weight: 500; }
 
             <div id="leaderboardContent">
                 <div class="loading">Loading early birds...</div>
-            </div>
-        </div>
-
-
-        <!-- ============================================================
-             TAB: BRANCH RANKINGS (TOTAL REVENUE)
-             ============================================================ -->
-        <div id="tabBranchLeaderboard" class="tab-content">
-            <h3>🏪 Branch Rankings <small>— best to worst performing branches</small></h3>
-            <p style="color:rgba(255,255,255,0.3);font-size:11px;margin-bottom:16px;">💰 Ranked purely by TOTAL REVENUE</p>
-
-            <div style="display:flex;gap:10px;margin:14px 0;flex-wrap:wrap;">
-                <select id="branchLeaderPeriod" onchange="loadBranchLeaderboard()" style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.08);color:#f0ebe6;padding:8px 14px;border-radius:10px;font-family:'Inter',sans-serif;font-size:12px;">
-                    <option value="daily">Today</option>
-                    <option value="weekly">Last 7 Days</option>
-                    <option value="monthly" selected>Last 30 Days</option>
-                    <option value="yearly">Last 365 Days</option>
-                </select>
-            </div>
-
-            <div id="branchLeaderboardContent">
-                <div class="loading">Loading branch rankings...</div>
-            </div>
-        </div>
-
-
-        <!-- ============================================================
-             TAB: TEAM DYNAMICS (CHECK-IN TIME + SALES)
-             ============================================================ -->
-        <div id="tabTeamDynamics" class="tab-content">
-            <h3>🤝 Team Dynamics <small>— who works well together</small></h3>
-            <p style="color:rgba(255,255,255,0.3);font-size:11px;margin-bottom:16px;">🌟 Based on check-in times and combined sales</p>
-
-            <div style="display:flex;gap:10px;margin:14px 0;flex-wrap:wrap;">
-                <select id="teamDynamicsPeriod" onchange="loadTeamDynamics()" style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.08);color:#f0ebe6;padding:8px 14px;border-radius:10px;font-family:'Inter',sans-serif;font-size:12px;">
-                    <option value="7">Last 7 Days</option>
-                    <option value="30" selected>Last 30 Days</option>
-                    <option value="90">Last 90 Days</option>
-                </select>
-                <select id="teamDynamicsBranch" onchange="loadTeamDynamics()" style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.08);color:#f0ebe6;padding:8px 14px;border-radius:10px;font-family:'Inter',sans-serif;font-size:12px;">
-                    <option value="all">All Branches</option>
-                </select>
-            </div>
-
-            <div id="teamDynamicsContent">
-                <div class="loading">Loading team dynamics...</div>
             </div>
         </div>
 
@@ -1248,7 +1123,7 @@ table td strong { color: #f0ebe6; font-weight: 500; }
         </div>
     </div>
 
-    <!-- View Worker Performance Modal -->
+    <!-- View Worker Modal -->
     <div class="modal-overlay" id="viewWorkerModal">
         <div class="modal-content">
             <div class="modal-header">
@@ -1315,35 +1190,184 @@ const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 // ============================================================
 let currentUser = null;
 let currentBranchId = null;
-let salesChartInstance = null;
-let bpiChartInstance = null;
-let movingPerfChartInstance = null;
-let viewWorkerPieChartInstance = null;
-let pieChartInstance = null;
-let growthLineChartInstance = null;
-let allFactorsChartInstance = null;
 let editingWorkerId = null;
 let locationTracker = null;
 let capturedBranchId = null;
 let isCapturingLocation = false;
 let realtimeSubscription = null;
-let branchesUnlocked = false;   // password gate for Branches tab
+let branchesUnlocked = false;
+let autoCloseInterval = null;
+let countdownInterval = null;
 
 // ============================================================
 // SYSTEM CONSTANTS
 // ============================================================
-const BASE_DAILY_PAY = 10000;
-const BASE_MONTHLY_PAY = 250000;
 const ADMIN_PASSWORD = 'J';
 const BRANCHES_PASSWORD = 'J';
 const SETTINGS_PASSWORD = 'J';
-
-let MAX_PRICE = 500000;
-let MAX_REVENUE = 10000000;
-let MAX_ITEMS = 200;
-let LOCATION_BUFFER = 150;
-
+const LOCATION_BUFFER = 150;
 const MAX_HOURS = 12;
+const UGANDA_TIMEZONE = 'Africa/Nairobi';
+
+// 🕘 AUTO-CLOSE AT 9 PM
+const AUTO_CLOSE_HOUR = 21;
+const AUTO_CLOSE_MINUTE = 0;
+
+// ============================================================
+// UGANDA TIME HELPERS
+// ============================================================
+function getUgandaTimeParts(date = new Date()) {
+    const parts = new Intl.DateTimeFormat('en-GB', {
+        timeZone: UGANDA_TIMEZONE,
+        year: 'numeric', month: '2-digit', day: '2-digit',
+        hour: '2-digit', minute: '2-digit', second: '2-digit',
+        hour12: false
+    }).formatToParts(date);
+    const map = {};
+    for (const p of parts) if (p.type !== 'literal') map[p.type] = p.value;
+    return {
+        year: parseInt(map.year),
+        month: parseInt(map.month),
+        day: parseInt(map.day),
+        hour: parseInt(map.hour),
+        minute: parseInt(map.minute),
+        second: parseInt(map.second),
+        dateStr: `${map.year}-${map.month}-${map.day}`
+    };
+}
+
+function getUgandaDateStr(date = new Date()) {
+    return getUgandaTimeParts(date).dateStr;
+}
+
+function getUganda9PMISO(dateStr) {
+    // Uganda = UTC+3 year-round. 9 PM EAT = 18:00 UTC same day.
+    return new Date(`${dateStr}T18:00:00.000Z`).toISOString();
+}
+
+function getMsUntil9PMUganda() {
+    const now = new Date();
+    const p = getUgandaTimeParts(now);
+    const nowMs = Date.UTC(p.year, p.month - 1, p.day, p.hour, p.minute, p.second);
+    let targetMs = Date.UTC(p.year, p.month - 1, p.day, AUTO_CLOSE_HOUR, AUTO_CLOSE_MINUTE, 0);
+    if (nowMs >= targetMs) targetMs += 24 * 60 * 60 * 1000;
+    return targetMs - nowMs;
+}
+
+function formatCountdown(ms) {
+    if (ms <= 0) return 'Closing now...';
+    const totalSec = Math.floor(ms / 1000);
+    const h = Math.floor(totalSec / 3600);
+    const m = Math.floor((totalSec % 3600) / 60);
+    const s = totalSec % 60;
+    if (h > 0) return `${h}h ${m}m ${s}s until auto-close`;
+    return `${m}m ${s}s until auto-close`;
+}
+
+// ============================================================
+// 🕘 AUTO-CLOSE ENGINE
+// ============================================================
+async function runAutoClose(silent = true) {
+    try {
+        const todayStr = getUgandaDateStr();
+        const nowParts = getUgandaTimeParts();
+        const nowMinutes = nowParts.hour * 60 + nowParts.minute;
+        const ninePM = AUTO_CLOSE_HOUR * 60 + AUTO_CLOSE_MINUTE;
+
+        // BEFORE 9 PM — sweep previous days' forgotten logs
+        if (nowMinutes < ninePM) {
+            const { data: oldForgotten } = await _supabase
+                .from('daily_logs')
+                .select('id, log_date')
+                .lt('log_date', todayStr)
+                .eq('is_closed', false);
+
+            if (oldForgotten && oldForgotten.length > 0) {
+                let closedCount = 0;
+                for (const log of oldForgotten) {
+                    const { error } = await _supabase
+                        .from('daily_logs')
+                        .update({
+                            is_closed: true,
+                            check_out_time: getUganda9PMISO(log.log_date),
+                            auto_closed: true
+                        })
+                        .eq('id', log.id)
+                        .eq('is_closed', false);
+                    if (!error) closedCount++;
+                }
+                if (closedCount > 0) console.log(`🕘 Swept ${closedCount} forgotten log(s) from previous days.`);
+            }
+            return { ran: false };
+        }
+
+        // AFTER 9 PM — close all still-open logs for today
+        const { data: openToday } = await _supabase
+            .from('daily_logs')
+            .select('id')
+            .eq('log_date', todayStr)
+            .eq('is_closed', false);
+
+        if (!openToday || openToday.length === 0) return { ran: true, closedCount: 0 };
+
+        const ninePMISO = getUganda9PMISO(todayStr);
+        let closedCount = 0;
+
+        for (const log of openToday) {
+            const { error } = await _supabase
+                .from('daily_logs')
+                .update({
+                    is_closed: true,
+                    check_out_time: ninePMISO,
+                    auto_closed: true
+                })
+                .eq('id', log.id)
+                .eq('is_closed', false);
+            if (!error) closedCount++;
+        }
+
+        if (closedCount > 0) {
+            console.log(`🕘 Auto-closed ${closedCount} worker(s) at 9PM`);
+            if (currentUser) {
+                loadTodayActivity();
+                loadCheckinBranches();
+                if (currentUser.role === 'worker' && locationTracker) {
+                    locationTracker.stopTracking();
+                    locationTracker = null;
+                }
+            }
+            if (!silent && currentUser) {
+                alert(`🕘 9:00 PM Auto-Close\n\n${closedCount} worker(s) were closed automatically.`);
+            }
+        }
+
+        return { ran: true, closedCount };
+    } catch (err) {
+        console.error('Auto-close error:', err);
+        return { ran: false };
+    }
+}
+
+function startAutoCloseEngine() {
+    if (autoCloseInterval) clearInterval(autoCloseInterval);
+    if (countdownInterval) clearInterval(countdownInterval);
+
+    runAutoClose(true);
+
+    autoCloseInterval = setInterval(() => {
+        runAutoClose(false);
+    }, 60 * 1000);
+
+    countdownInterval = setInterval(() => {
+        const el = document.getElementById('autoCloseCountdown');
+        if (el) el.textContent = formatCountdown(getMsUntil9PMUganda());
+    }, 1000);
+
+    const el = document.getElementById('autoCloseCountdown');
+    if (el) el.textContent = formatCountdown(getMsUntil9PMUganda());
+
+    console.log('🕘 Auto-close engine started — closes open logs at 9:00 PM Uganda time.');
+}
 
 // ============================================================
 // HELPER FUNCTIONS
@@ -1450,7 +1474,7 @@ async function checkIfAtBranch(location) {
 }
 
 // ============================================================
-// LOGIN ACCESS CHECK (with location)
+// LOGIN ACCESS CHECK
 // ============================================================
 async function checkLoginAccessWithLocation(email, password, location, branchCheck) {
     const { data: user, error } = await _supabase
@@ -1729,33 +1753,6 @@ class LocationTracker {
 }
 
 // ============================================================
-// ============================================================
-// CREDITS CALCULATOR (THE CORE FORMULA)
-// ============================================================
-function calculateWorkerCredits(totalSales, totalItems, maxRevenue, maxItems, maxPrice) {
-    if (!totalSales || totalSales <= 0) return 0;
-
-    const safeItems = Math.max(totalItems || 0, 1);
-    const avgPrice = totalSales / safeItems;
-
-    let revenueFactor = Math.min(totalSales / maxRevenue, 1);
-    let volumeFactor = Math.min(safeItems / maxItems, 1);
-    let priceFactor = Math.min(avgPrice / maxPrice, 1);
-
-    if (revenueFactor === 0 && totalSales > 0) revenueFactor = 0.01;
-    if (volumeFactor === 0 && safeItems > 0) volumeFactor = 0.01;
-    if (priceFactor === 0 && avgPrice > 0) priceFactor = 0.01;
-
-    const rawScore = revenueFactor * volumeFactor * priceFactor;
-    const rawCredits = totalSales * rawScore * 5;
-
-    // 🔧 FIX: apply 2% to the RAW CREDITS (scaling), not as a ceiling on sales
-    const credits = rawCredits * 0.02;
-
-    return credits;
-}
-
-// ============================================================
 // BRANCH LOADER
 // ============================================================
 async function loadBranches() {
@@ -1781,7 +1778,7 @@ async function loadCheckinBranches() {
         return;
     }
 
-    const today = new Date().toISOString().split('T')[0];
+    const today = getUgandaDateStr();
     const { data: logs } = await _supabase
         .from('daily_logs')
         .select('branch_id, is_closed')
@@ -1825,7 +1822,7 @@ async function loadCheckinBranches() {
 async function checkInToBranch(branchId, branchName) {
     if (currentUser.role !== 'worker') { alert('Only workers can check in.'); return; }
 
-    const today = new Date().toISOString().split('T')[0];
+    const today = getUgandaDateStr();
 
     const { data: closedCheck } = await _supabase
         .from('daily_logs')
@@ -1903,20 +1900,15 @@ async function checkInToBranch(branchId, branchName) {
         }
 
         // New check-in
-        const isSunday = new Date().getDay() === 0;
         const { error: insertError } = await _supabase.from('daily_logs').insert([{
             worker_id: currentUser.id,
             branch_id: branchId,
             log_date: today,
-        
             check_in_time: new Date().toISOString(),
             check_in_lat: location.lat,
             check_in_lng: location.lng,
             check_in_accuracy: location.accuracy,
-            is_closed: false,
-            daily_sales: 0,
-            worker_credit: 0,
-            items_sold: 0
+            is_closed: false
         }]);
 
         if (insertError) {
@@ -1948,7 +1940,7 @@ async function checkInToBranch(branchId, branchName) {
 async function loadTodayActivity() {
     if (!currentUser) return;
     const container = document.getElementById('todayActivity');
-    const today = new Date().toISOString().split('T')[0];
+    const today = getUgandaDateStr();
 
     try {
         let query = _supabase
@@ -1972,7 +1964,7 @@ async function loadTodayActivity() {
         }
 
         let html = `<div class="table-wrap"><table><thead><tr>
-            <th>Worker</th><th>Branch</th><th>Check In</th><th>Status</th><th>Sales</th><th>Credit</th>`;
+            <th>Worker</th><th>Branch</th><th>Check In</th><th>Check Out</th><th>Status</th>`;
 
         if (currentUser.role === 'manager') html += `<th>Action</th>`;
         else {
@@ -1984,29 +1976,33 @@ async function loadTodayActivity() {
         for (const d of data) {
             const workerName = d.workers?.full_name || 'Unknown';
             const branchName = d.branches?.name || 'Unknown';
-            const isClosed = d.is_closed ? '🔒 Closed' : '✅ Active';
-            const salesDisplay = d.daily_sales ? `UGX ${Number(d.daily_sales).toLocaleString()}` : '-';
-            const creditDisplay = d.worker_credit ? `${Number(d.worker_credit).toFixed(2)}` : '-';
+            const checkIn = d.check_in_time ? new Date(d.check_in_time).toLocaleTimeString('en-US', { timeZone: UGANDA_TIMEZONE }) : '-';
+            const checkOut = d.check_out_time ? new Date(d.check_out_time).toLocaleTimeString('en-US', { timeZone: UGANDA_TIMEZONE }) : '-';
+
+            let statusDisplay = d.is_closed ? '🔒 Closed' : '✅ Active';
+            if (d.auto_closed) statusDisplay = '🕘 Auto-Closed';
 
             html += `<tr>
                 <td>${workerName} ${d.workers?.jc_id ? '('+d.workers.jc_id+')' : ''}</td>
                 <td>${branchName}</td>
-                <td>${d.check_in_time ? new Date(d.check_in_time).toLocaleTimeString() : '-'}</td>
-                <td>${isClosed}</td>
-                <td>${salesDisplay}</td>
-                <td>${creditDisplay}</td>`;
+                <td>${checkIn}</td>
+                <td>${checkOut}</td>
+                <td>${statusDisplay}</td>`;
 
             const canClose = !d.is_closed && (
                 currentUser.role === 'manager' ||
                 (currentUser.role === 'worker' && d.worker_id === currentUser.id)
             );
-            const canReopen = d.is_closed && currentUser.role === 'manager';
+            const canReopen = d.is_closed && !d.auto_closed && currentUser.role === 'manager';
 
             if (canReopen) {
                 html += `<td><button class="btn-warning" onclick="reopenBranch('${d.branch_id}', '${branchName.replace(/'/g, "\\'")}')" style="padding:3px 12px;font-size:10px;">🔓 Reopen</button></td>`;
             } else if (canClose) {
-                const fn = currentUser.role === 'worker' ? 'closeDayByWorker' : 'closeDay';
-                html += `<td><button class="btn-success" onclick="${fn}('${d.branch_id}', '${branchName.replace(/'/g, "\\'")}')" style="padding:3px 12px;font-size:10px;">📥 Close Day</button></td>`;
+                if (currentUser.role === 'worker') {
+                    html += `<td><button class="btn-success" onclick="closeDayByWorker('${d.branch_id}', '${branchName.replace(/'/g, "\\'")}')" style="padding:3px 12px;font-size:10px;">📥 Close My Day</button></td>`;
+                } else {
+                    html += `<td><button class="btn-success" onclick="closeDay('${d.branch_id}', '${branchName.replace(/'/g, "\\'")}')" style="padding:3px 12px;font-size:10px;">📥 Close Worker</button></td>`;
+                }
             } else {
                 html += `<td>${d.is_closed ? '✅' : '-'}</td>`;
             }
@@ -2021,12 +2017,12 @@ async function loadTodayActivity() {
 }
 
 // ============================================================
-// CLOSE DAY — WORKER VERSION (credits only)
+// CLOSE DAY — WORKER VERSION (no sales input)
 // ============================================================
 async function closeDayByWorker(branchId, branchName) {
     if (!currentUser || currentUser.role !== 'worker') { alert('Only workers can close their own day.'); return; }
 
-    const today = new Date().toISOString().split('T')[0];
+    const today = getUgandaDateStr();
 
     const { data: existingLog, error: checkError } = await _supabase
         .from('daily_logs')
@@ -2038,7 +2034,6 @@ async function closeDayByWorker(branchId, branchName) {
 
     if (checkError || !existingLog) { alert('❌ You are not checked in today.'); return; }
 
-    // Location check
     const { data: branchLoc } = await _supabase
         .from('branch_locations')
         .select('latitude, longitude, buffer_radius')
@@ -2058,73 +2053,29 @@ async function closeDayByWorker(branchId, branchName) {
         return;
     }
 
-    // Prompt for sales + items
-    const salesInput = prompt(`📊 Enter TOTAL SALES for ${branchName} today:`, "0");
-    if (salesInput === null) { alert('❌ Closing cancelled.'); return; }
-    const totalBranchSales = parseFloat(salesInput.replace(/,/g, ''));
-    if (isNaN(totalBranchSales) || totalBranchSales < 0) { alert('❌ Invalid sales.'); return; }
-
-    const itemsInput = prompt(`📦 Enter TOTAL ITEMS SOLD:`, "1");
-    if (itemsInput === null) { alert('❌ Closing cancelled.'); return; }
-    const totalBranchItems = parseInt(itemsInput);
-    if (isNaN(totalBranchItems) || totalBranchItems < 0) { alert('❌ Invalid items.'); return; }
-
-    if (!confirm(`📊 Confirm closing ${branchName}:\n\n💰 Sales: UGX ${totalBranchSales.toLocaleString()}\n📦 Items: ${totalBranchItems}\n\n⚠️ This will CLOSE the branch for ALL workers.`)) {
+    if (!confirm(`📥 Close your day at ${branchName}?\n\n⚠️ You will NOT be able to check in again today.`)) {
         alert('❌ Cancelled.'); return;
     }
 
-    // Get all open logs at this branch
-    const { data: openLogs } = await _supabase
+    const { error: updateError } = await _supabase
         .from('daily_logs')
-        .select(`*, workers:worker_id (id, full_name, daily_rate, monthly_base_salary, jc_id)`)
-        .eq('branch_id', branchId)
-        .eq('log_date', today)
+        .update({
+            is_closed: true,
+            check_out_time: new Date().toISOString(),
+            check_out_lat: location.lat,
+            check_out_lng: location.lng,
+            check_out_accuracy: location.accuracy,
+            closed_by: currentUser.id
+        })
+        .eq('id', existingLog.id)
         .eq('is_closed', false);
 
-    if (!openLogs || openLogs.length === 0) { alert('❌ No open days found.'); return; }
-
-    const daysInMonth = getDaysInMonth(today);
-    const totalCredits = calculateWorkerCredits(totalBranchSales, totalBranchItems, MAX_REVENUE, MAX_ITEMS, MAX_PRICE);
-    const creditsPerWorker = Math.round(totalCredits / openLogs.length);
-    const salesPerWorker = totalBranchSales / openLogs.length;
-    const itemsPerWorker = Math.round(totalBranchItems / openLogs.length);
-
-    const branchAvgPrice = totalBranchItems > 0 ? totalBranchSales / totalBranchItems : 0;
-    const revF = Math.min(totalBranchSales / MAX_REVENUE, 1);
-    const volF = Math.min(totalBranchItems / MAX_ITEMS, 1);
-    const prF = Math.min(branchAvgPrice / MAX_PRICE, 1);
-
-    let closedCount = 0;
-    for (const log of openLogs) {
-        const dailyRate = 10000;
-        const dailyCost = dailyRate + (log.workers?.monthly_base_salary || 250000) / daysInMonth;
-        const dailyBPI = dailyCost > 0 ? creditsPerWorker / dailyCost : 0;
-
-        const { error: updateError } = await _supabase
-            .from('daily_logs')
-            .update({
-                daily_sales: salesPerWorker,
-                items_sold: itemsPerWorker,
-                worker_credit: creditsPerWorker,
-                daily_cost: dailyCost,
-                daily_bpi: dailyBPI,
-                daily_pay: dailyRate,
-                revenue_factor: revF,
-                volume_factor: volF,
-                price_factor: prF,
-                is_closed: true,
-                check_out_time: new Date().toISOString(),
-                check_out_lat: location.lat,
-                check_out_lng: location.lng,
-                check_out_accuracy: location.accuracy
-            })
-            .eq('id', log.id)
-            .eq('is_closed', false);
-
-        if (!updateError) closedCount++;
+    if (updateError) {
+        alert('❌ Error closing day: ' + updateError.message);
+        return;
     }
 
-    alert(`✅ ${branchName} CLOSED!\n\n📊 ${closedCount} worker(s) closed\n💰 Sales: UGX ${totalBranchSales.toLocaleString()}\n📦 Items: ${totalBranchItems}\n💳 Credits per worker: ${creditsPerWorker}`);
+    alert(`✅ Your day at ${branchName} is closed!`);
 
     if (locationTracker) { locationTracker.stopTracking(); locationTracker = null; }
 
@@ -2133,16 +2084,16 @@ async function closeDayByWorker(branchId, branchName) {
 }
 
 // ============================================================
-// CLOSE DAY — MANAGER VERSION (credits only)
+// CLOSE DAY — MANAGER VERSION (closes selected worker, no sales)
 // ============================================================
 async function closeDay(branchId, branchName) {
     if (!currentUser || currentUser.role !== 'manager') { alert('Only managers can close days.'); return; }
 
-    const today = new Date().toISOString().split('T')[0];
+    const today = getUgandaDateStr();
 
     const { data: openLogs, error: fetchError } = await _supabase
         .from('daily_logs')
-        .select(`*, workers:worker_id (id, full_name, daily_rate, monthly_base_salary, jc_id)`)
+        .select(`*, workers:worker_id (id, full_name, jc_id)`)
         .eq('branch_id', branchId)
         .eq('log_date', today)
         .eq('is_closed', false);
@@ -2152,51 +2103,14 @@ async function closeDay(branchId, branchName) {
         return;
     }
 
-    const workerCount = openLogs.length;
-    const workerNames = openLogs.map(l => l.workers?.full_name || 'Unknown').join(', ');
-    if (!confirm(`📊 Closing ${branchName}\n\n👥 ${workerCount} worker(s):\n${workerNames}\n\nContinue?`)) return;
+    if (openLogs.length === 1) {
+        const log = openLogs[0];
+        const workerName = log.workers?.full_name || 'Unknown';
+        if (!confirm(`📥 Close day for ${workerName} at ${branchName}?`)) return;
 
-    const salesInput = prompt(`💰 Enter TOTAL SALES for ${branchName}:`, "0");
-    if (salesInput === null) { alert('❌ Cancelled.'); return; }
-    const totalSales = parseFloat(salesInput.replace(/,/g, ''));
-    if (isNaN(totalSales) || totalSales < 0) { alert('❌ Invalid sales.'); return; }
-
-    const itemsInput = prompt(`📦 Enter TOTAL ITEMS SOLD:`, "1");
-    if (itemsInput === null) { alert('❌ Cancelled.'); return; }
-    const totalItems = parseInt(itemsInput);
-    if (isNaN(totalItems) || totalItems < 0) { alert('❌ Invalid items.'); return; }
-
-    const avgPrice = totalItems > 0 ? totalSales / totalItems : 0;
-    if (!confirm(`📊 Confirm:\n\n💰 Sales: UGX ${totalSales.toLocaleString()}\n📦 Items: ${totalItems}\n💵 Avg Price: UGX ${avgPrice.toFixed(2)}\n👥 ${workerCount} worker(s)`)) return;
-
-    const daysInMonth = getDaysInMonth(today);
-    const totalCredits = calculateWorkerCredits(totalSales, totalItems, MAX_REVENUE, MAX_ITEMS, MAX_PRICE);
-    const creditsPerWorker = Math.round(totalCredits / openLogs.length);
-    const salesPerWorker = totalSales / openLogs.length;
-    const itemsPerWorker = Math.round(totalItems / openLogs.length);
-
-    const revF = Math.min(totalSales / MAX_REVENUE, 1);
-    const volF = Math.min(totalItems / MAX_ITEMS, 1);
-    const prF = Math.min(avgPrice / MAX_PRICE, 1);
-
-    let closedCount = 0;
-    for (const log of openLogs) {
-        const dailyRate = 10000;
-        const dailyCost = dailyRate + (log.workers?.monthly_base_salary || 250000) / daysInMonth;
-        const dailyBPI = dailyCost > 0 ? creditsPerWorker / dailyCost : 0;
-
-        const { error: updateError } = await _supabase
+        const { error } = await _supabase
             .from('daily_logs')
             .update({
-                daily_sales: salesPerWorker,
-                items_sold: itemsPerWorker,
-                worker_credit: creditsPerWorker,
-                daily_cost: dailyCost,
-                daily_bpi: dailyBPI,
-                daily_pay: dailyRate,
-                revenue_factor: revF,
-                volume_factor: volF,
-                price_factor: prF,
                 is_closed: true,
                 check_out_time: new Date().toISOString(),
                 closed_by: currentUser.id
@@ -2204,10 +2118,41 @@ async function closeDay(branchId, branchName) {
             .eq('id', log.id)
             .eq('is_closed', false);
 
-        if (!updateError) closedCount++;
-    }
+        if (error) { alert('❌ Error: ' + error.message); return; }
+        alert(`✅ ${workerName}'s day closed!`);
+    } else {
+        const workerList = openLogs.map((l, i) =>
+            `${i + 1}. ${l.workers?.full_name || 'Unknown'} (${l.workers?.jc_id || 'N/A'})`
+        ).join('\n');
 
-    alert(`✅ ${branchName} CLOSED!\n\n📊 ${closedCount} worker(s)\n💰 Sales: UGX ${totalSales.toLocaleString()}\n📦 Items: ${totalItems}\n💳 Credits per worker: ${creditsPerWorker}`);
+        const choice = prompt(
+            `📋 Select worker to close at ${branchName}:\n\n${workerList}\n\nEnter number (1-${openLogs.length}):`
+        );
+        if (choice === null) return;
+
+        const index = parseInt(choice) - 1;
+        if (isNaN(index) || index < 0 || index >= openLogs.length) {
+            alert('❌ Invalid selection.'); return;
+        }
+
+        const log = openLogs[index];
+        const workerName = log.workers?.full_name || 'Unknown';
+
+        if (!confirm(`📥 Close day for ${workerName} at ${branchName}?`)) return;
+
+        const { error } = await _supabase
+            .from('daily_logs')
+            .update({
+                is_closed: true,
+                check_out_time: new Date().toISOString(),
+                closed_by: currentUser.id
+            })
+            .eq('id', log.id)
+            .eq('is_closed', false);
+
+        if (error) { alert('❌ Error: ' + error.message); return; }
+        alert(`✅ ${workerName}'s day closed!`);
+    }
 
     loadTodayActivity();
     loadCheckinBranches();
@@ -2220,17 +2165,18 @@ async function closeDay(branchId, branchName) {
 async function reopenBranch(branchId, branchName) {
     if (!currentUser || currentUser.role !== 'manager') { alert('Only managers can reopen.'); return; }
 
-    const today = new Date().toISOString().split('T')[0];
-    if (!confirm(`⚠️ REOPEN ${branchName}?\n\nAllows workers to ADD more sales.\nNO stress test. NO recalc.`)) return;
+    const today = getUgandaDateStr();
+    if (!confirm(`⚠️ REOPEN ${branchName}?\n\nAllows workers to check in again.`)) return;
 
     const { data: closedLogs } = await _supabase
         .from('daily_logs')
         .select('*')
         .eq('branch_id', branchId)
         .eq('log_date', today)
-        .eq('is_closed', true);
+        .eq('is_closed', true)
+        .eq('auto_closed', false);
 
-    if (!closedLogs || closedLogs.length === 0) { alert('❌ No closed logs found.'); return; }
+    if (!closedLogs || closedLogs.length === 0) { alert('❌ No manually-closed logs found.'); return; }
 
     let count = 0;
     for (const log of closedLogs) {
@@ -2248,7 +2194,7 @@ async function reopenBranch(branchId, branchName) {
         if (!error) count++;
     }
 
-    alert(`✅ ${branchName} reopened!\n\n${count} worker(s) can now add more sales.`);
+    alert(`✅ ${branchName} reopened!\n\n${count} worker(s) can now check in again.`);
     loadTodayActivity();
     loadCheckinBranches();
 }
@@ -2352,7 +2298,6 @@ async function handleLogin() {
             distance: result.distance
         };
 
-        // Create login log
         try {
             await _supabase.from('login_logs').insert({
                 user_id: result.user.id,
@@ -2431,10 +2376,11 @@ function showLogin() {
     document.getElementById('loginForm').style.display = 'block';
     document.getElementById('signupForm').style.display = 'none';
 }
+
 // ============================================================
 // SHOW DASHBOARD
 // ============================================================
-function showDashboard() {
+async function showDashboard() {
     document.getElementById('loginScreen').style.display = 'none';
     document.getElementById('dashboard').style.display = 'block';
 
@@ -2463,7 +2409,6 @@ function showDashboard() {
         }
     }
 
-    // Session timer
     const sessionTimer = document.getElementById('sessionTimer');
     if (sessionTimer && window.sessionManager) {
         const remaining = window.sessionManager.sessionEnd - Date.now();
@@ -2475,596 +2420,17 @@ function showDashboard() {
             : `⏰ ${displayMinutes}m remaining`;
     }
 
-    // Load initial data
     loadBranches();
     loadCheckinBranches();
     loadTodayActivity();
+
+    // Run auto-close sweep on dashboard entry
+    await runAutoClose(true);
 
     if (isManager) {
         loadWorkers();
         loadBranchList();
         loadLeaderboard();
-        loadBranchLeaderboard();
-        loadTeamDynamics();
-    } else {
-        loadWorkerProfile();
-        loadWorkerPerformanceTab();
-        loadPerformanceFactorBreakdown();
-    }
-}
-
-// ============================================================
-// WORKER PROFILE
-// ============================================================
-async function loadWorkerProfile() {
-    if (!currentUser || currentUser.role !== 'worker') return;
-
-    try {
-        const { data: worker, error } = await _supabase
-            .from('workers')
-            .select('*')
-            .eq('id', currentUser.id)
-            .single();
-
-        if (error || !worker) return;
-
-        document.getElementById('workerNameDisplay').textContent = worker.full_name;
-        document.getElementById('workerJcIdDisplay').textContent = worker.jc_id;
-        document.getElementById('workerSalaryDisplay').textContent = `UGX ${Number(worker.monthly_base_salary).toLocaleString()}`;
-        document.getElementById('workerDailyDisplay').textContent = `UGX ${Number(worker.daily_rate).toLocaleString()}`;
-
-        if (worker.avatar_url) {
-            document.getElementById('workerAvatar').src = worker.avatar_url;
-            document.getElementById('headerAvatar').src = worker.avatar_url;
-            document.getElementById('headerAvatar').style.display = 'inline-block';
-        }
-    } catch (err) {
-        console.error('Error loading worker profile:', err);
-    }
-}
-
-// ============================================================
-// WORKER PAY DASHBOARD (simplified — credits only)
-// ============================================================
-async function loadWorkerPayDashboard() {
-    if (!currentUser || currentUser.role !== 'worker') return;
-    const container = document.getElementById('workerPayDashboard');
-    if (!container) return;
-
-    const today = new Date().toISOString().split('T')[0];
-    const currentMonth = today.slice(0, 7);
-
-    try {
-        // All-time logs
-        const { data: allLogs } = await _supabase
-            .from('daily_logs')
-            .select('*')
-            .eq('worker_id', currentUser.id)
-            .eq('is_closed', true)
-            .order('log_date', { ascending: false });
-
-        // Monthly logs (for daily breakdown)
-        const { data: monthlyLogs } = await _supabase
-            .from('daily_logs')
-            .select('*')
-            .eq('worker_id', currentUser.id)
-            .gte('log_date', currentMonth + '-01')
-            .lte('log_date', today)
-            .eq('is_closed', true)
-            .order('log_date', { ascending: false });
-
-        // Worker info
-        const { data: worker } = await _supabase
-            .from('workers')
-            .select('daily_rate, monthly_base_salary')
-            .eq('id', currentUser.id)
-            .single();
-
-        const dailyRate = worker?.daily_rate || 10000;
-
-        // Lifetime stats
-        let totalCredits = 0;
-        let daysWorked = 0;
-        let totalSales = 0;
-        let totalItems = 0;
-        for (const log of allLogs || []) {
-            totalCredits += log.worker_credit || 0;
-            daysWorked++;
-            totalSales += log.daily_sales || 0;
-            totalItems += log.items_sold || 0;
-        }
-        const avgCredits = daysWorked > 0 ? totalCredits / daysWorked : 0;
-
-        // Build HTML
-        let html = `
-            <div style="background:rgba(255,215,0,0.05);border-radius:12px;padding:16px;border:1px solid rgba(255,215,0,0.15);margin-top:16px;">
-                <h4 style="color:#ffd700;font-weight:400;font-family:'Playfair Display',serif;font-size:16px;letter-spacing:0.5px;margin-bottom:12px;">
-                    💳 Lifetime Credits
-                </h4>
-                <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;">
-                    <div style="background:rgba(255,215,0,0.08);border-radius:8px;padding:14px;text-align:center;border:2px solid rgba(255,215,0,0.2);">
-                        <div style="font-size:9px;color:rgba(255,215,0,0.4);text-transform:uppercase;letter-spacing:0.5px;">Total Earned</div>
-                        <div style="font-size:22px;font-weight:700;color:#ffd700;">${Math.round(totalCredits).toLocaleString()}</div>
-                        <div style="font-size:9px;color:rgba(255,255,255,0.2);">⭐ ALL TIME</div>
-                    </div>
-                    <div style="background:rgba(255,255,255,0.03);border-radius:8px;padding:14px;text-align:center;border:1px solid rgba(255,255,255,0.06);">
-                        <div style="font-size:9px;color:rgba(255,255,255,0.3);text-transform:uppercase;letter-spacing:0.5px;">Average / Day</div>
-                        <div style="font-size:22px;font-weight:700;color:#7bcfa6;">${Math.round(avgCredits).toLocaleString()}</div>
-                        <div style="font-size:9px;color:rgba(255,255,255,0.2);">Per Day Worked</div>
-                    </div>
-                    <div style="background:rgba(255,255,255,0.03);border-radius:8px;padding:14px;text-align:center;border:1px solid rgba(255,255,255,0.06);">
-                        <div style="font-size:9px;color:rgba(255,255,255,0.3);text-transform:uppercase;letter-spacing:0.5px;">Days Worked</div>
-                        <div style="font-size:22px;font-weight:700;color:#f0ebe6;">${daysWorked}</div>
-                        <div style="font-size:9px;color:rgba(255,255,255,0.2);">⭐ ALL TIME</div>
-                    </div>
-                </div>
-
-                <div style="margin-top:12px;display:grid;grid-template-columns:1fr 1fr;gap:12px;">
-                    <div style="background:rgba(255,255,255,0.03);border-radius:8px;padding:12px;text-align:center;">
-                        <div style="font-size:9px;color:rgba(255,255,255,0.3);">💰 Total Sales Made</div>
-                        <div style="font-size:16px;font-weight:600;color:#f0ebe6;">UGX ${totalSales.toLocaleString()}</div>
-                    </div>
-                    <div style="background:rgba(255,255,255,0.03);border-radius:8px;padding:12px;text-align:center;">
-                        <div style="font-size:9px;color:rgba(255,255,255,0.3);">📦 Total Items Sold</div>
-                        <div style="font-size:16px;font-weight:600;color:#f0ebe6;">${totalItems.toLocaleString()}</div>
-                    </div>
-                </div>
-            </div>
-        `;
-
-        // Daily breakdown (this month)
-        if (monthlyLogs && monthlyLogs.length > 0) {
-            html += `
-                <div style="background:rgba(255,255,255,0.03);border-radius:12px;padding:16px;border:1px solid rgba(255,255,255,0.06);margin-top:16px;">
-                    <h4 style="color:#f0ebe6;font-weight:400;font-family:'Playfair Display',serif;font-size:16px;letter-spacing:0.5px;margin-bottom:12px;">
-                        📅 This Month
-                        <span style="font-size:11px;color:rgba(255,255,255,0.3);font-family:'Inter',sans-serif;margin-left:8px;">
-                            ${currentMonth} | ${monthlyLogs.length} days
-                        </span>
-                    </h4>
-                    <div style="overflow-x:auto;max-height:300px;overflow-y:auto;">
-                        <table style="width:100%;font-size:11px;">
-                            <thead>
-                                <tr style="background:rgba(255,255,255,0.03);">
-                                    <th style="padding:6px 8px;text-align:left;color:rgba(255,255,255,0.4);">Date</th>
-                                    <th style="padding:6px 8px;text-align:left;color:rgba(255,255,255,0.4);">Sales</th>
-                                    <th style="padding:6px 8px;text-align:left;color:rgba(255,255,255,0.4);">Items</th>
-                                    <th style="padding:6px 8px;text-align:left;color:#ffd700;">Credits</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-            `;
-            for (const log of monthlyLogs) {
-                const credits = log.worker_credit || 0;
-                html += `
-                    <tr style="border-bottom:1px solid rgba(255,255,255,0.03);">
-                        <td style="padding:4px 8px;color:rgba(255,255,255,0.6);">${log.log_date}</td>
-                        <td style="padding:4px 8px;color:rgba(255,255,255,0.6);">UGX ${(log.daily_sales || 0).toLocaleString()}</td>
-                        <td style="padding:4px 8px;color:rgba(255,255,255,0.6);">${log.items_sold || 0}</td>
-                        <td style="padding:4px 8px;color:#ffd700;font-weight:600;">${Math.round(credits).toLocaleString()}</td>
-                    </tr>
-                `;
-            }
-            html += `</tbody></table></div></div>`;
-        }
-
-        container.innerHTML = html;
-    } catch (err) {
-        console.error('Error loading worker pay dashboard:', err);
-        container.innerHTML = `<p style="color:#e94560;">Error: ${err.message}</p>`;
-    }
-}
-
-// ============================================================
-// WORKER PERFORMANCE TAB (main view for workers)
-// ============================================================
-async function loadWorkerPerformanceTab() {
-    if (!currentUser || currentUser.role !== 'worker') return;
-    const container = document.getElementById('tabMyPerformance');
-    if (!container) return;
-
-    try {
-        const today = new Date().toISOString().split('T')[0];
-        const currentMonth = today.slice(0, 7);
-        const monthStart = currentMonth + '-01';
-
-        // Worker info
-        const { data: worker } = await _supabase
-            .from('workers')
-            .select('*')
-            .eq('id', currentUser.id)
-            .single();
-        if (!worker) return;
-
-        // Lifetime logs
-        const { data: allLogs } = await _supabase
-            .from('daily_logs')
-            .select('*')
-            .eq('worker_id', currentUser.id)
-            .eq('is_closed', true)
-            .order('log_date', { ascending: false });
-
-        let totalCredits = 0, daysWorked = 0, totalSales = 0, totalItems = 0;
-        for (const log of allLogs || []) {
-            totalCredits += log.worker_credit || 0;
-            daysWorked++;
-            totalSales += log.daily_sales || 0;
-            totalItems += log.items_sold || 0;
-        }
-        const avgCredits = daysWorked > 0 ? totalCredits / daysWorked : 0;
-
-        // Profile section
-        const profileHtml = `
-            <div class="worker-profile-section" id="workerProfileSection">
-                <div style="position:relative;">
-                    <img class="worker-avatar-large" id="workerAvatar" src="${worker.avatar_url || ''}" alt="Profile" />
-                    <button class="avatar-upload-btn" onclick="document.getElementById('avatarInput').click()" style="position:absolute;bottom:-5px;right:-5px;background:rgba(212,165,116,0.2);color:#d4a574;border:1px solid rgba(212,165,116,0.2);padding:4px 10px;border-radius:8px;cursor:pointer;font-size:10px;font-family:'Inter',sans-serif;">📷</button>
-                    <input type="file" id="avatarInput" class="avatar-upload-input" accept="image/*" onchange="uploadAvatar(event)" style="display:none;" />
-                </div>
-                <div class="worker-profile-info">
-                    <h2 id="workerNameDisplay">${worker.full_name}</h2>
-                    <div class="jc-id" id="workerJcIdDisplay">${worker.jc_id}</div>
-                    <div class="pay-info">
-                        <div class="pay-item">💰 Monthly Salary: <strong id="workerSalaryDisplay">UGX ${Number(worker.monthly_base_salary).toLocaleString()}</strong></div>
-                        <div class="pay-item">📅 Daily Rate: <strong id="workerDailyDisplay">UGX ${Number(worker.daily_rate).toLocaleString()}</strong></div>
-                    </div>
-                    <div style="margin-top:12px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;width:100%;max-width:420px;margin-left:auto;margin-right:auto;">
-                        <div style="background:rgba(255,215,0,0.05);border-radius:8px;padding:10px 4px;border:2px solid rgba(255,215,0,0.2);text-align:center;">
-                            <div style="font-size:8px;color:rgba(255,215,0,0.4);text-transform:uppercase;">💰 Total Credits</div>
-                            <div style="font-size:20px;font-weight:700;color:#ffd700;">${Math.round(totalCredits).toLocaleString()}</div>
-                            <div style="font-size:8px;color:rgba(255,215,0,0.2);">⭐ LIFETIME</div>
-                        </div>
-                        <div style="background:rgba(255,255,255,0.03);border-radius:8px;padding:10px 4px;border:1px solid rgba(255,255,255,0.06);text-align:center;">
-                            <div style="font-size:8px;color:rgba(255,255,255,0.3);text-transform:uppercase;">Avg / Day</div>
-                            <div style="font-size:18px;font-weight:700;color:#7bcfa6;">${Math.round(avgCredits).toLocaleString()}</div>
-                            <div style="font-size:8px;color:rgba(255,255,255,0.2);">Credits</div>
-                        </div>
-                        <div style="background:rgba(255,255,255,0.03);border-radius:8px;padding:10px 4px;border:1px solid rgba(255,255,255,0.06);text-align:center;">
-                            <div style="font-size:8px;color:rgba(255,255,255,0.3);text-transform:uppercase;">Days Worked</div>
-                            <div style="font-size:18px;font-weight:700;color:#f0ebe6;">${daysWorked}</div>
-                            <div style="font-size:8px;color:rgba(255,255,255,0.2);">⭐ ALL TIME</div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div id="workerPayDashboard" style="margin-top:20px;"></div>
-
-            <div id="performanceFactorBreakdown" style="margin-top:20px;"></div>
-        `;
-
-        container.innerHTML = profileHtml;
-
-        // Load sub-panels
-        setTimeout(async () => {
-            await loadWorkerPayDashboard();
-            await loadPerformanceFactorBreakdown();
-        }, 100);
-
-    } catch (err) {
-        console.error('Error loading performance tab:', err);
-        container.innerHTML = `<p style="color:#e94560;">Error: ${err.message}</p>`;
-    }
-}
-
-// ============================================================
-// PERFORMANCE FACTOR ANALYSIS (worker + manager)
-// ============================================================
-async function loadPerformanceFactorBreakdown() {
-    if (!currentUser || currentUser.role !== 'worker') return;
-
-    let container = document.getElementById('performanceFactorBreakdown');
-    if (!container) {
-        const tab = document.getElementById('tabMyPerformance');
-        if (!tab) return;
-        container = document.createElement('div');
-        container.id = 'performanceFactorBreakdown';
-        tab.appendChild(container);
-    }
-
-    try {
-        const today = new Date().toISOString().split('T')[0];
-        const currentMonth = today.slice(0, 7);
-        const monthStart = currentMonth + '-01';
-
-        const { data: allLogs } = await _supabase
-            .from('daily_logs')
-            .select('*')
-            .eq('worker_id', currentUser.id)
-            .gte('log_date', monthStart)
-            .lte('log_date', today)
-            .eq('is_closed', true)
-            .order('log_date', { ascending: false });
-
-        if (!allLogs || allLogs.length === 0) {
-            container.innerHTML = `
-                <div style="background:rgba(255,255,255,0.03);border-radius:12px;padding:20px;border:1px solid rgba(255,255,255,0.06);">
-                    <h4 style="color:#f0ebe6;font-weight:400;font-family:'Playfair Display',serif;font-size:16px;letter-spacing:0.5px;margin-bottom:8px;">
-                        📊 Performance Factor Analysis
-                    </h4>
-                    <p style="color:rgba(255,255,255,0.3);font-size:13px;text-align:center;padding:20px 0;">
-                        Close a day to see your performance breakdown!
-                    </p>
-                </div>
-            `;
-            return;
-        }
-
-        const todayLog = allLogs.find(log => log.log_date === today && log.is_closed);
-        if (!todayLog) {
-            container.innerHTML = `
-                <div style="background:rgba(255,255,255,0.03);border-radius:12px;padding:20px;border:1px solid rgba(255,255,255,0.06);">
-                    <h4 style="color:#f0ebe6;font-weight:400;font-family:'Playfair Display',serif;font-size:16px;letter-spacing:0.5px;margin-bottom:8px;">
-                        📊 Performance Factor Analysis
-                    </h4>
-                    <p style="color:rgba(255,255,255,0.3);font-size:13px;text-align:center;padding:20px 0;">
-                        You haven't closed today's shift yet.
-                    </p>
-                </div>
-            `;
-            return;
-        }
-
-        // Branch worker count
-        let workerCount = 1;
-        if (todayLog.branch_id) {
-            const { data: branchLogs } = await _supabase
-                .from('daily_logs')
-                .select('worker_id')
-                .eq('branch_id', todayLog.branch_id)
-                .eq('log_date', today)
-                .eq('is_closed', true);
-            if (branchLogs && branchLogs.length > 0) {
-                workerCount = [...new Set(branchLogs.map(l => l.worker_id))].length;
-            }
-        }
-
-        const perWorkerMaxRevenue = MAX_REVENUE / workerCount;
-        const perWorkerMaxItems = MAX_ITEMS / workerCount;
-        const perWorkerMaxPrice = MAX_PRICE;
-
-        function calcDayFactors(log) {
-            const sales = log.daily_sales || 0;
-            const items = log.items_sold || 0;
-            const avgPrice = items > 0 ? sales / items : 0;
-            const credits = log.worker_credit || 0;
-
-            const rRaw = Math.min(sales / perWorkerMaxRevenue, 1);
-            const vRaw = Math.min(items / perWorkerMaxItems, 1);
-            const pRaw = Math.min(avgPrice / perWorkerMaxPrice, 1);
-
-            const totalRaw = rRaw + vRaw + pRaw;
-            let rPct = 0, vPct = 0, pPct = 0;
-            if (totalRaw === 0) { rPct = 33.33; vPct = 33.33; pPct = 33.34; }
-            else { rPct = (rRaw / totalRaw) * 100; vPct = (vRaw / totalRaw) * 100; pPct = (pRaw / totalRaw) * 100; }
-
-            return { rPct, vPct, pPct, credits, sales, items, avgPrice, date: log.log_date };
-        }
-
-        function calcDayLoss(dayF) {
-            const factors = [
-                { name: 'Revenue', pct: dayF.rPct },
-                { name: 'Volume', pct: dayF.vPct },
-                { name: 'Price', pct: dayF.pPct }
-            ];
-            const sorted = [...factors].sort((a, b) => b.pct - a.pct);
-            const best = sorted[0];
-            const worst = sorted[sorted.length - 1];
-            const difference = best.pct - worst.pct;
-            const creditsLost = (difference / 100) * dayF.credits;
-            return {
-                best, worst, difference,
-                creditsLost,
-                snatchLost: creditsLost * 0.20,
-                perfLost: creditsLost * 0.20,
-                stressLost: creditsLost * 0.20,
-                totalLost: creditsLost * 0.60
-            };
-        }
-
-        const todayFactors = calcDayFactors(todayLog);
-        const todayLoss = calcDayLoss(todayFactors);
-
-        const factors = [
-            { name: 'Revenue', pct: todayFactors.rPct, emoji: '📈', key: 'revenue', value: todayFactors.sales },
-            { name: 'Volume', pct: todayFactors.vPct, emoji: '📦', key: 'volume', value: todayFactors.items },
-            { name: 'Price', pct: todayFactors.pPct, emoji: '💵', key: 'price', value: todayFactors.avgPrice }
-        ];
-
-        const sortedFactors = [...factors].sort((a, b) => b.pct - a.pct);
-        const best = sortedFactors[0];
-        const worst = sortedFactors[sortedFactors.length - 1];
-
-        // Find consistent worst across month
-        const previousLogs = allLogs.filter(log => log.log_date !== today);
-        const factorWorstCount = { Revenue: 0, Volume: 0, Price: 0 };
-        const factorTotalLost = { Revenue: 0, Volume: 0, Price: 0 };
-        const factorWorstDetails = [];
-        let totalBonusLost = 0, totalSnatchLost = 0, totalPerfLost = 0, totalStressLost = 0;
-
-        for (const log of previousLogs) {
-            const dayF = calcDayFactors(log);
-            const dayL = calcDayLoss(dayF);
-            const wf = dayL.worst.name;
-            factorWorstCount[wf]++;
-            factorTotalLost[wf] += dayL.totalLost;
-            factorWorstDetails.push({
-                date: log.log_date,
-                worstFactor: wf,
-                worstPct: dayL.worst.pct,
-                totalLost: dayL.totalLost
-            });
-            totalBonusLost += dayL.totalLost;
-            totalSnatchLost += dayL.snatchLost;
-            totalPerfLost += dayL.perfLost;
-            totalStressLost += dayL.stressLost;
-        }
-
-        const todayWorst = todayLoss.worst.name;
-        factorWorstCount[todayWorst]++;
-        factorTotalLost[todayWorst] += todayLoss.totalLost;
-        totalBonusLost += todayLoss.totalLost;
-        totalSnatchLost += todayLoss.snatchLost;
-        totalPerfLost += todayLoss.perfLost;
-        totalStressLost += todayLoss.stressLost;
-
-        let consistentWorst = '', consistentWorstCount = 0;
-        for (const [f, c] of Object.entries(factorWorstCount)) {
-            if (c > consistentWorstCount) { consistentWorstCount = c; consistentWorst = f; }
-        }
-
-        const totalDays = allLogs.length;
-        const consistencyPct = (consistentWorstCount / totalDays) * 100;
-
-        let consistencyColor = '#d4a574', urgency = 'LOW';
-        if (consistencyPct >= 70) { consistencyColor = '#e94560'; urgency = 'HIGH'; }
-        else if (consistencyPct >= 50) { consistencyColor = '#d4a574'; urgency = 'MEDIUM'; }
-        else { consistencyColor = '#7bcfa6'; urgency = 'LOW'; }
-
-        const avgDailyLoss = totalDays > 0 ? totalBonusLost / totalDays : 0;
-        const totalDaysInMonth = new Date(today).getDate();
-        const projectedMonthlyLoss = avgDailyLoss * totalDaysInMonth;
-        const projectedYearlyLoss = avgDailyLoss * 250;
-
-        // Build HTML
-        let html = `
-            <div style="background:rgba(255,255,255,0.03);border-radius:12px;padding:20px;border:1px solid rgba(255,255,255,0.06);">
-                <h4 style="color:#f0ebe6;font-weight:400;font-family:'Playfair Display',serif;font-size:16px;letter-spacing:0.5px;margin-bottom:4px;">
-                    📊 Performance Factor Analysis
-                </h4>
-                <p style="color:rgba(255,255,255,0.3);font-size:11px;margin-bottom:16px;">
-                    ${totalDays} day(s) worked this month
-                </p>
-
-                <div style="display:grid;gap:12px;margin-bottom:16px;">
-        `;
-
-        for (const factor of factors) {
-            const pct = factor.pct;
-            const isBest = factor.key === best.key;
-            const isWorst = factor.key === worst.key;
-            const barColor = isBest ? '#7bcfa6' : isWorst ? '#e94560' : '#d4a574';
-            const statusText = isBest ? '✅ BEST TODAY' : isWorst ? '⚠️ WORST TODAY' : '';
-            const statusColor = isBest ? '#7bcfa6' : isWorst ? '#e94560' : 'rgba(255,255,255,0.3)';
-
-            html += `
-                <div style="background:rgba(255,255,255,0.02);border-radius:8px;padding:10px 14px;border:1px solid rgba(255,255,255,0.04);">
-                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
-                        <span style="font-size:12px;color:#f0ebe6;font-weight:500;">
-                            ${factor.emoji} ${factor.name}
-                            ${isBest ? ' 🏆' : ''}${isWorst ? ' ⚠️' : ''}
-                        </span>
-                        <span style="font-size:12px;color:${statusColor};font-weight:600;">
-                            ${pct.toFixed(1)}% ${statusText}
-                        </span>
-                    </div>
-                    <div style="width:100%;height:16px;background:rgba(255,255,255,0.06);border-radius:8px;overflow:hidden;">
-                        <div style="height:100%;background:${barColor};border-radius:8px;width:${Math.max(pct, 2)}%;transition:width 0.5s ease;"></div>
-                    </div>
-                    <div style="display:flex;justify-content:space-between;font-size:8px;color:rgba(255,255,255,0.15);margin-top:2px;">
-                        <span>${factor.key === 'volume' ? factor.value.toFixed(0) + ' items' : 'UGX ' + Math.round(factor.value).toLocaleString()}</span>
-                        <span>${isBest ? '✅ Strength!' : isWorst ? '🔴 Needs work!' : ''}</span>
-                    </div>
-                </div>
-            `;
-        }
-
-        html += `
-                </div>
-
-                <div style="padding:14px 16px;background:${consistencyColor}11;border-radius:10px;border:2px solid ${consistencyColor}33;margin-bottom:16px;">
-                    <div style="font-size:10px;color:rgba(255,255,255,0.3);">🔍 YOUR CONSISTENTLY WORST FACTOR</div>
-                    <div style="font-size:18px;font-weight:700;color:${consistencyColor};">
-                        ${consistentWorst}
-                        <span style="font-size:12px;font-weight:400;color:rgba(255,255,255,0.3);">
-                            (${consistentWorstCount}/${totalDays} days - ${consistencyPct.toFixed(0)}%)
-                        </span>
-                    </div>
-                    <div style="margin-top:6px;font-size:11px;color:rgba(255,255,255,0.4);">
-                        ${consistencyPct >= 70
-                            ? `${consistentWorst} has been your worst factor most days! This is a serious pattern.`
-                            : consistencyPct >= 50
-                            ? `${consistentWorst} is a recurring weak spot.`
-                            : `No clear pattern yet — keep working.`}
-                    </div>
-                </div>
-
-                <div style="background:rgba(255,255,255,0.02);border-radius:8px;padding:12px;border:1px solid rgba(255,255,255,0.04);margin-bottom:16px;">
-                    <div style="font-size:10px;color:rgba(255,255,255,0.3);margin-bottom:8px;">
-                        📅 DAILY BREAKDOWN (Worst Factor Each Day)
-                    </div>
-        `;
-
-        const recentDays = factorWorstDetails.slice(0, 10);
-        for (const d of recentDays) {
-            const isConsistent = d.worstFactor === consistentWorst;
-            const color = isConsistent ? '#e94560' : 'rgba(255,255,255,0.3)';
-            html += `
-                <div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid rgba(255,255,255,0.02);">
-                    <span style="font-size:9px;color:rgba(255,255,255,0.4);">${d.date}</span>
-                    <span style="font-size:9px;color:${color};">
-                        ${isConsistent ? '⚠️' : '•'} ${d.worstFactor} was worst (${d.worstPct.toFixed(1)}%)
-                    </span>
-                </div>
-            `;
-        }
-        if (factorWorstDetails.length > 10) {
-            html += `<div style="text-align:center;font-size:8px;color:rgba(255,255,255,0.15);padding-top:4px;">+ ${factorWorstDetails.length - 10} more days</div>`;
-        }
-
-        html += `
-                </div>
-
-                <div style="padding:16px;background:rgba(255,215,0,0.03);border-radius:10px;border:2px solid rgba(255,215,0,0.15);">
-                    <h5 style="color:#ffd700;font-weight:500;font-size:13px;margin:0 0 8px 0;">
-                        💰 WHAT ${consistentWorst.toUpperCase()} HAS COST YOU
-                    </h5>
-                    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:10px;">
-                        <div style="background:rgba(255,255,255,0.02);border-radius:6px;padding:8px;text-align:center;">
-                            <div style="font-size:8px;color:rgba(255,255,255,0.3);">🏆 Snatch</div>
-                            <div style="font-size:14px;color:#e94560;font-weight:600;">-UGX ${Math.round(totalSnatchLost).toLocaleString()}</div>
-                        </div>
-                        <div style="background:rgba(255,255,255,0.02);border-radius:6px;padding:8px;text-align:center;">
-                            <div style="font-size:8px;color:rgba(255,255,255,0.3);">📈 Performance</div>
-                            <div style="font-size:14px;color:#e94560;font-weight:600;">-UGX ${Math.round(totalPerfLost).toLocaleString()}</div>
-                        </div>
-                        <div style="background:rgba(255,255,255,0.02);border-radius:6px;padding:8px;text-align:center;">
-                            <div style="font-size:8px;color:rgba(255,255,255,0.3);">🧪 Stress</div>
-                            <div style="font-size:14px;color:#e94560;font-weight:600;">-UGX ${Math.round(totalStressLost).toLocaleString()}</div>
-                        </div>
-                    </div>
-                    <div style="background:rgba(233,69,96,0.08);border-radius:6px;padding:10px;border:1px solid rgba(233,69,96,0.15);">
-                        <div style="display:flex;justify-content:space-between;align-items:center;">
-                            <span style="font-size:10px;color:rgba(255,255,255,0.4);">💰 TOTAL COST SO FAR</span>
-                            <span style="font-size:16px;font-weight:700;color:#e94560;">-UGX ${Math.round(totalBonusLost).toLocaleString()}</span>
-                        </div>
-                    </div>
-                </div>
-
-                <div style="margin-top:12px;padding:12px;background:rgba(255,255,255,0.02);border-radius:8px;border:1px solid rgba(255,255,255,0.04);">
-                    <div style="font-size:9px;color:rgba(255,255,255,0.3);margin-bottom:4px;">📊 PROJECTIONS</div>
-                    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;">
-                        <div style="text-align:center;padding:6px;background:rgba(255,255,255,0.02);border-radius:4px;">
-                            <div style="font-size:8px;color:rgba(255,255,255,0.3);">Daily Avg</div>
-                            <div style="font-size:14px;color:#e94560;font-weight:600;">-UGX ${Math.round(avgDailyLoss).toLocaleString()}</div>
-                        </div>
-                        <div style="text-align:center;padding:6px;background:rgba(255,255,255,0.02);border-radius:4px;">
-                            <div style="font-size:8px;color:rgba(255,255,255,0.3);">Monthly</div>
-                            <div style="font-size:14px;color:#e94560;font-weight:600;">-UGX ${Math.round(projectedMonthlyLoss).toLocaleString()}</div>
-                        </div>
-                        <div style="text-align:center;padding:6px;background:rgba(233,69,96,0.05);border-radius:4px;border:1px solid rgba(233,69,96,0.1);">
-                            <div style="font-size:8px;color:rgba(255,255,255,0.3);">Year-End</div>
-                            <div style="font-size:14px;color:#e94560;font-weight:700;">-UGX ${Math.round(projectedYearlyLoss).toLocaleString()}</div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        `;
-
-        container.innerHTML = html;
-
-    } catch (err) {
-        console.error('Error loading performance factor breakdown:', err);
     }
 }
 
@@ -3086,14 +2452,13 @@ async function uploadAvatar(event) {
         if (error) { alert('Error uploading avatar: ' + error.message); return; }
 
         currentUser.avatar_url = imageUrl;
-        const wa = document.getElementById('workerAvatar');
         const ha = document.getElementById('headerAvatar');
-        if (wa) wa.src = imageUrl;
         if (ha) { ha.src = imageUrl; ha.style.display = 'inline-block'; }
         alert('✅ Avatar updated!');
     };
     reader.readAsDataURL(file);
 }
+
 // ============================================================
 // MANAGER: WORKERS TAB
 // ============================================================
@@ -3115,13 +2480,11 @@ async function loadWorkers() {
         return;
     }
 
-    // Get latest performance for each worker
     const workerIds = data.map(w => w.id);
     const { data: perfData } = await _supabase
         .from('daily_logs')
-        .select('worker_id, daily_sales, worker_credit, log_date, daily_pay')
+        .select('worker_id, log_date, check_in_time, check_out_time, is_closed')
         .in('worker_id', workerIds)
-        .eq('is_closed', true)
         .order('log_date', { ascending: false });
 
     container.innerHTML = `
@@ -3133,8 +2496,7 @@ async function loadWorkers() {
                 <th>Email</th>
                 <th>Salary</th>
                 <th>Daily Rate</th>
-                <th>Latest Sales</th>
-                <th>Latest Credit</th>
+                <th>Last Check-In</th>
                 <th>Status</th>
                 <th>Actions</th>
             </tr></thead>
@@ -3144,24 +2506,18 @@ async function loadWorkers() {
                     ? `<span class="badge success">Active</span>`
                     : `<span class="badge danger">Inactive</span>`;
                 const latest = perfData?.find(p => p.worker_id === w.id);
-                const latestSales = latest ? `UGX ${Number(latest.daily_sales || 0).toLocaleString()}` : 'No data';
-                const latestCredit = latest ? Math.round(latest.worker_credit || 0).toLocaleString() : 'No data';
+                const lastCheckIn = latest?.check_in_time
+                    ? new Date(latest.check_in_time).toLocaleString()
+                    : 'No data';
 
                 return `
                     <tr>
                         <td><strong>${w.jc_id}</strong></td>
-                        <td>
-                            <button class="btn-outline"
-                                onclick="viewWorkerPerformance('${w.id}')"
-                                style="padding:2px 8px;font-size:10px;color:#d4a574;border-color:rgba(212,165,116,0.3);">
-                                ${w.full_name}
-                            </button>
-                        </td>
+                        <td>${w.full_name}</td>
                         <td>${w.email || '-'}</td>
                         <td>UGX ${Number(w.monthly_base_salary).toLocaleString()}</td>
                         <td>UGX ${Number(w.daily_rate).toLocaleString()}</td>
-                        <td>${latestSales}</td>
-                        <td style="color:#ffd700;font-weight:600;">${latestCredit}</td>
+                        <td>${lastCheckIn}</td>
                         <td>${statusBadge}</td>
                         <td>
                             <button class="btn-primary btn-sm"
@@ -3182,165 +2538,7 @@ async function loadWorkers() {
             </tbody>
         </table>
         </div>
-        <p style="color:rgba(255,255,255,0.3);font-size:11px;margin-top:12px;">👆 Click a worker's name to view their Performance Factor Analysis</p>
     `;
-}
-
-// ============================================================
-// MANAGER: VIEW WORKER PERFORMANCE (factored view only)
-// ============================================================
-async function viewWorkerPerformance(workerId) {
-    const modal = document.getElementById('viewWorkerModal');
-    const content = document.getElementById('viewWorkerContent');
-    const nameEl = document.getElementById('viewWorkerName');
-    const jcIdEl = document.getElementById('viewWorkerJcId');
-
-    modal.classList.add('active');
-    content.innerHTML = '<div class="loading">Loading...</div>';
-
-    try {
-        const { data: worker } = await _supabase
-            .from('workers').select('*').eq('id', workerId).single();
-        if (!worker) { content.innerHTML = '<p style="color:#e94560;">Worker not found.</p>'; return; }
-
-        nameEl.textContent = `📊 ${worker.full_name}`;
-        jcIdEl.textContent = worker.jc_id;
-
-        const today = new Date().toISOString().split('T')[0];
-        const currentMonth = today.slice(0, 7);
-        const monthStart = currentMonth + '-01';
-
-        // Lifetime logs
-        const { data: allLogs } = await _supabase
-            .from('daily_logs').select('*')
-            .eq('worker_id', workerId)
-            .eq('is_closed', true)
-            .order('log_date', { ascending: false });
-
-        let totalCredits = 0, daysWorked = 0, totalSales = 0, totalItems = 0;
-        for (const log of allLogs || []) {
-            totalCredits += log.worker_credit || 0;
-            daysWorked++;
-            totalSales += log.daily_sales || 0;
-            totalItems += log.items_sold || 0;
-        }
-        const avgCredits = daysWorked > 0 ? totalCredits / daysWorked : 0;
-
-        // Monthly logs for factor analysis
-        const { data: monthlyLogs } = await _supabase
-            .from('daily_logs').select('*')
-            .eq('worker_id', workerId)
-            .gte('log_date', monthStart)
-            .lte('log_date', today)
-            .eq('is_closed', true)
-            .order('log_date', { ascending: false });
-
-        let factorHtml = '<p style="color:rgba(255,255,255,0.3);font-size:12px;text-align:center;padding:16px;">No closed days this month.</p>';
-
-        if (monthlyLogs && monthlyLogs.length > 0) {
-            // Branch worker count for scaling
-            let workerCount = 1;
-            const todayLog = monthlyLogs.find(l => l.log_date === today);
-            if (todayLog?.branch_id) {
-                const { data: bl } = await _supabase
-                    .from('daily_logs').select('worker_id')
-                    .eq('branch_id', todayLog.branch_id)
-                    .eq('log_date', today)
-                    .eq('is_closed', true);
-                if (bl && bl.length > 0) workerCount = [...new Set(bl.map(x => x.worker_id))].length;
-            }
-
-            const maxRev = MAX_REVENUE / workerCount;
-            const maxItems = MAX_ITEMS / workerCount;
-
-            function calcF(log) {
-                const s = log.daily_sales || 0;
-                const i = log.items_sold || 0;
-                const ap = i > 0 ? s / i : 0;
-                const r = Math.min(s / maxRev, 1);
-                const v = Math.min(i / maxItems, 1);
-                const p = Math.min(ap / MAX_PRICE, 1);
-                const tot = r + v + p;
-                if (tot === 0) return { r: 33.33, v: 33.33, p: 33.34 };
-                return { r: (r/tot)*100, v: (v/tot)*100, p: (p/tot)*100 };
-            }
-
-            const latest = monthlyLogs[0];
-            const f = calcF(latest);
-
-            factorHtml = `
-                <div style="background:rgba(255,255,255,0.02);border-radius:8px;padding:14px;border:1px solid rgba(255,255,255,0.04);">
-                    <div style="font-size:11px;color:rgba(255,255,255,0.3);margin-bottom:8px;">
-                        📊 Performance Factor — ${latest.log_date}
-                    </div>
-                    ${['r','v','p'].map((k, idx) => {
-                        const label = ['📈 Revenue','📦 Volume','💵 Price'][idx];
-                        const pct = f[k];
-                        const color = pct >= 40 ? '#7bcfa6' : pct >= 25 ? '#d4a574' : '#e94560';
-                        return `
-                            <div style="margin-bottom:8px;">
-                                <div style="display:flex;justify-content:space-between;font-size:11px;color:rgba(255,255,255,0.5);margin-bottom:2px;">
-                                    <span>${label}</span>
-                                    <span style="color:${color};font-weight:600;">${pct.toFixed(1)}%</span>
-                                </div>
-                                <div style="width:100%;height:10px;background:rgba(255,255,255,0.06);border-radius:5px;overflow:hidden;">
-                                    <div style="height:100%;background:${color};border-radius:5px;width:${pct}%;"></div>
-                                </div>
-                            </div>
-                        `;
-                    }).join('')}
-                </div>
-            `;
-        }
-
-        content.innerHTML = `
-            <div class="worker-profile-section" style="margin-bottom:16px;">
-                <img class="worker-avatar-large" src="${worker.avatar_url || ''}" alt="Profile" />
-                <div class="worker-profile-info">
-                    <h2 style="font-size:16px;">${worker.full_name}</h2>
-                    <div class="jc-id">${worker.jc_id}</div>
-                </div>
-            </div>
-
-            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:16px;">
-                <div style="background:rgba(255,215,0,0.05);border-radius:8px;padding:10px;text-align:center;border:1px solid rgba(255,215,0,0.15);">
-                    <div style="font-size:8px;color:rgba(255,215,0,0.4);text-transform:uppercase;">💰 Credits</div>
-                    <div style="font-size:16px;font-weight:700;color:#ffd700;">${Math.round(totalCredits).toLocaleString()}</div>
-                    <div style="font-size:8px;color:rgba(255,255,255,0.2);">LIFETIME</div>
-                </div>
-                <div style="background:rgba(255,255,255,0.03);border-radius:8px;padding:10px;text-align:center;border:1px solid rgba(255,255,255,0.06);">
-                    <div style="font-size:8px;color:rgba(255,255,255,0.3);text-transform:uppercase;">Avg / Day</div>
-                    <div style="font-size:16px;font-weight:700;color:#7bcfa6;">${Math.round(avgCredits).toLocaleString()}</div>
-                </div>
-                <div style="background:rgba(255,255,255,0.03);border-radius:8px;padding:10px;text-align:center;border:1px solid rgba(255,255,255,0.06);">
-                    <div style="font-size:8px;color:rgba(255,255,255,0.3);text-transform:uppercase;">Days</div>
-                    <div style="font-size:16px;font-weight:700;color:#f0ebe6;">${daysWorked}</div>
-                </div>
-            </div>
-
-            ${factorHtml}
-
-            <div style="margin-top:14px;display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:10px;color:rgba(255,255,255,0.4);text-align:center;">
-                <div style="background:rgba(255,255,255,0.02);border-radius:6px;padding:8px;">
-                    💰 Sales: UGX ${totalSales.toLocaleString()}
-                </div>
-                <div style="background:rgba(255,255,255,0.02);border-radius:6px;padding:8px;">
-                    📦 Items: ${totalItems.toLocaleString()}
-                </div>
-            </div>
-        `;
-    } catch (err) {
-        content.innerHTML = `<p style="color:#e94560;">Error: ${err.message}</p>`;
-    }
-}
-
-function closeViewWorkerModal() {
-    const modal = document.getElementById('viewWorkerModal');
-    if (modal) modal.classList.remove('active');
-    if (viewWorkerPieChartInstance) {
-        viewWorkerPieChartInstance.destroy();
-        viewWorkerPieChartInstance = null;
-    }
 }
 
 // ============================================================
@@ -3353,18 +2551,15 @@ async function deleteWorker(id) {
         .from('workers').select('full_name, jc_id').eq('id', id).single();
     const workerName = worker?.full_name || 'this worker';
 
-    if (!confirm(`⚠️ Delete ${workerName}?\n\nSales data will be kept (anonymized).\nAccess will be removed.`)) return;
+    if (!confirm(`⚠️ Delete ${workerName}?\n\nAttendance data will be kept (anonymized).\nAccess will be removed.`)) return;
 
-    // Anonymize logs
     await _supabase.from('daily_logs')
         .update({ worker_id: null, worker_name: `Deleted User (${worker?.jc_id || 'Unknown'})` })
         .eq('worker_id', id);
 
-    // Delete location history + anomalies
     await _supabase.from('worker_location_history').delete().eq('worker_id', id);
     await _supabase.from('location_anomalies').delete().eq('worker_id', id);
 
-    // Delete worker
     const { error } = await _supabase.from('workers').delete().eq('id', id);
     if (error) { alert('Error: ' + error.message); return; }
 
@@ -3418,7 +2613,7 @@ async function saveWorkerPay() {
 }
 
 // ============================================================
-// MANAGER: BRANCHES TAB (behind password gate)
+// MANAGER: BRANCHES TAB
 // ============================================================
 async function loadBranchList() {
     if (!currentUser || currentUser.role !== 'manager') return;
@@ -3614,7 +2809,6 @@ async function loadLeaderboard() {
             return;
         }
 
-        // Group by worker
         const map = {};
         for (const log of logs) {
             if (!log.workers) continue;
@@ -3661,251 +2855,8 @@ async function loadLeaderboard() {
 }
 
 // ============================================================
-// MANAGER: BRANCH RANKINGS (TOTAL REVENUE)
-// ============================================================
-async function loadBranchLeaderboard() {
-    const container = document.getElementById('branchLeaderboardContent');
-    const period = document.getElementById('branchLeaderPeriod')?.value || 'monthly';
-
-    const today = new Date().toISOString().split('T')[0];
-    let startStr;
-    if (period === 'daily') startStr = today;
-    else if (period === 'weekly') {
-        const d = new Date(); d.setDate(d.getDate() - 7);
-        startStr = d.toISOString().split('T')[0];
-    } else if (period === 'monthly') {
-        const d = new Date(); d.setDate(d.getDate() - 30);
-        startStr = d.toISOString().split('T')[0];
-    } else {
-        const d = new Date(); d.setDate(d.getDate() - 365);
-        startStr = d.toISOString().split('T')[0];
-    }
-
-    try {
-        const { data: branches } = await _supabase
-            .from('branches').select('id, name').eq('is_active', true);
-
-        if (!branches || branches.length === 0) {
-            container.innerHTML = '<p style="color:rgba(255,255,255,0.4);">No branches.</p>';
-            return;
-        }
-
-        const rankings = [];
-        for (const b of branches) {
-            const { data: logs } = await _supabase
-                .from('daily_logs')
-                .select('daily_sales, worker_id')
-                .eq('branch_id', b.id)
-                .gte('log_date', startStr)
-                .lte('log_date', today)
-                .eq('is_closed', true);
-
-            const totalRev = (logs || []).reduce((s, l) => s + (l.daily_sales || 0), 0);
-            const workerCount = new Set((logs || []).map(l => l.worker_id)).size;
-            const days = (logs || []).length;
-            rankings.push({ name: b.name, revenue: totalRev, workers: workerCount, days });
-        }
-
-        rankings.sort((a, b) => b.revenue - a.revenue);
-
-        let html = '<div style="display:grid;gap:16px;">';
-        rankings.forEach((r, i) => {
-            const rank = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `#${i+1}`;
-            const color = i === 0 ? '#ffd700' : i === 1 ? '#c0c0c0' : i === 2 ? '#cd7f32' : '#d4a574';
-            html += `
-                <div class="branch-rank-card">
-                    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;">
-                        <div style="display:flex;align-items:center;gap:14px;">
-                            <span class="rank-number" style="color:${color};">${rank}</span>
-                            <div>
-                                <div class="branch-name">${r.name}</div>
-                                <div style="font-size:11px;color:rgba(255,255,255,0.3);">
-                                    ${r.workers} workers • ${r.days} worker-days
-                                </div>
-                            </div>
-                        </div>
-                        <div style="text-align:right;">
-                            <div style="font-size:20px;font-weight:700;color:${color};font-family:'Playfair Display',serif;">
-                                UGX ${r.revenue.toLocaleString()}
-                            </div>
-                            <div style="font-size:10px;color:rgba(255,255,255,0.3);">TOTAL REVENUE</div>
-                        </div>
-                    </div>
-                </div>
-            `;
-        });
-        html += '</div>';
-        container.innerHTML = html;
-
-    } catch (err) {
-        container.innerHTML = `<p style="color:#e94560;">Error: ${err.message}</p>`;
-    }
-}
-
-// ============================================================
-// MANAGER: TEAM DYNAMICS (CHECK-IN + SALES)
-// ============================================================
-async function loadTeamDynamics() {
-    const container = document.getElementById('teamDynamicsContent');
-    const days = parseInt(document.getElementById('teamDynamicsPeriod')?.value || 30);
-    const branchFilter = document.getElementById('teamDynamicsBranch')?.value || 'all';
-
-    container.innerHTML = '<div class="loading">Analyzing...</div>';
-
-    const start = new Date();
-    start.setDate(start.getDate() - days);
-    const startStr = start.toISOString().split('T')[0];
-    const today = new Date().toISOString().split('T')[0];
-
-    try {
-        let query = _supabase
-            .from('daily_logs')
-            .select(`
-                worker_id, branch_id, log_date, daily_sales, check_in_time,
-                workers:worker_id (full_name, jc_id)
-            `)
-            .gte('log_date', startStr)
-            .lte('log_date', today)
-            .eq('is_closed', true);
-
-        if (branchFilter !== 'all') query = query.eq('branch_id', branchFilter);
-        const { data: logs, error } = await query;
-        if (error) throw error;
-        if (!logs || logs.length < 2) {
-            container.innerHTML = '<p style="color:rgba(255,255,255,0.4);font-size:13px;">Not enough data.</p>';
-            return;
-        }
-
-        // Group by branch + date
-        const groups = {};
-        for (const log of logs) {
-            const key = `${log.branch_id}|${log.log_date}`;
-            if (!groups[key]) groups[key] = [];
-            groups[key].push(log);
-        }
-
-        // Pair analysis
-        const pairMap = {};
-        for (const [key, group] of Object.entries(groups)) {
-            if (group.length < 2) continue;
-            for (let i = 0; i < group.length; i++) {
-                for (let j = i + 1; j < group.length; j++) {
-                    const a = group[i], b = group[j];
-                    const ids = [a.worker_id, b.worker_id].sort();
-                    const pk = ids.join('|');
-                    const aIn = new Date(a.check_in_time);
-                    const bIn = new Date(b.check_in_time);
-                    const bothEarly = new Date(aIn.toLocaleString('en-US',{timeZone:'Africa/Nairobi'})).getHours() < 7 &&
-                                      new Date(bIn.toLocaleString('en-US',{timeZone:'Africa/Nairobi'})).getHours() < 7;
-                    const combined = (a.daily_sales || 0) + (b.daily_sales || 0);
-
-                    if (!pairMap[pk]) {
-                        pairMap[pk] = {
-                            aName: a.workers?.full_name || 'Unknown',
-                            bName: b.workers?.full_name || 'Unknown',
-                            days: 0, bothEarlyCount: 0, totalSales: 0
-                        };
-                    }
-                    pairMap[pk].days++;
-                    if (bothEarly) pairMap[pk].bothEarlyCount++;
-                    pairMap[pk].totalSales += combined;
-                }
-            }
-        }
-
-        const pairs = Object.values(pairMap).map(p => {
-            const avgSales = p.totalSales / p.days;
-            const earlyPct = (p.bothEarlyCount / p.days) * 100;
-            let rating, color;
-            if (earlyPct >= 70 && avgSales > 500000) { rating = '🌟 Excellent'; color = '#7bcfa6'; }
-            else if (earlyPct >= 50) { rating = '✅ Good'; color = '#d4a574'; }
-            else if (earlyPct >= 25) { rating = '⚠️ Average'; color = '#e94560'; }
-            else { rating = '❌ Poor'; color = '#ff0000'; }
-            return { ...p, avgSales, earlyPct, rating, color };
-        }).sort((a, b) => b.avgSales - a.avgSales);
-
-        let html = `
-            <div style="background:rgba(255,255,255,0.03);border-radius:12px;padding:16px;border:1px solid rgba(255,255,255,0.06);margin-bottom:16px;">
-                <h4 style="color:#f0ebe6;font-weight:400;font-family:'Playfair Display',serif;font-size:16px;margin-bottom:10px;">
-                    🤝 Pair Performance
-                    <span style="font-size:11px;color:rgba(255,255,255,0.3);font-family:'Inter',sans-serif;margin-left:8px;">
-                        ${pairs.length} pairs • ${days} days
-                    </span>
-                </h4>
-                <div style="overflow-x:auto;">
-                    <table style="width:100%;font-size:11px;">
-                        <thead>
-                            <tr style="background:rgba(255,255,255,0.03);">
-                                <th style="padding:6px 10px;text-align:left;color:rgba(255,255,255,0.4);">Pair</th>
-                                <th style="padding:6px 10px;text-align:right;color:rgba(255,255,255,0.4);">Avg Sales</th>
-                                <th style="padding:6px 10px;text-align:center;color:rgba(255,255,255,0.4);">Both Early</th>
-                                <th style="padding:6px 10px;text-align:center;color:rgba(255,255,255,0.4);">Days</th>
-                                <th style="padding:6px 10px;text-align:center;color:rgba(255,255,255,0.4);">Rating</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            ${pairs.slice(0, 20).map(p => `
-                                <tr style="border-bottom:1px solid rgba(255,255,255,0.03);">
-                                    <td style="padding:6px 10px;color:#f0ebe6;">${p.aName} + ${p.bName}</td>
-                                    <td style="padding:6px 10px;text-align:right;color:#ffd700;">UGX ${Math.round(p.avgSales).toLocaleString()}</td>
-                                    <td style="padding:6px 10px;text-align:center;color:${p.earlyPct >= 50 ? '#7bcfa6' : '#e94560'};">${p.earlyPct.toFixed(0)}%</td>
-                                    <td style="padding:6px 10px;text-align:center;color:rgba(255,255,255,0.4);">${p.days}</td>
-                                    <td style="padding:6px 10px;text-align:center;color:${p.color};">${p.rating}</td>
-                                </tr>
-                            `).join('')}
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-
-            <div style="background:rgba(255,255,255,0.03);border-radius:12px;padding:16px;border:1px solid rgba(255,255,255,0.06);">
-                <h4 style="color:#f0ebe6;font-weight:400;font-family:'Playfair Display',serif;font-size:16px;margin-bottom:10px;">💡 Insights</h4>
-                ${pairs.length > 0 ? `
-                    <div style="padding:10px 14px;background:rgba(255,215,0,0.05);border-radius:6px;border-left:3px solid #ffd700;margin-bottom:8px;">
-                        <div style="font-size:12px;color:#ffd700;">🌟 Best Pair: ${pairs[0].aName} + ${pairs[0].bName}</div>
-                        <div style="font-size:10px;color:rgba(255,255,255,0.4);">
-                            UGX ${Math.round(pairs[0].avgSales).toLocaleString()} avg • ${pairs[0].earlyPct.toFixed(0)}% both early
-                        </div>
-                    </div>
-                    <div style="padding:10px 14px;background:rgba(233,69,96,0.05);border-radius:6px;border-left:3px solid #e94560;">
-                        <div style="font-size:12px;color:#e94560;">⚠️ Weakest: ${pairs[pairs.length-1].aName} + ${pairs[pairs.length-1].bName}</div>
-                        <div style="font-size:10px;color:rgba(255,255,255,0.4);">
-                            UGX ${Math.round(pairs[pairs.length-1].avgSales).toLocaleString()} avg • ${pairs[pairs.length-1].earlyPct.toFixed(0)}% both early
-                        </div>
-                    </div>
-                ` : '<p style="color:rgba(255,255,255,0.3);font-size:12px;">Not enough pair data yet.</p>'}
-            </div>
-        `;
-        container.innerHTML = html;
-
-    } catch (err) {
-        console.error(err);
-        container.innerHTML = `<p style="color:#e94560;">Error: ${err.message}</p>`;
-    }
-}
-
-// ============================================================
-// POPULATE BRANCH DROPDOWNS
-// ============================================================
-async function populateBranchFilter() {
-    const branches = await loadBranches();
-    const filter = document.getElementById('teamDynamicsBranch');
-    if (filter) {
-        filter.innerHTML = '<option value="all">All Branches</option>' +
-            branches.map(b => `<option value="${b.id}">${b.name}</option>`).join('');
-    }
-}
-
-// ============================================================
-// WINDOW LOAD
-// ============================================================
-window.addEventListener('load', function() {
-    populateBranchFilter();
-});
-// ============================================================
 // TIME & PERFORMANCE TAB
 // ============================================================
-const UGANDA_TIMEZONE = 'Africa/Nairobi';
 let tpChartInstances = {
     checkIn: null, scatter: null, weekly: null, daily: null
 };
@@ -3915,18 +2866,6 @@ function getUgandaTime(date) {
     return new Date(date.toLocaleString('en-US', { timeZone: UGANDA_TIMEZONE }));
 }
 
-function formatUgandaTime(date) {
-    return date.toLocaleTimeString('en-US', {
-        timeZone: UGANDA_TIMEZONE, hour: '2-digit', minute: '2-digit', hour12: true
-    });
-}
-
-function formatUgandaDate(date) {
-    return date.toLocaleDateString('en-US', {
-        timeZone: UGANDA_TIMEZONE, year: 'numeric', month: 'short', day: 'numeric'
-    });
-}
-
 function formatUgandaDateTime(date) {
     return date.toLocaleString('en-US', {
         timeZone: UGANDA_TIMEZONE, year: 'numeric', month: 'short', day: 'numeric',
@@ -3934,9 +2873,6 @@ function formatUgandaDateTime(date) {
     });
 }
 
-// ============================================================
-// FETCH RAW DATA
-// ============================================================
 async function fetchTimePerformanceData(branchId = null, days = 30) {
     try {
         const startDate = new Date();
@@ -3968,9 +2904,6 @@ async function fetchTimePerformanceData(branchId = null, days = 30) {
     }
 }
 
-// ============================================================
-// PROCESS RAW DATA
-// ============================================================
 function processTimeData(rawData) {
     return rawData.map(record => {
         let isOnTime = false, checkInHour = 0, checkInMinute = 0;
@@ -3986,6 +2919,8 @@ function processTimeData(rawData) {
 
         if (record.check_in_time && record.check_out_time) {
             hoursWorked = (new Date(record.check_out_time) - new Date(record.check_in_time)) / 3600000;
+            if (hoursWorked > MAX_HOURS) hoursWorked = MAX_HOURS;
+            if (hoursWorked < 0) hoursWorked = 0;
             const ugOut = new Date(new Date(record.check_out_time).toLocaleString('en-US', { timeZone: UGANDA_TIMEZONE }));
             checkOutDisplay = `${String(ugOut.getHours()).padStart(2, '0')}:${String(ugOut.getMinutes()).padStart(2, '0')}`;
         }
@@ -3999,15 +2934,11 @@ function processTimeData(rawData) {
             worker_name: record.workers?.full_name || 'Unknown',
             jc_id: record.workers?.jc_id || 'N/A',
             branch_name: record.branches?.name || 'Unknown',
-            daily_sales: record.daily_sales || 0,
             status: isOnTime ? 'EARLY' : 'LATE'
         };
     });
 }
 
-// ============================================================
-// BRANCH STATS (uses TOTAL branch sales)
-// ============================================================
 function calculateBranchStats(processedData) {
     const branchStats = {};
     const branchDateGroups = {};
@@ -4017,12 +2948,11 @@ function calculateBranchStats(processedData) {
         if (!branchDateGroups[key]) {
             branchDateGroups[key] = {
                 branch: r.branch_name, date: r.log_date,
-                total_sales: 0, total_hours: 0, worker_count: 0,
+                total_hours: 0, worker_count: 0,
                 early_count: 0, late_count: 0
             };
         }
         const g = branchDateGroups[key];
-        g.total_sales += r.daily_sales;
         g.total_hours += r.hours_worked;
         g.worker_count++;
         if (r.is_on_time) g.early_count++;
@@ -4034,12 +2964,11 @@ function calculateBranchStats(processedData) {
     branchDateArray.forEach(day => {
         if (!branchStats[day.branch]) {
             branchStats[day.branch] = {
-                daily_totals: [], daily_hours: [], daily_workers: [],
+                daily_hours: [], daily_workers: [],
                 daily_early: [], daily_late: [], dates: []
             };
         }
         const s = branchStats[day.branch];
-        s.daily_totals.push(day.total_sales);
         s.daily_hours.push(day.total_hours);
         s.daily_workers.push(day.worker_count);
         s.daily_early.push(day.early_count);
@@ -4048,9 +2977,7 @@ function calculateBranchStats(processedData) {
     });
 
     for (const [branch, s] of Object.entries(branchStats)) {
-        const days = s.daily_totals.length;
-        s.total_sales = s.daily_totals.reduce((a, b) => a + b, 0);
-        s.avg_daily_sales = days > 0 ? s.total_sales / days : 0;
+        const days = s.daily_hours.length;
         s.total_hours = s.daily_hours.reduce((a, b) => a + b, 0);
         s.avg_daily_hours = days > 0 ? s.total_hours / days : 0;
         s.total_workers = s.daily_workers.reduce((a, b) => a + b, 0);
@@ -4058,18 +2985,10 @@ function calculateBranchStats(processedData) {
         s.total_early = s.daily_early.reduce((a, b) => a + b, 0);
         s.total_late = s.daily_late.reduce((a, b) => a + b, 0);
         s.early_pct = s.total_workers > 0 ? (s.total_early / s.total_workers * 100) : 0;
-        s.max_sales = Math.max(...s.daily_totals);
-        s.min_sales = Math.min(...s.daily_totals);
-        s.daily_data = branchDateArray
-            .filter(d => d.branch === branch)
-            .sort((a, b) => a.date.localeCompare(b.date));
     }
     return branchStats;
 }
 
-// ============================================================
-// WORKER IMPACT
-// ============================================================
 function calculateWorkerImpact(processedData) {
     const workerData = {};
 
@@ -4078,7 +2997,6 @@ function calculateWorkerImpact(processedData) {
             workerData[r.worker_id] = {
                 id: r.worker_id, name: r.worker_name, jc_id: r.jc_id,
                 branch: r.branch_name,
-                early_sales: [], late_sales: [],
                 early_hours: [], late_hours: [],
                 early_count: 0, late_count: 0, total_count: 0
             };
@@ -4086,11 +3004,9 @@ function calculateWorkerImpact(processedData) {
         const s = workerData[r.worker_id];
         s.total_count++;
         if (r.is_on_time) {
-            s.early_sales.push(r.daily_sales);
             s.early_hours.push(r.hours_worked);
             s.early_count++;
         } else {
-            s.late_sales.push(r.daily_sales);
             s.late_hours.push(r.hours_worked);
             s.late_count++;
         }
@@ -4099,32 +3015,16 @@ function calculateWorkerImpact(processedData) {
     return Object.values(workerData)
         .filter(w => w.total_count >= 3)
         .map(w => {
-            const earlyAvg = w.early_sales.length > 0 ? w.early_sales.reduce((a, b) => a + b, 0) / w.early_sales.length : 0;
-            const lateAvg = w.late_sales.length > 0 ? w.late_sales.reduce((a, b) => a + b, 0) / w.late_sales.length : 0;
-            const earlyHours = w.early_hours.length > 0 ? w.early_hours.reduce((a, b) => a + b, 0) / w.early_hours.length : 0;
-            const lateHours = w.late_hours.length > 0 ? w.late_hours.reduce((a, b) => a + b, 0) / w.late_hours.length : 0;
-            const diff = earlyAvg - lateAvg;
-            const diffPct = lateAvg > 0 ? (diff / lateAvg * 100) : 0;
-
-            const allData = [];
-            w.early_sales.forEach((s, i) => allData.push({ h: w.early_hours[i] || 0, s }));
-            w.late_sales.forEach((s, i) => allData.push({ h: w.late_hours[i] || 0, s }));
-            const avgH = allData.reduce((a, d) => a + d.h, 0) / allData.length;
-            const avgS = allData.reduce((a, d) => a + d.s, 0) / allData.length;
-            let num = 0, denH = 0, denS = 0;
-            for (const d of allData) {
-                num += (d.h - avgH) * (d.s - avgS);
-                denH += (d.h - avgH) ** 2;
-                denS += (d.s - avgS) ** 2;
-            }
-            const corr = denH > 0 && denS > 0 ? num / Math.sqrt(denH * denS) : 0;
+            const earlyAvgHours = w.early_hours.length > 0 ? w.early_hours.reduce((a, b) => a + b, 0) / w.early_hours.length : 0;
+            const lateAvgHours = w.late_hours.length > 0 ? w.late_hours.reduce((a, b) => a + b, 0) / w.late_hours.length : 0;
+            const diff = earlyAvgHours - lateAvgHours;
+            const diffPct = lateAvgHours > 0 ? (diff / lateAvgHours * 100) : 0;
 
             return {
                 ...w,
-                earlyAvg, lateAvg, earlyHours, lateHours,
+                earlyAvgHours, lateAvgHours,
                 impact: diff, impactPct: diffPct,
-                correlation: corr,
-                status: diff > 0 ? '✅ IMPROVES WHEN EARLY' : diff < 0 ? 'LATE COMER' : '➡️ NO CHANGE',
+                status: diff > 0 ? '✅ WORKS LONGER WHEN EARLY' : diff < 0 ? 'SHORTER WHEN EARLY' : '➡️ NO CHANGE',
                 statusColor: diff > 0 ? '#7bcfa6' : '#e94560',
                 earlyPct: w.total_count > 0 ? (w.early_count / w.total_count * 100) : 0
             };
@@ -4132,9 +3032,6 @@ function calculateWorkerImpact(processedData) {
         .sort((a, b) => b.impact - a.impact);
 }
 
-// ============================================================
-// TEAM STATS
-// ============================================================
 function calculateTeamStats(processedData) {
     const dateGroups = {};
     processedData.forEach(r => {
@@ -4142,13 +3039,12 @@ function calculateTeamStats(processedData) {
         if (!dateGroups[key]) {
             dateGroups[key] = {
                 date: r.log_date, branch: r.branch_name, branch_id: r.branch_id,
-                early: 0, late: 0, total_sales: 0, total_hours: 0, workers: []
+                early: 0, late: 0, total_hours: 0, workers: []
             };
         }
         const g = dateGroups[key];
         if (r.is_on_time) g.early++;
         else g.late++;
-        g.total_sales += r.daily_sales;
         g.total_hours += r.hours_worked;
         g.workers.push(r.worker_id);
     });
@@ -4158,61 +3054,29 @@ function calculateTeamStats(processedData) {
     const lateTeams = teamData.filter(d => d.late > d.early);
     const balancedTeams = teamData.filter(d => d.early === d.late);
 
-    const earlyTeamAvgSales = earlyTeams.length > 0 ? earlyTeams.reduce((s, d) => s + d.total_sales, 0) / earlyTeams.length : 0;
-    const lateTeamAvgSales = lateTeams.length > 0 ? lateTeams.reduce((s, d) => s + d.total_sales, 0) / lateTeams.length : 0;
-    const balancedAvgSales = balancedTeams.length > 0 ? balancedTeams.reduce((s, d) => s + d.total_sales, 0) / balancedTeams.length : 0;
-
     return {
         earlyTeams, lateTeams, balancedTeams,
-        earlyTeamAvgSales, lateTeamAvgSales, balancedAvgSales,
         earlyTeamAvgHours: earlyTeams.length > 0 ? earlyTeams.reduce((s, d) => s + d.total_hours, 0) / earlyTeams.length : 0,
         lateTeamAvgHours: lateTeams.length > 0 ? lateTeams.reduce((s, d) => s + d.total_hours, 0) / lateTeams.length : 0,
         earlyTeamAvgWorkers: earlyTeams.length > 0 ? earlyTeams.reduce((s, d) => s + d.workers.length, 0) / earlyTeams.length : 0,
-        lateTeamAvgWorkers: lateTeams.length > 0 ? lateTeams.reduce((s, d) => s + d.workers.length, 0) / lateTeams.length : 0,
-        diff: earlyTeamAvgSales - lateTeamAvgSales,
-        diffPct: lateTeamAvgSales > 0 ? ((earlyTeamAvgSales - lateTeamAvgSales) / lateTeamAvgSales * 100) : 0
+        lateTeamAvgWorkers: lateTeams.length > 0 ? lateTeams.reduce((s, d) => s + d.workers.length, 0) / lateTeams.length : 0
     };
 }
 
-// ============================================================
-// RENDER STATS
-// ============================================================
 function renderTimeStatsNew(processedData, branchStats, teamStats) {
     const totalRecords = processedData.length;
     const uniqueDates = [...new Set(processedData.map(r => r.log_date))];
     const totalDays = uniqueDates.length;
-
-    const totalSales = processedData.reduce((s, r) => s + r.daily_sales, 0);
-    const dailyAvg = totalDays > 0 ? totalSales / totalDays : 0;
-
     const branches = [...new Set(processedData.map(r => r.branch_name))];
-
-    let avg7Display = '⏳ Waiting...', avg7Color = '#d4a574';
-    if (totalDays >= 7) {
-        const sorted = uniqueDates.sort((a, b) => b.localeCompare(a)).slice(0, 7);
-        const last7 = processedData.filter(r => sorted.includes(r.log_date)).reduce((s, r) => s + r.daily_sales, 0);
-        avg7Display = 'UGX ' + Math.round(last7 / 7).toLocaleString();
-        avg7Color = '#7bcfa6';
-    } else {
-        avg7Display = `⏳ ${7 - totalDays} more day${7 - totalDays > 1 ? 's' : ''}`;
-    }
-
-    let avg31Display = '⏳ Waiting...', avg31Color = '#d4a574';
-    if (totalDays >= 31) {
-        const sorted = uniqueDates.sort((a, b) => b.localeCompare(a)).slice(0, 31);
-        const last31 = processedData.filter(r => sorted.includes(r.log_date)).reduce((s, r) => s + r.daily_sales, 0);
-        avg31Display = 'UGX ' + Math.round(last31 / 31).toLocaleString();
-        avg31Color = '#7bcfa6';
-    } else {
-        avg31Display = `⏳ ${31 - totalDays} more day${31 - totalDays > 1 ? 's' : ''}`;
-    }
 
     const totalEarly = processedData.filter(r => r.is_on_time).length;
     const earlyPct = totalRecords > 0 ? (totalEarly / totalRecords * 100) : 0;
     const totalHours = processedData.reduce((s, r) => s + r.hours_worked, 0);
     const avgHours = totalRecords > 0 ? totalHours / totalRecords : 0;
 
-    const teamDiffPct = teamStats.diffPct;
+    const teamDiffPct = teamStats.earlyTeamAvgHours > 0 && teamStats.lateTeamAvgHours > 0
+        ? ((teamStats.earlyTeamAvgHours - teamStats.lateTeamAvgHours) / teamStats.lateTeamAvgHours * 100)
+        : 0;
 
     document.getElementById('tpStatsGrid').innerHTML = `
         <div class="stat-card" style="text-align:center;">
@@ -4220,59 +3084,49 @@ function renderTimeStatsNew(processedData, branchStats, teamStats) {
             <div class="label">📊 Total Records</div>
             <div style="font-size:8px;color:rgba(255,255,255,0.15);">${branches.join(', ')}</div>
         </div>
-        <div class="stat-card" style="text-align:center;border:2px solid #ffd70044;">
-            <div class="number" style="color:#ffd700;font-size:24px;">UGX ${dailyAvg.toLocaleString()}</div>
-            <div class="label">💰 Daily Avg (All Days)</div>
-            <div style="font-size:9px;color:rgba(255,255,255,0.2);">
-                ${branches.length === 1 ? branches[0] : branches.length + ' branches'} •
-                ${totalDays} day${totalDays > 1 ? 's' : ''} •
-                UGX ${totalSales.toLocaleString()} total
-            </div>
-        </div>
-        <div class="stat-card" style="text-align:center;border:2px solid ${totalDays >= 7 ? '#7bcfa644' : '#d4a57444'};">
-            <div class="number" style="color:${avg7Color};font-size:${totalDays >= 7 ? '24px' : '16px'};">${avg7Display}</div>
-            <div class="label">📊 7-Day Avg</div>
-        </div>
-        <div class="stat-card" style="text-align:center;border:2px solid ${totalDays >= 31 ? '#7bcfa644' : '#d4a57444'};">
-            <div class="number" style="color:${avg31Color};font-size:${totalDays >= 31 ? '24px' : '16px'};">${avg31Display}</div>
-            <div class="label">📊 31-Day Avg</div>
-        </div>
-        <div class="stat-card" style="text-align:center;border:2px solid ${teamDiffPct > 0 ? '#7bcfa644' : '#e9456044'};">
-            <div class="number" style="color:${teamDiffPct > 0 ? '#7bcfa6' : '#e94560'};">${teamDiffPct > 0 ? '+' : ''}${teamDiffPct.toFixed(0)}%</div>
-            <div class="label">🎯 Early Team Impact</div>
-            <div style="font-size:9px;color:rgba(255,255,255,0.2);">${teamDiffPct > 0 ? 'Early teams sell more' : 'Late teams sell more'}</div>
-        </div>
-        <div class="stat-card" style="text-align:center;">
-            <div class="number">${avgHours.toFixed(1)}h</div>
+        <div class="stat-card" style="text-align:center;border:2px solid #7bcfa644;">
+            <div class="number" style="color:#7bcfa6;font-size:24px;">${avgHours.toFixed(1)}h</div>
             <div class="label">⏰ Avg Hours Worked</div>
+            <div style="font-size:9px;color:rgba(255,255,255,0.2);">${totalDays} day${totalDays > 1 ? 's' : ''} tracked</div>
         </div>
         <div class="stat-card" style="text-align:center;border:2px solid #7bcfa644;">
             <div class="number" style="color:#7bcfa6;">${earlyPct.toFixed(0)}%</div>
             <div class="label">✅ Early Check-In Rate</div>
             <div style="font-size:9px;color:rgba(255,255,255,0.2);">Before 7AM</div>
         </div>
+        <div class="stat-card" style="text-align:center;border:2px solid ${teamDiffPct > 0 ? '#7bcfa644' : '#e9456044'};">
+            <div class="number" style="color:${teamDiffPct > 0 ? '#7bcfa6' : '#e94560'};">${teamDiffPct > 0 ? '+' : ''}${teamDiffPct.toFixed(0)}%</div>
+            <div class="label">🎯 Early Team Impact</div>
+            <div style="font-size:9px;color:rgba(255,255,255,0.2);">${teamDiffPct > 0 ? 'Early teams work longer' : 'Late teams work longer'}</div>
+        </div>
+        <div class="stat-card" style="text-align:center;">
+            <div class="number">${totalEarly}</div>
+            <div class="label">🌅 Early Birds</div>
+            <div style="font-size:9px;color:rgba(255,255,255,0.2);">Checked in before 7AM</div>
+        </div>
+        <div class="stat-card" style="text-align:center;">
+            <div class="number">${totalRecords - totalEarly}</div>
+            <div class="label">🌙 Late Arrivals</div>
+            <div style="font-size:9px;color:rgba(255,255,255,0.2);">Checked in after 7AM</div>
+        </div>
     `;
 }
 
-// ============================================================
-// RENDER CHARTS
-// ============================================================
 function renderTimeChartsNew(processedData) {
     for (const k in tpChartInstances) {
         if (tpChartInstances[k]) { tpChartInstances[k].destroy(); tpChartInstances[k] = null; }
     }
 
-    // Chart 1: Check-in distribution
     const c1 = document.getElementById('tpCheckInChart');
     if (c1) {
         const slots = [
-            { label: '6:00-6:30', min: 6.0, max: 6.5, count: 0, sales: 0 },
-            { label: '6:30-7:00', min: 6.5, max: 7.0, count: 0, sales: 0 },
-            { label: '7:00-7:30', min: 7.0, max: 7.5, count: 0, sales: 0 },
-            { label: '7:30-8:00', min: 7.5, max: 8.0, count: 0, sales: 0 },
-            { label: '8:00-8:30', min: 8.0, max: 8.5, count: 0, sales: 0 },
-            { label: '8:30-9:00', min: 8.5, max: 9.0, count: 0, sales: 0 },
-            { label: '9:00+', min: 9.0, max: 24.0, count: 0, sales: 0 }
+            { label: '6:00-6:30', min: 6.0, max: 6.5, count: 0 },
+            { label: '6:30-7:00', min: 6.5, max: 7.0, count: 0 },
+            { label: '7:00-7:30', min: 7.0, max: 7.5, count: 0 },
+            { label: '7:30-8:00', min: 7.5, max: 8.0, count: 0 },
+            { label: '8:00-8:30', min: 8.0, max: 8.5, count: 0 },
+            { label: '8:30-9:00', min: 8.5, max: 9.0, count: 0 },
+            { label: '9:00+', min: 9.0, max: 24.0, count: 0 }
         ];
         processedData.forEach(r => {
             const [h, m] = r.check_in_display.split(':').map(Number);
@@ -4280,41 +3134,30 @@ function renderTimeChartsNew(processedData) {
             let slot = slots.find(s => t >= s.min && t < s.max);
             if (!slot) slot = slots[slots.length - 1];
             slot.count++;
-            slot.sales += r.daily_sales;
         });
 
         tpChartInstances.checkIn = new Chart(c1.getContext('2d'), {
             type: 'bar',
             data: {
                 labels: slots.map(s => s.label),
-                datasets: [
-                    {
-                        label: 'Workers', data: slots.map(s => s.count),
-                        backgroundColor: slots.map(s => s.count > 0 ? 'rgba(123,207,166,0.6)' : 'rgba(255,255,255,0.05)'),
-                        borderColor: slots.map(s => s.count > 0 ? '#7bcfa6' : 'rgba(255,255,255,0.1)'),
-                        borderWidth: 2, borderRadius: 4, order: 2
-                    },
-                    {
-                        label: 'Avg Sales', data: slots.map(s => s.count > 0 ? s.sales / s.count : 0),
-                        type: 'line', borderColor: '#ffd700', backgroundColor: 'rgba(255,215,0,0.1)',
-                        borderWidth: 2, pointBackgroundColor: '#ffd700', pointRadius: 4,
-                        tension: 0.4, order: 1, yAxisID: 'y1'
-                    }
-                ]
+                datasets: [{
+                    label: 'Workers', data: slots.map(s => s.count),
+                    backgroundColor: slots.map(s => s.count > 0 ? 'rgba(123,207,166,0.6)' : 'rgba(255,255,255,0.05)'),
+                    borderColor: slots.map(s => s.count > 0 ? '#7bcfa6' : 'rgba(255,255,255,0.1)'),
+                    borderWidth: 2, borderRadius: 4
+                }]
             },
             options: {
                 responsive: true, maintainAspectRatio: false,
                 plugins: { legend: { labels: { color: 'rgba(255,255,255,0.4)', font: { size: 9 }, boxWidth: 12 } } },
                 scales: {
                     y: { beginAtZero: true, ticks: { color: 'rgba(255,255,255,0.3)', font: { size: 8 } }, grid: { color: 'rgba(255,255,255,0.05)' } },
-                    y1: { beginAtZero: true, position: 'right', ticks: { color: 'rgba(255,215,0,0.3)', font: { size: 8 }, callback: v => 'UGX ' + (v/1000).toFixed(0) + 'K' }, grid: { display: false } },
                     x: { ticks: { color: 'rgba(255,255,255,0.3)', font: { size: 8 } }, grid: { display: false } }
                 }
             }
         });
     }
 
-    // Chart 2: Scatter
     const c2 = document.getElementById('tpScatterChart');
     if (c2) {
         const sample = processedData.slice(0, 60);
@@ -4323,7 +3166,7 @@ function renderTimeChartsNew(processedData) {
             data: {
                 datasets: [{
                     label: 'Workers',
-                    data: sample.map(p => ({ x: p.hours_worked, y: p.daily_sales })),
+                    data: sample.map(p => ({ x: p.hours_worked, y: p.is_on_time ? 1 : 0 })),
                     backgroundColor: sample.map(p => p.is_on_time ? 'rgba(123,207,166,0.7)' : 'rgba(233,69,96,0.7)'),
                     borderColor: sample.map(p => p.is_on_time ? '#7bcfa6' : '#e94560'),
                     borderWidth: 1.5, pointRadius: 5, pointHoverRadius: 8
@@ -4334,22 +3177,20 @@ function renderTimeChartsNew(processedData) {
                 plugins: { legend: { labels: { color: 'rgba(255,255,255,0.4)', font: { size: 9 } } } },
                 scales: {
                     x: { title: { display: true, text: 'Hours Worked', color: 'rgba(255,255,255,0.3)', font: { size: 9 } }, min: 0, max: 12, ticks: { color: 'rgba(255,255,255,0.3)', font: { size: 8 } }, grid: { color: 'rgba(255,255,255,0.05)' } },
-                    y: { title: { display: true, text: 'Sales (UGX)', color: 'rgba(255,255,255,0.3)', font: { size: 9 } }, min: 0, ticks: { color: 'rgba(255,255,255,0.3)', font: { size: 8 }, callback: v => (v/1000000).toFixed(1) + 'M' }, grid: { color: 'rgba(255,255,255,0.05)' } }
+                    y: { title: { display: true, text: 'Early?', color: 'rgba(255,255,255,0.3)', font: { size: 9 } }, min: -0.1, max: 1.1, ticks: { color: 'rgba(255,255,255,0.3)', font: { size: 8 }, callback: v => v === 1 ? 'Early' : v === 0 ? 'Late' : '' }, grid: { color: 'rgba(255,255,255,0.05)' } }
                 }
             }
         });
     }
 
-    // Chart 3: Weekly
     const c3 = document.getElementById('tpWeeklyChart');
     if (c3) {
         const weekGroups = {};
         processedData.forEach(r => {
             const d = new Date(r.log_date);
             const wk = getWeekKey(d);
-            if (!weekGroups[wk]) weekGroups[wk] = { sales: 0, credits: 0, count: 0 };
-            weekGroups[wk].sales += r.daily_sales;
-            weekGroups[wk].credits += r.worker_credit || 0;
+            if (!weekGroups[wk]) weekGroups[wk] = { hours: 0, count: 0 };
+            weekGroups[wk].hours += r.hours_worked;
             weekGroups[wk].count++;
         });
         const weekKeys = Object.keys(weekGroups).sort();
@@ -4358,32 +3199,28 @@ function renderTimeChartsNew(processedData) {
             data: {
                 labels: weekKeys,
                 datasets: [
-                    { label: '📈 Total Sales', data: weekKeys.map(k => weekGroups[k].sales), borderColor: '#ffd700', backgroundColor: 'rgba(255,215,0,0.1)', borderWidth: 3, pointBackgroundColor: '#ffd700', pointRadius: 5, tension: 0.3, fill: true, yAxisID: 'y1' },
-                    { label: '💳 Avg Credits', data: weekKeys.map(k => weekGroups[k].count > 0 ? weekGroups[k].credits / weekGroups[k].count : 0), borderColor: '#4BC0C0', backgroundColor: 'rgba(75,192,192,0.1)', borderWidth: 2, pointBackgroundColor: '#4BC0C0', pointRadius: 4, tension: 0.3, yAxisID: 'y' }
+                    { label: '⏰ Avg Hours Worked', data: weekKeys.map(k => weekGroups[k].count > 0 ? weekGroups[k].hours / weekGroups[k].count : 0), borderColor: '#ffd700', backgroundColor: 'rgba(255,215,0,0.1)', borderWidth: 3, pointBackgroundColor: '#ffd700', pointRadius: 5, tension: 0.3, fill: true }
                 ]
             },
             options: {
                 responsive: true, maintainAspectRatio: false,
                 plugins: { legend: { labels: { color: 'rgba(255,255,255,0.5)', font: { size: 9 }, boxWidth: 12 } } },
                 scales: {
-                    y: { beginAtZero: true, position: 'left', ticks: { color: 'rgba(75,192,192,0.3)', font: { size: 8 } }, grid: { color: 'rgba(255,255,255,0.05)' } },
-                    y1: { beginAtZero: true, position: 'right', ticks: { color: 'rgba(255,215,0,0.3)', font: { size: 8 }, callback: v => (v/1000000).toFixed(1) + 'M' }, grid: { display: false } },
+                    y: { beginAtZero: true, ticks: { color: 'rgba(255,215,0,0.3)', font: { size: 8 }, callback: v => v + 'h' }, grid: { color: 'rgba(255,255,255,0.05)' } },
                     x: { ticks: { color: 'rgba(255,255,255,0.3)', font: { size: 8 }, maxRotation: 45 }, grid: { display: false } }
                 }
             }
         });
     }
 
-    // Chart 4: Daily pattern
     const c4 = document.getElementById('tpDailyPatternsChart');
     if (c4) {
         const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
         const dayData = {};
         processedData.forEach(r => {
             const day = dayNames[new Date(r.log_date).getDay()];
-            if (!dayData[day]) dayData[day] = { hours: [], sales: [] };
+            if (!dayData[day]) dayData[day] = { hours: [] };
             dayData[day].hours.push(r.hours_worked);
-            dayData[day].sales.push(r.daily_sales);
         });
         const ordered = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
         tpChartInstances.daily = new Chart(c4.getContext('2d'), {
@@ -4391,16 +3228,14 @@ function renderTimeChartsNew(processedData) {
             data: {
                 labels: ordered,
                 datasets: [
-                    { label: '⏰ Avg Hours', data: ordered.map(d => dayData[d] ? dayData[d].hours.reduce((a,b)=>a+b,0) / dayData[d].hours.length : 0), backgroundColor: 'rgba(212,165,116,0.6)', borderColor: '#d4a574', borderWidth: 2, borderRadius: 4, yAxisID: 'y' },
-                    { label: '📊 Avg Sales', data: ordered.map(d => dayData[d] ? dayData[d].sales.reduce((a,b)=>a+b,0) / dayData[d].sales.length : 0), type: 'line', borderColor: '#ffd700', backgroundColor: 'rgba(255,215,0,0.1)', borderWidth: 2, pointBackgroundColor: '#ffd700', pointRadius: 4, tension: 0.3, yAxisID: 'y1', fill: true }
+                    { label: '⏰ Avg Hours', data: ordered.map(d => dayData[d] ? dayData[d].hours.reduce((a,b)=>a+b,0) / dayData[d].hours.length : 0), backgroundColor: 'rgba(212,165,116,0.6)', borderColor: '#d4a574', borderWidth: 2, borderRadius: 4 }
                 ]
             },
             options: {
                 responsive: true, maintainAspectRatio: false,
                 plugins: { legend: { labels: { color: 'rgba(255,255,255,0.5)', font: { size: 9 }, boxWidth: 12 } } },
                 scales: {
-                    y: { beginAtZero: true, position: 'left', max: 12, ticks: { color: 'rgba(212,165,116,0.3)', font: { size: 8 }, callback: v => v + 'h' }, grid: { color: 'rgba(255,255,255,0.05)' } },
-                    y1: { beginAtZero: true, position: 'right', ticks: { color: 'rgba(255,215,0,0.3)', font: { size: 8 }, callback: v => (v/1000000).toFixed(1) + 'M' }, grid: { display: false } },
+                    y: { beginAtZero: true, max: 12, ticks: { color: 'rgba(212,165,116,0.3)', font: { size: 8 }, callback: v => v + 'h' }, grid: { color: 'rgba(255,255,255,0.05)' } },
                     x: { ticks: { color: 'rgba(255,255,255,0.3)', font: { size: 9 } }, grid: { display: false } }
                 }
             }
@@ -4416,9 +3251,6 @@ function getWeekKey(d) {
     return `${date.getUTCFullYear()}-W${String(weekNo).padStart(2, '0')}`;
 }
 
-// ============================================================
-// RENDER WORKER IMPACT TABLE
-// ============================================================
 function renderWorkerImpactTable(workerImpact) {
     const container = document.getElementById('tpImpactAnalysis');
     if (!container) return;
@@ -4432,7 +3264,7 @@ function renderWorkerImpactTable(workerImpact) {
         <div style="margin-bottom:16px;">
             <h4 style="color:#f0ebe6;font-weight:400;font-family:'Playfair Display',serif;font-size:16px;margin-bottom:10px;">
                 👤 WORKER IMPACT ANALYSIS
-                <span style="font-size:11px;color:rgba(255,255,255,0.3);font-family:'Inter',sans-serif;margin-left:8px;">Does each worker sell more when early?</span>
+                <span style="font-size:11px;color:rgba(255,255,255,0.3);font-family:'Inter',sans-serif;margin-left:8px;">Do workers work longer when they arrive early?</span>
             </h4>
             <div style="overflow-x:auto;">
                 <table style="width:100%;font-size:11px;">
@@ -4440,8 +3272,8 @@ function renderWorkerImpactTable(workerImpact) {
                         <tr style="background:rgba(255,255,255,0.03);border-bottom:2px solid rgba(255,255,255,0.06);">
                             <th style="padding:8px 10px;text-align:left;color:rgba(255,255,255,0.4);">Worker</th>
                             <th style="padding:8px 10px;text-align:left;color:rgba(255,255,255,0.4);">Branch</th>
-                            <th style="padding:8px 10px;text-align:right;color:#7bcfa6;">Early Avg</th>
-                            <th style="padding:8px 10px;text-align:right;color:#e94560;">Late Avg</th>
+                            <th style="padding:8px 10px;text-align:right;color:#7bcfa6;">Early Avg Hours</th>
+                            <th style="padding:8px 10px;text-align:right;color:#e94560;">Late Avg Hours</th>
                             <th style="padding:8px 10px;text-align:right;color:#ffd700;">Impact</th>
                             <th style="padding:8px 10px;text-align:center;color:rgba(255,255,255,0.4);">Status</th>
                             <th style="padding:8px 10px;text-align:center;color:rgba(255,255,255,0.4);">Early %</th>
@@ -4455,9 +3287,9 @@ function renderWorkerImpactTable(workerImpact) {
             <tr style="border-bottom:1px solid rgba(255,255,255,0.03);">
                 <td style="padding:6px 10px;color:#f0ebe6;font-weight:500;">${w.name}</td>
                 <td style="padding:6px 10px;color:rgba(255,255,255,0.4);font-size:10px;">${w.branch}</td>
-                <td style="padding:6px 10px;text-align:right;color:#7bcfa6;">UGX ${Math.round(w.earlyAvg).toLocaleString()}</td>
-                <td style="padding:6px 10px;text-align:right;color:#e94560;">UGX ${Math.round(w.lateAvg).toLocaleString()}</td>
-                <td style="padding:6px 10px;text-align:right;color:${c};font-weight:600;">${w.impact > 0 ? '+' : ''}UGX ${Math.round(w.impact).toLocaleString()}</td>
+                <td style="padding:6px 10px;text-align:right;color:#7bcfa6;">${w.earlyAvgHours.toFixed(1)}h</td>
+                <td style="padding:6px 10px;text-align:right;color:#e94560;">${w.lateAvgHours.toFixed(1)}h</td>
+                <td style="padding:6px 10px;text-align:right;color:${c};font-weight:600;">${w.impact > 0 ? '+' : ''}${w.impact.toFixed(1)}h</td>
                 <td style="padding:6px 10px;text-align:center;color:${c};font-size:10px;">${w.status}</td>
                 <td style="padding:6px 10px;text-align:center;color:rgba(255,255,255,0.4);font-size:10px;">${w.earlyPct.toFixed(0)}%</td>
             </tr>
@@ -4467,15 +3299,14 @@ function renderWorkerImpactTable(workerImpact) {
     container.innerHTML = html;
 }
 
-// ============================================================
-// RENDER TEAM ANALYSIS
-// ============================================================
 function renderTeamAnalysis(teamStats) {
     const container = document.getElementById('tpDailyDetailsContent');
     if (!container) return;
 
-    const diffPct = teamStats.diffPct;
-    const diff = teamStats.diff;
+    const earlyHours = teamStats.earlyTeamAvgHours;
+    const lateHours = teamStats.lateTeamAvgHours;
+    const diff = earlyHours - lateHours;
+    const diffPct = lateHours > 0 ? (diff / lateHours * 100) : 0;
 
     container.innerHTML = `
         <div style="margin-bottom:16px;">
@@ -4485,88 +3316,35 @@ function renderTeamAnalysis(teamStats) {
             <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:12px;">
                 <div style="background:rgba(123,207,166,0.05);border:2px solid rgba(123,207,166,0.2);border-radius:10px;padding:12px;text-align:center;">
                     <div style="font-size:9px;color:rgba(123,207,166,0.4);text-transform:uppercase;">✅ Early Teams</div>
-                    <div style="font-size:18px;font-weight:700;color:#7bcfa6;">UGX ${Math.round(teamStats.earlyTeamAvgSales).toLocaleString()}</div>
+                    <div style="font-size:18px;font-weight:700;color:#7bcfa6;">${earlyHours.toFixed(1)}h</div>
                     <div style="font-size:10px;color:rgba(255,255,255,0.2);">${teamStats.earlyTeams.length} days</div>
                 </div>
                 <div style="background:rgba(233,69,96,0.05);border:2px solid rgba(233,69,96,0.2);border-radius:10px;padding:12px;text-align:center;">
                     <div style="font-size:9px;color:rgba(233,69,96,0.4);text-transform:uppercase;">🔴 Late Teams</div>
-                    <div style="font-size:18px;font-weight:700;color:#e94560;">UGX ${Math.round(teamStats.lateTeamAvgSales).toLocaleString()}</div>
+                    <div style="font-size:18px;font-weight:700;color:#e94560;">${lateHours.toFixed(1)}h</div>
                     <div style="font-size:10px;color:rgba(255,255,255,0.2);">${teamStats.lateTeams.length} days</div>
                 </div>
                 <div style="background:rgba(255,215,0,0.05);border:2px solid ${diffPct > 0 ? 'rgba(123,207,166,0.3)' : 'rgba(233,69,96,0.3)'};border-radius:10px;padding:12px;text-align:center;">
                     <div style="font-size:9px;color:rgba(255,215,0,0.4);text-transform:uppercase;">🎯 Impact</div>
                     <div style="font-size:18px;font-weight:700;color:${diffPct > 0 ? '#7bcfa6' : '#e94560'};">${diffPct > 0 ? '+' : ''}${diffPct.toFixed(0)}%</div>
-                    <div style="font-size:10px;color:rgba(255,255,255,0.2);">UGX ${Math.round(diff).toLocaleString()}</div>
+                    <div style="font-size:10px;color:rgba(255,255,255,0.2);">${diff > 0 ? '+' : ''}${diff.toFixed(1)}h</div>
                 </div>
             </div>
             <div style="padding:8px 12px;background:rgba(212,165,116,0.05);border-radius:6px;font-size:10px;color:rgba(255,255,255,0.4);text-align:center;">
-                ${diffPct > 0 ? `✅ Early teams make ${diffPct.toFixed(0)}% MORE sales` : diffPct < 0 ? `⚠️ Late teams make ${Math.abs(diffPct).toFixed(0)}% MORE sales` : '🟡 No clear difference'}
+                ${diffPct > 0 ? `✅ Early teams work ${diffPct.toFixed(0)}% LONGER` : diffPct < 0 ? `⚠️ Late teams work ${Math.abs(diffPct).toFixed(0)}% LONGER` : '🟡 No clear difference'}
             </div>
         </div>
     `;
 }
 
-// ============================================================
-// RENDER BRANCH SALES HISTORY
-// ============================================================
-function renderBranchSalesHistory(branchStats) {
-    const container = document.getElementById('tpImpactAnalysis');
-    if (!container) return;
-
-    let html = `
-        <div style="margin-top:16px;border-top:1px solid rgba(255,255,255,0.06);padding-top:16px;">
-            <h4 style="color:#f0ebe6;font-weight:400;font-family:'Playfair Display',serif;font-size:16px;margin-bottom:10px;">
-                📊 BRANCH SALES HISTORY
-                <span style="font-size:11px;color:rgba(255,255,255,0.3);font-family:'Inter',sans-serif;margin-left:8px;">TOTAL branch sales</span>
-            </h4>
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
-    `;
-
-    for (const [branch, s] of Object.entries(branchStats)) {
-        const totalDays = s.daily_totals.length;
-        let avg7Display = '⏳ Waiting...', avg7Color = '#d4a574';
-        if (totalDays >= 7) {
-            const l7 = s.daily_totals.slice(-7);
-            avg7Display = 'UGX ' + Math.round(l7.reduce((a, b) => a + b, 0) / 7).toLocaleString();
-            avg7Color = '#7bcfa6';
-        } else avg7Display = `⏳ ${7 - totalDays} more`;
-
-        let avg31Display = '⏳ Waiting...', avg31Color = '#d4a574';
-        if (totalDays >= 31) {
-            const l31 = s.daily_totals.slice(-31);
-            avg31Display = 'UGX ' + Math.round(l31.reduce((a, b) => a + b, 0) / 31).toLocaleString();
-            avg31Color = '#7bcfa6';
-        } else avg31Display = `⏳ ${31 - totalDays} more`;
-
-        html += `
-            <div style="background:rgba(255,255,255,0.02);border-radius:8px;padding:12px;border:1px solid rgba(255,255,255,0.04);">
-                <div style="font-size:13px;font-weight:600;color:#f0ebe6;">📍 ${branch}</div>
-                <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;margin-top:6px;font-size:10px;">
-                    <span style="color:rgba(255,255,255,0.3);">📅 Days:</span><span style="color:#f0ebe6;">${totalDays}</span>
-                    <span style="color:rgba(255,255,255,0.3);">💰 Daily Avg:</span><span style="color:#ffd700;font-weight:600;">UGX ${Math.round(s.avg_daily_sales).toLocaleString()}</span>
-                    <span style="color:rgba(255,255,255,0.3);">📊 7-Day:</span><span style="color:${avg7Color};font-weight:600;">${avg7Display}</span>
-                    <span style="color:rgba(255,255,255,0.3);">📊 31-Day:</span><span style="color:${avg31Color};font-weight:600;">${avg31Display}</span>
-                    <span style="color:rgba(255,255,255,0.3);">📈 Highest:</span><span style="color:#7bcfa6;">UGX ${Math.round(s.max_sales).toLocaleString()}</span>
-                    <span style="color:rgba(255,255,255,0.3);">📉 Lowest:</span><span style="color:#e94560;">UGX ${Math.round(s.min_sales).toLocaleString()}</span>
-                    <span style="color:rgba(255,255,255,0.3);">👥 Avg Workers:</span><span style="color:#f0ebe6;">${s.avg_daily_workers.toFixed(1)}</span>
-                    <span style="color:rgba(255,255,255,0.3);">✅ Early %:</span><span style="color:${s.early_pct >= 50 ? '#7bcfa6' : '#e94560'};">${s.early_pct.toFixed(0)}%</span>
-                </div>
-            </div>
-        `;
-    }
-    html += `</div></div>`;
-    container.innerHTML += html;
-}
-
-// ============================================================
-// RENDER SUMMARY
-// ============================================================
 function renderSummaryAnswers(processedData, branchStats, workerImpact, teamStats) {
     const container = document.getElementById('tpImpactAnalysis');
     if (!container) return;
 
     const positiveImpact = workerImpact.filter(w => w.impact > 0);
-    const teamDiffPct = teamStats.diffPct;
+    const earlyHours = teamStats.earlyTeamAvgHours;
+    const lateHours = teamStats.lateTeamAvgHours;
+    const diffPct = lateHours > 0 ? ((earlyHours - lateHours) / lateHours * 100) : 0;
 
     let html = `
         <div style="margin-top:16px;border-top:1px solid rgba(255,255,255,0.06);padding-top:16px;">
@@ -4575,17 +3353,17 @@ function renderSummaryAnswers(processedData, branchStats, workerImpact, teamStat
             </h4>
             <div style="background:rgba(255,255,255,0.02);border-radius:8px;padding:14px;">
                 <div style="margin-bottom:8px;padding-bottom:8px;border-bottom:1px solid rgba(255,255,255,0.03);">
-                    <div style="font-weight:600;color:#d4a574;font-size:12px;">✅ Does each worker increase sales when early?</div>
+                    <div style="font-weight:600;color:#d4a574;font-size:12px;">✅ Do workers work longer when early?</div>
                     <div style="font-size:11px;color:rgba(255,255,255,0.4);">
                         ${positiveImpact.length > 0 ? positiveImpact.slice(0, 5).map(w =>
-                            `🟢 ${w.name}: +${w.impactPct.toFixed(0)}% (UGX ${Math.round(w.impact).toLocaleString()})`
-                        ).join(' | ') : '⚠️ No workers improve when early (need 3+ days of data)'}
+                            `🟢 ${w.name}: +${w.impact.toFixed(1)}h`
+                        ).join(' | ') : '⚠️ No workers work longer when early (need 3+ days of data)'}
                     </div>
                 </div>
                 <div>
-                    <div style="font-weight:600;color:#d4a574;font-size:12px;">✅ Do more early birds increase team sales?</div>
-                    <div style="font-size:11px;color:${teamDiffPct > 0 ? '#7bcfa6' : '#e94560'};">
-                        ${teamDiffPct > 0 ? '✅ YES' : '❌ NO'} — Early teams: UGX ${Math.round(teamStats.earlyTeamAvgSales).toLocaleString()} | Late: UGX ${Math.round(teamStats.lateTeamAvgSales).toLocaleString()}
+                    <div style="font-weight:600;color:#d4a574;font-size:12px;">✅ Do early teams work longer?</div>
+                    <div style="font-size:11px;color:${diffPct > 0 ? '#7bcfa6' : '#e94560'};">
+                        ${diffPct > 0 ? '✅ YES' : '❌ NO'} — Early: ${earlyHours.toFixed(1)}h | Late: ${lateHours.toFixed(1)}h
                     </div>
                 </div>
             </div>
@@ -4593,9 +3371,7 @@ function renderSummaryAnswers(processedData, branchStats, workerImpact, teamStat
     `;
     container.innerHTML += html;
 }
-// ============================================================
-// RENDER WORKER SUMMARY — 7AM On-Time Performance
-// ============================================================
+
 function renderWorkerSummaryTable(processedData) {
     const container = document.getElementById('tpSummaryContent');
     if (!container) return;
@@ -4605,7 +3381,6 @@ function renderWorkerSummaryTable(processedData) {
         return;
     }
 
-    // Group by worker
     const workerMap = {};
     processedData.forEach(r => {
         const id = r.worker_id;
@@ -4618,13 +3393,11 @@ function renderWorkerSummaryTable(processedData) {
                 early: 0,
                 late: 0,
                 checkInTimes: [],
-                hoursWorked: [],
-                sales: 0
+                hoursWorked: []
             };
         }
         const w = workerMap[id];
         w.total++;
-        w.sales += r.daily_sales || 0;
         w.hoursWorked.push(r.hours_worked || 0);
 
         if (r.check_in_display && r.check_in_display !== 'N/A') {
@@ -4653,8 +3426,7 @@ function renderWorkerSummaryTable(processedData) {
                 avgMins,
                 avgTimeDisplay,
                 avgHours,
-                onTimePct: w.total > 0 ? (w.early / w.total) * 100 : 0,
-                avgSales: w.total > 0 ? w.sales / w.total : 0
+                onTimePct: w.total > 0 ? (w.early / w.total) * 100 : 0
             };
         })
         .sort((a, b) => a.avgMins - b.avgMins);
@@ -4670,7 +3442,6 @@ function renderWorkerSummaryTable(processedData) {
                     <th style="padding:8px 10px;text-align:center;color:#7bcfa6;">On-Time %</th>
                     <th style="padding:8px 10px;text-align:center;color:rgba(255,255,255,0.4);">Days</th>
                     <th style="padding:8px 10px;text-align:center;color:rgba(255,255,255,0.4);">Avg Hours</th>
-                    <th style="padding:8px 10px;text-align:right;color:#ffd700;">Avg Sales</th>
                 </tr>
             </thead>
             <tbody>
@@ -4678,7 +3449,7 @@ function renderWorkerSummaryTable(processedData) {
 
     workers.forEach(w => {
         const onTimeColor = w.onTimePct >= 70 ? '#7bcfa6' : w.onTimePct >= 40 ? '#d4a574' : '#e94560';
-        const checkInColor = w.avgMins <= 420 ? '#7bcfa6' : '#e94560'; // 420 = 7:00 AM
+        const checkInColor = w.avgMins <= 420 ? '#7bcfa6' : '#e94560';
         html += `
             <tr style="border-bottom:1px solid rgba(255,255,255,0.03);">
                 <td style="padding:6px 10px;color:#f0ebe6;font-weight:500;">${w.name}</td>
@@ -4688,7 +3459,6 @@ function renderWorkerSummaryTable(processedData) {
                 <td style="padding:6px 10px;text-align:center;color:${onTimeColor};font-weight:600;">${w.onTimePct.toFixed(0)}%</td>
                 <td style="padding:6px 10px;text-align:center;color:rgba(255,255,255,0.5);">${w.total}</td>
                 <td style="padding:6px 10px;text-align:center;color:rgba(255,255,255,0.5);">${w.avgHours.toFixed(1)}h</td>
-                <td style="padding:6px 10px;text-align:right;color:#ffd700;">UGX ${Math.round(w.avgSales).toLocaleString()}</td>
             </tr>
         `;
     });
@@ -4697,9 +3467,6 @@ function renderWorkerSummaryTable(processedData) {
     container.innerHTML = html;
 }
 
-// ============================================================
-// MAIN LOADER
-// ============================================================
 async function loadTimePerformanceTab() {
     if (!currentUser || currentUser.role !== 'manager') return;
     const container = document.getElementById('tabTimePerformance');
@@ -4750,7 +3517,6 @@ async function loadTimePerformanceTab() {
         renderTimeChartsNew(processedData);
         renderWorkerImpactTable(workerImpact);
         renderTeamAnalysis(teamStats);
-        renderBranchSalesHistory(branchStats);
         renderSummaryAnswers(processedData, branchStats, workerImpact, teamStats);
         renderWorkerSummaryTable(processedData);
         populateTimeBranchFilter(rawData);
@@ -4779,9 +3545,9 @@ window.exportTimeReport = function() {
     if (!window.tpData.workers || window.tpData.workers.length === 0) {
         alert('⚠️ No data loaded. Refresh the tab first.'); return;
     }
-    let csv = 'Worker,JC ID,Avg Hours,Early Avg,Late Avg,Impact,Early %\n';
+    let csv = 'Worker,JC ID,Early Avg Hours,Late Avg Hours,Impact,Early %\n';
     for (const w of window.tpData.workers) {
-        csv += `${w.name},${w.jc_id},${w.earlyHours.toFixed(1)},${w.earlyAvg},${w.lateAvg},${w.impact},${w.earlyPct.toFixed(0)}%\n`;
+        csv += `${w.name},${w.jc_id},${w.earlyAvgHours.toFixed(1)},${w.lateAvgHours.toFixed(1)},${w.impact.toFixed(1)},${w.earlyPct.toFixed(0)}%\n`;
     }
     const blob = new Blob([csv], { type: 'text/csv' });
     const url = URL.createObjectURL(blob);
@@ -4833,12 +3599,12 @@ function generateTimeShareText() {
     const timeData = window.tpData.timeData || [];
     const now = getUgandaTime(new Date());
 
-    const totalSales = timeData.reduce((s, r) => s + r.daily_sales, 0);
-    const avgHours = timeData.length > 0 ? timeData.reduce((s, r) => s + r.hours_worked, 0) / timeData.length : 0;
+    const totalHours = timeData.reduce((s, r) => s + r.hours_worked, 0);
+    const avgHours = timeData.length > 0 ? totalHours / timeData.length : 0;
     const earlyRecords = timeData.filter(r => r.is_on_time);
     const lateRecords = timeData.filter(r => !r.is_on_time);
-    const earlyAvg = earlyRecords.length > 0 ? earlyRecords.reduce((s, r) => s + r.daily_sales, 0) / earlyRecords.length : 0;
-    const lateAvg = lateRecords.length > 0 ? lateRecords.reduce((s, r) => s + r.daily_sales, 0) / lateRecords.length : 0;
+    const earlyAvgHours = earlyRecords.length > 0 ? earlyRecords.reduce((s, r) => s + r.hours_worked, 0) / earlyRecords.length : 0;
+    const lateAvgHours = lateRecords.length > 0 ? lateRecords.reduce((s, r) => s + r.hours_worked, 0) / lateRecords.length : 0;
 
     let text = `📊 *TIME & PERFORMANCE - JEANS CLUB*\n`;
     text += `📅 ${formatUgandaDateTime(now)}\n`;
@@ -4847,14 +3613,13 @@ function generateTimeShareText() {
     text += `━━━━━━━━━━━━━━━━━━━━━\n\n`;
     text += `👥 Workers: ${workers.length}\n`;
     text += `📊 Records: ${timeData.length}\n`;
-    text += `💰 Total Sales: UGX ${totalSales.toLocaleString()}\n`;
     text += `⏰ Avg Hours: ${avgHours.toFixed(1)}h\n\n`;
     text += `🎯 EARLY IMPACT:\n`;
-    text += `   Early (≤7AM): UGX ${Math.round(earlyAvg).toLocaleString()}\n`;
-    text += `   Late (>7AM): UGX ${Math.round(lateAvg).toLocaleString()}\n\n`;
+    text += `   Early (≤7AM): ${earlyAvgHours.toFixed(1)}h\n`;
+    text += `   Late (>7AM): ${lateAvgHours.toFixed(1)}h\n\n`;
     text += `🏆 TOP PERFORMERS:\n`;
     workers.slice(0, 5).forEach((w, i) => {
-        text += `   ${i+1}. ${w.name} - UGX ${Math.round(w.earlyAvg).toLocaleString()} (${w.earlyPct.toFixed(0)}% early)\n`;
+        text += `   ${i+1}. ${w.name} - ${w.earlyAvgHours.toFixed(1)}h (${w.earlyPct.toFixed(0)}% early)\n`;
     });
     return text;
 }
@@ -4863,7 +3628,6 @@ function generateTimeShareText() {
 // DOM READY — FINAL WIRING
 // ============================================================
 document.addEventListener('DOMContentLoaded', function() {
-    // Login / Signup
     document.getElementById('loginBtn')?.addEventListener('click', handleLogin);
     document.getElementById('signupBtn')?.addEventListener('click', handleSignup);
     document.getElementById('showSignupBtn')?.addEventListener('click', showSignup);
@@ -4877,7 +3641,6 @@ document.addEventListener('DOMContentLoaded', function() {
         if (e.key === 'Enter') unlockBranches();
     });
 
-    // Tab click handlers
     document.querySelectorAll('[data-tab]').forEach(btn => {
         btn.addEventListener('click', function() {
             document.querySelectorAll('[data-tab]').forEach(b => b.classList.remove('active'));
@@ -4890,10 +3653,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 loadCheckinBranches();
                 loadTodayActivity();
             }
-            if (target === 'tabMyPerformance' && currentUser?.role === 'worker') {
-                loadWorkerProfile();
-                loadWorkerPerformanceTab();
-            }
             if (target === 'tabWorkers' && currentUser?.role === 'manager') {
                 loadWorkers();
             }
@@ -4903,20 +3662,12 @@ document.addEventListener('DOMContentLoaded', function() {
             if (target === 'tabLeaderboard') {
                 loadLeaderboard();
             }
-            if (target === 'tabBranchLeaderboard') {
-                loadBranchLeaderboard();
-            }
-            if (target === 'tabTeamDynamics') {
-                loadTeamDynamics();
-            }
             if (target === 'tabBranches' && currentUser?.role === 'manager') {
-                // Password gate is already shown by default
                 if (branchesUnlocked) loadBranchList();
             }
         });
     });
 
-    // Modal close handlers
     document.getElementById('editPayModal')?.addEventListener('click', function(e) {
         if (e.target === this) closeEditPayModal();
     });
@@ -4927,15 +3678,13 @@ document.addEventListener('DOMContentLoaded', function() {
         if (e.target === this) closeCaptureLocationModal();
     });
 
-    console.log('👖 JEANS CLUB — Simplified System Loaded!');
-    console.log('   ✅ Check-in / Check-out with GPS');
-    console.log('   ✅ Time & Performance tab');
-    console.log('   ✅ Leadership (early birds)');
-    console.log('   ✅ Branch Rankings (revenue)');
-    console.log('   ✅ Team Dynamics (check-in + sales)');
-    console.log('   ✅ Branches (password: J)');
-    console.log('   ✅ Credits only — no bonuses, no stress tests');
+    // Start the 9PM auto-close engine
+    startAutoCloseEngine();
+
+    console.log('👖 JEANS CLUB — System Loaded!');
+    console.log('   🕘 Auto-close at 9:00 PM Uganda time');
 });
+
 // ============================================================
 // QR CODE GENERATOR
 // ============================================================
@@ -4951,19 +3700,16 @@ function generateQRCode() {
     }
 }
 
-// Generate on page load
 document.addEventListener('DOMContentLoaded', function() {
     setTimeout(generateQRCode, 500);
 });
 
-// Regenerate when switching between login/signup
 document.addEventListener('click', function(e) {
     if (e.target.id === 'showSignupBtn' || e.target.id === 'showLoginBtn') {
         setTimeout(generateQRCode, 300);
     }
 });
 
-// Backup — run when page fully loads
 window.addEventListener('load', function() {
     setTimeout(generateQRCode, 300);
 });
@@ -4990,7 +3736,6 @@ window.addEventListener('load', function() {
     </div>
 </div>
 
-<!-- Persistent Popup - Auto removes when app is installed -->
 <div id="installPopup" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 20000; justify-content: center; align-items: center; text-align: center;">
     <div style="background: linear-gradient(135deg, #1a1a2e 0%, #0a0a0a 100%); padding: 40px; border-radius: 20px; max-width: 350px; margin: 20px; border: 2px solid #FFD700; box-shadow: 0 0 50px rgba(255,215,0,0.3);">
         <div style="font-size: 60px; margin-bottom: 20px;">📲</div>
@@ -5011,7 +3756,6 @@ window.addEventListener('load', function() {
 </style>
 
 <script>
-// Detect if user is inside the installed app (WebView)
 function isAppInstalled() {
     var ua = navigator.userAgent || navigator.vendor || window.opera;
     var isInWebView = (ua.indexOf('wv') > -1) || (ua.indexOf('WebView') > -1);
@@ -5083,6 +3827,5 @@ document.addEventListener('visibilitychange', function() {
 });
 </script>
 
-</script>
 </body>
 </html>
