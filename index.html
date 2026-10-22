@@ -1209,11 +1209,11 @@ const LOCATION_BUFFER = 150;
 const MAX_HOURS = 12;
 const UGANDA_TIMEZONE = 'Africa/Nairobi';
 
-// 🕘 AUTO-CLOSE AT 9 PM
-const AUTO_CLOSE_HOUR = 21;
+// 🕚 AUTO-CLOSE AT 11 PM
+const AUTO_CLOSE_HOUR = 23;
 const AUTO_CLOSE_MINUTE = 0;
 
-// 🕘 PUNISHMENT: auto-closed days count as only 2 hours worked
+// 🕚 PUNISHMENT: auto-closed days count as only 2 hours worked
 const AUTO_CLOSED_HOURS_PENALTY = 2;
 
 // ============================================================
@@ -1243,12 +1243,12 @@ function getUgandaDateStr(date = new Date()) {
     return getUgandaTimeParts(date).dateStr;
 }
 
-function getUganda9PMISO(dateStr) {
-    // Uganda = UTC+3 year-round. 9 PM EAT = 18:00 UTC same day.
-    return new Date(`${dateStr}T18:00:00.000Z`).toISOString();
+function getUgandaAutoCloseISO(dateStr) {
+    // Uganda = UTC+3 year-round. 11 PM EAT = 20:00 UTC same day.
+    return new Date(`${dateStr}T20:00:00.000Z`).toISOString();
 }
 
-function getMsUntil9PMUganda() {
+function getMsUntilAutoCloseUganda() {
     const now = new Date();
     const p = getUgandaTimeParts(now);
     const nowMs = Date.UTC(p.year, p.month - 1, p.day, p.hour, p.minute, p.second);
@@ -1268,17 +1268,17 @@ function formatCountdown(ms) {
 }
 
 // ============================================================
-// 🕘 AUTO-CLOSE ENGINE
+// 🕚 AUTO-CLOSE ENGINE
 // ============================================================
 async function runAutoClose(silent = true) {
     try {
         const todayStr = getUgandaDateStr();
         const nowParts = getUgandaTimeParts();
         const nowMinutes = nowParts.hour * 60 + nowParts.minute;
-        const ninePM = AUTO_CLOSE_HOUR * 60 + AUTO_CLOSE_MINUTE;
+        const autoCloseMinutes = AUTO_CLOSE_HOUR * 60 + AUTO_CLOSE_MINUTE;
 
-        // BEFORE 9 PM — sweep previous days' forgotten logs
-        if (nowMinutes < ninePM) {
+        // BEFORE 11 PM — sweep previous days' forgotten logs
+        if (nowMinutes < autoCloseMinutes) {
             const { data: oldForgotten } = await _supabase
                 .from('daily_logs')
                 .select('id, log_date')
@@ -1292,19 +1292,19 @@ async function runAutoClose(silent = true) {
                         .from('daily_logs')
                         .update({
                             is_closed: true,
-                            check_out_time: getUganda9PMISO(log.log_date),
+                            check_out_time: getUgandaAutoCloseISO(log.log_date),
                             auto_closed: true
                         })
                         .eq('id', log.id)
                         .eq('is_closed', false);
                     if (!error) closedCount++;
                 }
-                if (closedCount > 0) console.log(`🕘 Swept ${closedCount} forgotten log(s) from previous days.`);
+                if (closedCount > 0) console.log(`🕚 Swept ${closedCount} forgotten log(s) from previous days.`);
             }
             return { ran: false };
         }
 
-        // AFTER 9 PM — close all still-open logs for today
+        // AFTER 11 PM — close all still-open logs for today
         const { data: openToday } = await _supabase
             .from('daily_logs')
             .select('id')
@@ -1313,7 +1313,7 @@ async function runAutoClose(silent = true) {
 
         if (!openToday || openToday.length === 0) return { ran: true, closedCount: 0 };
 
-        const ninePMISO = getUganda9PMISO(todayStr);
+        const autoCloseISO = getUgandaAutoCloseISO(todayStr);
         let closedCount = 0;
 
         for (const log of openToday) {
@@ -1321,7 +1321,7 @@ async function runAutoClose(silent = true) {
                 .from('daily_logs')
                 .update({
                     is_closed: true,
-                    check_out_time: ninePMISO,
+                    check_out_time: autoCloseISO,
                     auto_closed: true
                 })
                 .eq('id', log.id)
@@ -1330,7 +1330,7 @@ async function runAutoClose(silent = true) {
         }
 
         if (closedCount > 0) {
-            console.log(`🕘 Auto-closed ${closedCount} worker(s) at 9PM`);
+            console.log(`🕚 Auto-closed ${closedCount} worker(s) at 11PM`);
             if (currentUser) {
                 loadTodayActivity();
                 loadCheckinBranches();
@@ -1340,7 +1340,7 @@ async function runAutoClose(silent = true) {
                 }
             }
             if (!silent && currentUser) {
-                alert(`🕘 9:00 PM Auto-Close\n\n${closedCount} worker(s) were closed automatically.`);
+                alert(`🕚 11:00 PM Auto-Close\n\n${closedCount} worker(s) were closed automatically.`);
             }
         }
 
@@ -1363,13 +1363,13 @@ function startAutoCloseEngine() {
 
     countdownInterval = setInterval(() => {
         const el = document.getElementById('autoCloseCountdown');
-        if (el) el.textContent = formatCountdown(getMsUntil9PMUganda());
+        if (el) el.textContent = formatCountdown(getMsUntilAutoCloseUganda());
     }, 1000);
 
     const el = document.getElementById('autoCloseCountdown');
-    if (el) el.textContent = formatCountdown(getMsUntil9PMUganda());
+    if (el) el.textContent = formatCountdown(getMsUntilAutoCloseUganda());
 
-    console.log('🕘 Auto-close engine started — closes open logs at 9:00 PM Uganda time.');
+    console.log('🕚 Auto-close engine started — closes open logs at 11:00 PM Uganda time.');
 }
 
 // ============================================================
@@ -2027,11 +2027,11 @@ async function loadTodayActivity() {
 
             const hours = getHoursWorked(d);
             const hoursDisplay = hours > 0
-                ? `<span style="color:${d.auto_closed ? '#e94560' : '#7bcfa6'};font-weight:600;">${hours.toFixed(1)}h</span>${d.auto_closed ? ' 🕘' : ''}`
+                ? `<span style="color:${d.auto_closed ? '#e94560' : '#7bcfa6'};font-weight:600;">${hours.toFixed(1)}h</span>${d.auto_closed ? ' 🕚' : ''}`
                 : '-';
 
             let statusDisplay = d.is_closed ? '🔒 Closed' : '✅ Active';
-            if (d.auto_closed) statusDisplay = '🕘 Auto-Closed';
+            if (d.auto_closed) statusDisplay = '🕚 Auto-Closed';
 
             html += `<tr>
                 <td style="white-space:nowrap;color:rgba(255,255,255,0.55);font-size:9px;">${dateDisplay}</td>
@@ -3696,7 +3696,7 @@ document.addEventListener('DOMContentLoaded', function() {
     startAutoCloseEngine();
 
     console.log('👖 JEANS CLUB — System Loaded!');
-    console.log('   🕘 Auto-close at 9:00 PM Uganda time (2h penalty applied)');
+    console.log('   🕚 Auto-close at 11:00 PM Uganda time (2h penalty applied)');
 });
 
 // ============================================================
