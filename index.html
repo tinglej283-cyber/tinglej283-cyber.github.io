@@ -190,6 +190,81 @@ table td strong { color: #f0ebe6; font-weight: 500; }
 .badge.warning { background: rgba(212,165,116,0.15); color: #d4a574; border: 1px solid rgba(212,165,116,0.15); }
 .badge.info { background: rgba(54,162,235,0.15); color: #36A2EB; border: 1px solid rgba(54,162,235,0.15); }
 
+/* ─── ARRIVAL CARD (Surface A) ─── */
+.arrival-card {
+    margin-bottom: 12px;
+    border-radius: 14px;
+    border: 1px solid rgba(255,255,255,0.08);
+    border-left-width: 5px;
+    padding: 14px 16px;
+    background: rgba(255,255,255,0.04);
+    position: relative;
+}
+.arrival-card.early {
+    border-left-color: #7bcfa6;
+    background: linear-gradient(90deg, rgba(123,207,166,0.10), rgba(255,255,255,0.02));
+}
+.arrival-card.ontime {
+    border-left-color: #d4a574;
+    background: linear-gradient(90deg, rgba(212,165,116,0.10), rgba(255,255,255,0.02));
+}
+.arrival-card.late {
+    border-left-color: #e94560;
+    background: linear-gradient(90deg, rgba(233,69,96,0.10), rgba(255,255,255,0.02));
+}
+.arrival-card.autoclosed {
+    border-left-color: #e94560;
+    background: linear-gradient(90deg, rgba(233,69,96,0.14), rgba(255,255,255,0.02));
+}
+.arrival-card .ac-headline {
+    font-family: 'Playfair Display', serif;
+    font-size: 19px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    line-height: 1.2;
+    margin-bottom: 4px;
+}
+.arrival-card.early .ac-headline { color: #7bcfa6; }
+.arrival-card.ontime .ac-headline { color: #d4a574; }
+.arrival-card.late .ac-headline { color: #e94560; }
+.arrival-card.autoclosed .ac-headline { color: #e94560; }
+.arrival-card .ac-sub {
+    font-size: 12px;
+    color: rgba(255,255,255,0.55);
+    line-height: 1.5;
+}
+.arrival-card .ac-divider {
+    height: 1px;
+    background: rgba(255,255,255,0.08);
+    margin: 10px 0;
+}
+.arrival-card .ac-meta {
+    font-size: 11px;
+    color: rgba(255,255,255,0.5);
+    line-height: 1.7;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+.arrival-card .ac-meta .ac-live-time { color: #f0ebe6; font-weight: 600; }
+.arrival-card .ac-tip {
+    margin-top: 8px;
+    font-size: 11px;
+    color: rgba(255,255,255,0.4);
+    font-style: italic;
+}
+.arrival-pill {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 20px;
+    font-size: 8px;
+    font-weight: 500;
+    white-space: nowrap;
+}
+.arrival-pill.early { background: rgba(123,207,166,0.15); color: #7bcfa6; border: 1px solid rgba(123,207,166,0.2); }
+.arrival-pill.ontime { background: rgba(212,165,116,0.15); color: #d4a574; border: 1px solid rgba(212,165,116,0.2); }
+.arrival-pill.late { background: rgba(233,69,96,0.15); color: #e94560; border: 1px solid rgba(233,69,96,0.2); }
+
 /* ─── BUTTONS ─── */
 .btn-primary { background: rgba(212,165,116,0.15); color: #d4a574; border: 1px solid rgba(212,165,116,0.2); padding: 6px 16px; border-radius: 8px; font-weight: 500; cursor: pointer; transition: all 0.3s ease; font-family: 'Inter', sans-serif; font-size: 10px; }
 .btn-primary:hover { background: rgba(212,165,116,0.25); transform: translateY(-1px); }
@@ -404,6 +479,10 @@ table td strong { color: #f0ebe6; font-weight: 500; }
     .worker-profile-info h2 { font-size: 16px; }
     .worker-avatar-large { width: 50px; height: 50px; }
 
+    .arrival-card { padding: 12px 13px; }
+    .arrival-card .ac-headline { font-size: 17px; }
+    .arrival-card .ac-sub { font-size: 11px; }
+
     .branch-grid { grid-template-columns: 1fr 1fr; gap: 6px; }
     .branch-card { padding: 10px 8px; }
     .branch-card .branch-name { font-size: 12px; }
@@ -488,6 +567,11 @@ table td strong { color: #f0ebe6; font-weight: 500; }
     .header-user .user-name { font-size: 9px; }
     .header-user .role-badge { font-size: 7px; padding: 1px 8px; }
     .btn-logout { font-size: 8px; padding: 3px 8px; }
+
+    .arrival-card { padding: 11px 12px; border-radius: 10px; }
+    .arrival-card .ac-headline { font-size: 15px; }
+    .arrival-card .ac-sub { font-size: 10px; }
+    .arrival-card .ac-meta { font-size: 10px; }
 
     .branch-grid { grid-template-columns: 1fr; gap: 6px; }
     .tabs button { font-size: 8px; padding: 4px 8px; }
@@ -1198,6 +1282,7 @@ let realtimeSubscription = null;
 let branchesUnlocked = false;
 let autoCloseInterval = null;
 let countdownInterval = null;
+let shiftTimerInterval = null;
 
 // ============================================================
 // SYSTEM CONSTANTS
@@ -1215,6 +1300,11 @@ const AUTO_CLOSE_MINUTE = 0;
 
 // 🕚 PUNISHMENT: auto-closed days count as only 2 hours worked
 const AUTO_CLOSED_HOURS_PENALTY = 2;
+
+// 🎯 TARGET: 7:00 AM SHARP (≤ 7:00:00 = EARLY, exactly 7:00 = ON TIME, > 7:00 = LATE)
+const TARGET_HOUR = 7;
+const TARGET_MINUTE = 0;
+const TARGET_SECOND = 0;
 
 // ============================================================
 // UGANDA TIME HELPERS
@@ -1265,6 +1355,61 @@ function formatCountdown(ms) {
     const s = totalSec % 60;
     if (h > 0) return `${h}h ${m}m ${s}s until auto-close`;
     return `${m}m ${s}s until auto-close`;
+}
+
+// ============================================================
+// 🎯 ARRIVAL STATUS HELPER (7:00 AM SHARP)
+// ============================================================
+function getArrivalStatus(checkInISO) {
+    if (!checkInISO) return null;
+    const d = new Date(checkInISO);
+    if (isNaN(d)) return null;
+
+    const p = getUgandaTimeParts(d);
+    const targetMins = TARGET_HOUR * 60 + TARGET_MINUTE;
+    const actualMins = p.hour * 60 + p.minute;
+    const actualSecs = actualMins * 60 + p.second;
+    const targetSecs = targetMins * 60 + TARGET_SECOND;
+
+    let state; // 'early' | 'ontime' | 'late'
+    let deltaSecs = targetSecs - actualSecs;
+    let deltaText = '';
+
+    if (actualSecs < targetSecs) {
+        state = 'early';
+        const m = Math.floor(deltaSecs / 60);
+        const s = deltaSecs % 60;
+        if (m > 0 && s > 0) deltaText = `${m} min ${s} sec before 7 AM target`;
+        else if (m > 0) deltaText = `${m} min before 7 AM target`;
+        else deltaText = `${s} sec before 7 AM target`;
+    } else if (actualSecs === targetSecs) {
+        state = 'ontime';
+        deltaText = 'Right on target';
+    } else {
+        state = 'late';
+        const after = -deltaSecs;
+        const m = Math.floor(after / 60);
+        const s = after % 60;
+        if (m > 0 && s > 0) deltaText = `${m} min ${s} sec after 7 AM target`;
+        else if (m > 0) deltaText = `${m} min after 7 AM target`;
+        else deltaText = `${s} sec after 7 AM target`;
+    }
+
+    const timeStr = d.toLocaleTimeString('en-US', {
+        timeZone: UGANDA_TIMEZONE,
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: true
+    });
+
+    return {
+        state,
+        emoji: state === 'early' ? '🌅' : state === 'ontime' ? '⚡' : '🌙',
+        headline: state === 'early' ? "YOU'RE EARLY!" : state === 'ontime' ? 'ON TIME' : "YOU'RE LATE",
+        pill: state === 'early' ? '🌅 Early' : state === 'ontime' ? '⚡ On Time' : '🌙 Late',
+        timeStr,
+        deltaText
+    };
 }
 
 // ============================================================
@@ -1432,6 +1577,90 @@ function canReopenLog(log) {
     if (log.auto_closed) return false;
     const todayStr = getUgandaDateStr();
     return log.log_date === todayStr;
+}
+
+// ------------------------------------------------------------
+// LIVE ON-SHIFT TIMER (Surface A)
+// ------------------------------------------------------------
+function formatElapsed(ms) {
+    if (ms < 0) ms = 0;
+    const totalSec = Math.floor(ms / 1000);
+    const h = Math.floor(totalSec / 3600);
+    const m = Math.floor((totalSec % 3600) / 60);
+    const s = totalSec % 60;
+    return `${h}h ${String(m).padStart(2, '0')}m ${String(s).padStart(2, '0')}s`;
+}
+
+function startShiftTimer(checkInISO) {
+    stopShiftTimer();
+    if (!checkInISO) return;
+    const startMs = new Date(checkInISO).getTime();
+    if (isNaN(startMs)) return;
+
+    const tick = () => {
+        const el = document.getElementById('acLiveTime');
+        if (!el) return;
+        el.textContent = formatElapsed(Date.now() - startMs);
+    };
+    tick();
+    shiftTimerInterval = setInterval(tick, 1000);
+}
+
+function stopShiftTimer() {
+    if (shiftTimerInterval) {
+        clearInterval(shiftTimerInterval);
+        shiftTimerInterval = null;
+    }
+}
+
+// ============================================================
+// SURFACE A — RENDER WORKER ARRIVAL CARD
+// ============================================================
+function renderWorkerArrivalCard(myLog, distanceText, withinText) {
+    const el = document.getElementById('locationStatus');
+    if (!el) return;
+
+    if (!myLog) {
+        // Not checked in — neutral state
+        stopShiftTimer();
+        el.className = '';
+        el.innerHTML = `<div id="locationInfo" style="font-size:12px;color:rgba(255,255,255,0.5);">🔍 Detecting your location...</div>`;
+        return;
+    }
+
+    // Auto-closed log → show penalty message
+    if (myLog.auto_closed) {
+        stopShiftTimer();
+        el.className = '';
+        el.innerHTML = `
+            <div class="arrival-card autoclosed">
+                <div class="ac-headline">🕚 AUTO-CLOSED</div>
+                <div class="ac-sub">Your shift was closed at 11:00 PM (2h penalty applied)</div>
+                <div class="ac-divider"></div>
+                <div class="ac-meta">
+                    <div>💡 Next time, tap <strong>"Close My Day"</strong> before 11 PM to keep your full hours.</div>
+                </div>
+            </div>
+        `;
+        return;
+    }
+
+    const status = getArrivalStatus(myLog.check_in_time);
+    if (!status) return;
+
+    el.className = '';
+    el.innerHTML = `
+        <div class="arrival-card ${status.state}">
+            <div class="ac-headline">${status.emoji} ${status.headline}</div>
+            <div class="ac-sub">Checked in at ${status.timeStr} · ${status.deltaText}</div>
+            <div class="ac-divider"></div>
+            <div class="ac-meta">
+                <div>${distanceText || '📍 Locating...'}</div>
+                <div>⏱️ On shift <span class="ac-live-time" id="acLiveTime">0h 00m 00s</span></div>
+            </div>
+        </div>
+    `;
+    startShiftTimer(myLog.check_in_time);
 }
 
 // ============================================================
@@ -1666,6 +1895,8 @@ class LocationTracker {
         this.lastSaveTime = 0;
         this.anomalyCount = 0;
         this.checkOutRequested = false;
+        this.lastDistanceText = '';
+        this.lastWithinText = '';
     }
 
     startTracking() {
@@ -1760,8 +1991,24 @@ class LocationTracker {
     }
 
     updateLocationDisplay(distance, isWithin) {
+        this.lastDistanceText = `📍 Distance from branch: ${distance.toFixed(0)}m · ${isWithin ? '✅ Within buffer' : '⚠️ Outside buffer'}`;
+        this.lastWithinText = isWithin ? 'within' : 'outside';
+
         const el = document.getElementById('locationStatus');
         if (!el) return;
+
+        // If arrival card is present, only refresh the distance line
+        const card = el.querySelector('.arrival-card');
+        if (card && !card.classList.contains('autoclosed')) {
+            // Find meta first line, refresh it
+            const metaDivs = card.querySelectorAll('.ac-meta > div');
+            if (metaDivs.length >= 1) {
+                metaDivs[0].innerHTML = this.lastDistanceText;
+            }
+            return;
+        }
+
+        // Otherwise (no card → neutral state), show the old location block
         const color = isWithin ? '#7bcfa6' : '#e94560';
         el.innerHTML = `
             <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
@@ -1825,6 +2072,11 @@ async function loadCheckinBranches() {
             myLog = myLogs[0];
             currentBranchId = myLog.branch_id;
         }
+    }
+
+    // ── Surface A: render worker arrival card ──
+    if (currentUser.role === 'worker') {
+        renderWorkerArrivalCard(myLog, '', '');
     }
 
     grid.innerHTML = branches.map(branch => {
@@ -1963,7 +2215,7 @@ async function checkInToBranch(branchId, branchName) {
 }
 
 // ============================================================
-// TODAY'S ACTIVITY (Last 7 Days) — with Hours Worked
+// TODAY'S ACTIVITY (Last 7 Days) — with Hours Worked + Arrival column
 // ============================================================
 async function loadTodayActivity() {
     if (!currentUser) return;
@@ -2000,7 +2252,7 @@ async function loadTodayActivity() {
         }
 
         let html = `<div class="table-wrap"><table><thead><tr>
-            <th>Date</th><th>Worker</th><th>Branch</th><th>Check In</th><th>Check Out</th><th>Hours Worked</th><th>Status</th>`;
+            <th>Date</th><th>Worker</th><th>Branch</th><th>Check In</th><th>Arrival</th><th>Check Out</th><th>Hours Worked</th><th>Status</th>`;
 
         if (currentUser.role === 'manager') html += `<th>Action</th>`;
         else {
@@ -2025,6 +2277,13 @@ async function loadTodayActivity() {
                   })
                 : '-';
 
+            // ── Surface B: arrival pill ──
+            const arrival = getArrivalStatus(d.check_in_time);
+            let arrivalPill = '<span style="color:rgba(255,255,255,0.25);">—</span>';
+            if (arrival) {
+                arrivalPill = `<span class="arrival-pill ${arrival.state}">${arrival.pill}</span>`;
+            }
+
             const hours = getHoursWorked(d);
             const hoursDisplay = hours > 0
                 ? `<span style="color:${d.auto_closed ? '#e94560' : '#7bcfa6'};font-weight:600;">${hours.toFixed(1)}h</span>${d.auto_closed ? ' 🕚' : ''}`
@@ -2038,6 +2297,7 @@ async function loadTodayActivity() {
                 <td>${workerName} ${d.workers?.jc_id ? '('+d.workers.jc_id+')' : ''}</td>
                 <td>${branchName}</td>
                 <td>${checkIn}</td>
+                <td>${arrivalPill}</td>
                 <td>${checkOut}</td>
                 <td>${hoursDisplay}</td>
                 <td>${statusDisplay}</td>`;
@@ -2130,6 +2390,7 @@ async function closeDayByWorker(branchId, branchName) {
     alert(`✅ Your day at ${branchName} is closed!`);
 
     if (locationTracker) { locationTracker.stopTracking(); locationTracker = null; }
+    stopShiftTimer();
 
     loadTodayActivity();
     loadCheckinBranches();
@@ -2413,6 +2674,7 @@ async function handleSignup() {
 function handleLogout() {
     if (realtimeSubscription) { realtimeSubscription.unsubscribe(); realtimeSubscription = null; }
     if (locationTracker) { locationTracker.stopTracking(); locationTracker = null; }
+    stopShiftTimer();
     currentUser = null;
     document.getElementById('dashboard').style.display = 'none';
     document.getElementById('loginScreen').style.display = 'block';
@@ -3697,6 +3959,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     console.log('👖 JEANS CLUB — System Loaded!');
     console.log('   🕚 Auto-close at 11:00 PM Uganda time (2h penalty applied)');
+    console.log('   🎯 Arrival target: 7:00:00 AM sharp (early / on-time / late)');
 });
 
 // ============================================================
