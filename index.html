@@ -1564,7 +1564,7 @@ function getHoursWorked(log) {
     if (!log.check_in_time || !log.check_out_time) return 0;
     const raw = (new Date(log.check_out_time) - new Date(log.check_in_time)) / 3600000;
     if (isNaN(raw) || raw < 0) return 0;
-    return Math.min(raw, MAX_HOURS);
+    return raw;
 }
 
 // ------------------------------------------------------------
